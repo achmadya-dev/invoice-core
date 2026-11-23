@@ -19,11 +19,19 @@ export function InvoiceEditor({
   edit,
   view,
   setView,
+  onLoadExample,
+  onPrint,
+  onDuplicate,
+  onDelete,
 }: {
   workspace: Workspace
   edit: EditInvoice
   view: 'edit' | 'preview'
   setView: (view: 'edit' | 'preview') => void
+  onLoadExample?: () => void
+  onPrint: () => void
+  onDuplicate?: () => void
+  onDelete?: () => void
 }) {
   const draft = workspace.draft
   const [template, setTemplate] = useState('')
@@ -72,7 +80,14 @@ export function InvoiceEditor({
             <h2 id="editor-title">
               <Icon name="edit" /> Edit invoice
             </h2>
-            <span className={`ic-tag ic-${draft.status}`}>{draft.status}</span>
+            <div className="ic-panel-actions">
+              {onLoadExample && (
+                <button type="button" className="ic-panel-button" onClick={onLoadExample}>
+                  Load example
+                </button>
+              )}
+              <span className={`ic-tag ic-${draft.status}`}>{draft.status}</span>
+            </div>
           </div>
           <div className="ic-editor-body">
             <section className="ic-section" aria-labelledby="details-title">
@@ -170,6 +185,22 @@ export function InvoiceEditor({
                     }}
                   />
                 </label>
+                {previousClients.size > 0 && (
+                  <SelectField
+                    label="Reuse a previous client"
+                    value=""
+                    placeholder="Select a client"
+                    span
+                    options={Array.from(previousClients.entries(), ([key, contact]) => ({
+                      value: key,
+                      label: contact.name,
+                    }))}
+                    onChange={(key) => {
+                      const contact = previousClients.get(key)
+                      if (contact) set('client', contact)
+                    }}
+                  />
+                )}
               </div>
               <details className="ic-detail">
                 <summary>Sender details</summary>
@@ -190,22 +221,6 @@ export function InvoiceEditor({
               <details className="ic-detail">
                 <summary>Billing details</summary>
                 <div className="ic-fields">
-                  {previousClients.size > 0 && (
-                    <SelectField
-                      label="Reuse a previous client"
-                      value=""
-                      placeholder="Select a client"
-                      span
-                      options={Array.from(previousClients.entries(), ([key, contact]) => ({
-                        value: key,
-                        label: contact.name,
-                      }))}
-                      onChange={(key) => {
-                        const contact = previousClients.get(key)
-                        if (contact) set('client', contact)
-                      }}
-                    />
-                  )}
                   <ContactFields
                     label="Billing contact"
                     contact={draft.client}
@@ -422,11 +437,40 @@ export function InvoiceEditor({
             </section>
           </div>
           <div className="ic-editor-foot">
-            <span>Preview updates as you type</span>
-            <span>Stored on this device</span>
+            {saved && (onDuplicate || onDelete) ? (
+              <>
+                <span>Saved in local history</span>
+                <div className="ic-actions">
+                  {onDuplicate && (
+                    <button type="button" className="ic-panel-button" onClick={onDuplicate}>
+                      Duplicate
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      className="ic-panel-button ic-panel-button-danger"
+                      onClick={onDelete}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <span>Preview updates as you type</span>
+                <span>Stored on this device</span>
+              </>
+            )}
           </div>
         </section>
-        <InvoicePreview invoice={draft} />
+        <InvoicePreview
+          invoice={draft}
+          focused={view === 'preview'}
+          onToggleFocus={() => setView(view === 'edit' ? 'preview' : 'edit')}
+          onPrint={onPrint}
+        />
       </div>
     </>
   )

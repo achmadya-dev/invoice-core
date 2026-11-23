@@ -82,6 +82,7 @@ export type Sender = z.infer<typeof senderSchema>
 export type Company = z.infer<typeof companySchema>
 export type LineItem = z.infer<typeof itemSchema>
 export type Invoice = z.infer<typeof invoiceSchema>
+export type InvoiceStatus = (typeof invoiceStatuses)[number]
 export type Theme = (typeof themes)[number]
 
 function unique(values: string[]) {
@@ -411,4 +412,30 @@ const dates = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UT
 
 export function formatDate(value: string) {
   return value ? dates.format(new Date(`${value}T00:00:00Z`)) : '—'
+}
+
+export function updateInvoiceStatus(
+  workspace: Workspace,
+  invoiceId: string,
+  status: InvoiceStatus,
+  now = new Date(),
+): Workspace {
+  const target = workspace.invoices.find((invoice) => invoice.id === invoiceId)
+  if (!target) return workspace
+  const updatedAt = now.toISOString()
+  const invoices = workspace.invoices.map((invoice) =>
+    invoice.id === invoiceId ? { ...invoice, status, updatedAt } : invoice,
+  )
+  const draft =
+    workspace.draft.id === invoiceId && !workspace.dirty
+      ? { ...workspace.draft, status, updatedAt }
+      : workspace.draft
+  return { ...workspace, invoices, draft }
+}
+
+export function formatBytes(bytes: number): string {
+  const safe = Number.isFinite(bytes) && bytes > 0 ? bytes : 0
+  if (safe < 1024) return `${Math.round(safe)} B`
+  if (safe < 1024 * 1024) return `${(safe / 1024).toFixed(1)} KB`
+  return `${(safe / (1024 * 1024)).toFixed(2)} MB`
 }
