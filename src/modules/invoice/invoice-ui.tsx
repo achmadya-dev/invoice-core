@@ -1,7 +1,9 @@
+import { Combobox } from '@base-ui/react/combobox'
+import { Select } from '@base-ui/react/select'
 import { countryCodes, countryName, currencies, currencyName } from './domain/catalog'
-import type { Contact, Currency, Sender } from './domain/invoice'
+import type { Contact, Currency, Sender, Theme } from './domain/invoice'
 import { readLogo } from './workspace.browser'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 const countryOptions = countryCodes
   .map((code) => ({ code, name: countryName(code) }))
@@ -21,6 +23,7 @@ const icons = {
     'M16 12a4 4 0 1 1-8 0 4 4 0 1 1 8 0ZM12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5',
   dark: 'M20.8 14.4A9 9 0 0 1 9.6 3.2a9 9 0 1 0 11.2 11.2Z',
   chevron: 'm6 9 6 6 6-6',
+  check: 'm5 12 4 4L19 6',
 } as const
 
 export function Icon({ name }: { name: keyof typeof icons }) {
@@ -48,22 +51,154 @@ export function CurrencySelect({
   onChange: (value: Currency) => void
 }) {
   return (
-    <label className="ic-field">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => {
-          const match = currencies.find((code) => code === event.target.value)
-          if (match) onChange(match)
-        }}
-      >
-        {currencies.map((code) => (
-          <option key={code} value={code}>
-            {code} — {currencyName(code)}
-          </option>
-        ))}
-      </select>
-    </label>
+    <SelectField
+      label={label}
+      value={value}
+      options={currencies.map((code) => ({
+        value: code,
+        label: `${code} — ${currencyName(code)}`,
+      }))}
+      onChange={(nextValue) => {
+        const match = currencies.find((code) => code === nextValue)
+        if (match) onChange(match)
+      }}
+    />
+  )
+}
+
+export type SelectOption = { value: string; label: string }
+
+export function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  compact = false,
+  disabled = false,
+  span = false,
+}: {
+  label: string
+  value: string
+  options: SelectOption[]
+  onChange: (value: string) => void
+  placeholder?: string
+  compact?: boolean
+  disabled?: boolean
+  span?: boolean
+}) {
+  return (
+    <Select.Root
+      items={options}
+      value={value === '' && placeholder ? null : value}
+      disabled={disabled}
+      onValueChange={(nextValue) => {
+        if (typeof nextValue === 'string') onChange(nextValue)
+      }}
+    >
+      <div className={compact ? 'ic-select-compact' : span ? 'ic-field ic-span' : 'ic-field'}>
+        <Select.Label className={compact ? 'sr-only' : undefined}>{label}</Select.Label>
+        <Select.Trigger
+          className={compact ? 'ic-select-trigger ic-select-trigger-compact' : 'ic-select-trigger'}
+        >
+          <Select.Value placeholder={placeholder} />
+          <Select.Icon className="ic-select-icon">
+            <Icon name="chevron" />
+          </Select.Icon>
+        </Select.Trigger>
+        <Select.Positioner className="ic-select-positioner" sideOffset={4}>
+          <Select.Popup className="ic-select-popup">
+            <Select.List className="ic-select-list">
+              {options.map((option) => (
+                <Select.Item
+                  key={option.value}
+                  value={option.value}
+                  label={option.label}
+                  className="ic-select-option"
+                >
+                  <Select.ItemText>{option.label}</Select.ItemText>
+                  <Select.ItemIndicator className="ic-select-indicator">
+                    <Icon name="check" />
+                  </Select.ItemIndicator>
+                </Select.Item>
+              ))}
+            </Select.List>
+          </Select.Popup>
+        </Select.Positioner>
+      </div>
+    </Select.Root>
+  )
+}
+
+const countryItems = Combobox.createItems(countryOptions, {
+  getValue: (country) => country.code,
+  getLabel: (country) => country.name,
+})
+
+export function CountrySelect({
+  label,
+  value,
+  onChange,
+  theme,
+  span = false,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  theme: Theme
+  span?: boolean
+}) {
+  const id = useId()
+  return (
+    <Combobox.Root
+      items={countryItems}
+      value={value || null}
+      onValueChange={(nextValue) => onChange(typeof nextValue === 'string' ? nextValue : '')}
+    >
+      <div className={span ? 'ic-field ic-span' : 'ic-field'}>
+        <label htmlFor={id}>{label}</label>
+        <Combobox.InputGroup className="ic-country-group">
+          <Combobox.Input id={id} className="ic-country-input" placeholder="Search countries" />
+          <Combobox.Trigger
+            className="ic-country-trigger"
+            aria-label={`Show ${label.toLowerCase()} options`}
+          >
+            <Icon name="chevron" />
+          </Combobox.Trigger>
+          {value && (
+            <Combobox.Clear
+              className="ic-country-clear"
+              aria-label={`Clear ${label.toLowerCase()}`}
+            >
+              <Icon name="close" />
+            </Combobox.Clear>
+          )}
+        </Combobox.InputGroup>
+        <Combobox.Portal>
+          <Combobox.Positioner className="ic-country-positioner" sideOffset={4}>
+            <Combobox.Popup className="ic-country-popup" data-theme={theme}>
+              <Combobox.Empty>
+                <div className="ic-country-empty">No countries match.</div>
+              </Combobox.Empty>
+              <Combobox.List className="ic-country-list">
+                {(country) => (
+                  <Combobox.Item
+                    key={country.code}
+                    value={country.code}
+                    className="ic-country-option"
+                  >
+                    <Combobox.ItemIndicator className="ic-country-indicator">
+                      <Icon name="check" />
+                    </Combobox.ItemIndicator>
+                    <span>{country.name}</span>
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </div>
+    </Combobox.Root>
   )
 }
 
@@ -71,10 +206,12 @@ export function ContactFields({
   label,
   contact,
   onChange,
+  theme,
 }: {
   label: string
   contact: Contact
   onChange: (patch: Partial<Contact>) => void
+  theme: Theme
 }) {
   return (
     <>
@@ -104,20 +241,12 @@ export function ContactFields({
           onChange={(event) => onChange({ phone: event.target.value })}
         />
       </label>
-      <label className="ic-field">
-        {label} country
-        <select
-          value={contact.country}
-          onChange={(event) => onChange({ country: event.target.value })}
-        >
-          <option value="">Select a country</option>
-          {countryOptions.map(({ code, name }) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <CountrySelect
+        label={`${label} country`}
+        value={contact.country}
+        onChange={(country) => onChange({ country })}
+        theme={theme}
+      />
       <label className="ic-field ic-span">
         {label} address
         <textarea
@@ -134,9 +263,11 @@ export function ContactFields({
 export function SenderFields({
   sender,
   onChange,
+  theme,
 }: {
   sender: Sender
   onChange: (patch: Partial<Sender>) => void
+  theme: Theme
 }) {
   const [logoError, setLogoError] = useState('')
   const readAttempt = useRef(0)
@@ -148,7 +279,7 @@ export function SenderFields({
   )
   return (
     <>
-      <ContactFields label="Sender" contact={sender} onChange={onChange} />
+      <ContactFields label="Sender" contact={sender} onChange={onChange} theme={theme} />
       <label className="ic-field">
         Website
         <input

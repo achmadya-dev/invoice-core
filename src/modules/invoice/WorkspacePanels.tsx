@@ -9,9 +9,10 @@ import {
   newCompany,
   type Company,
   type Invoice,
+  type Theme,
   type Workspace,
 } from './domain/invoice'
-import { CurrencySelect, Icon, SenderFields } from './invoice-ui'
+import { CurrencySelect, Icon, SelectField, SenderFields } from './invoice-ui'
 import { DecimalField } from './InvoiceEditor'
 import { decodeWorkspace, downloadFile } from './workspace.browser'
 
@@ -53,17 +54,13 @@ export function InvoiceHistory({
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <label className="ic-field">
-          Filter by company
-          <select value={profile} onChange={(event) => setProfile(event.target.value)}>
-            <option value="">All companies</option>
-            {Array.from(choices, ([id, name]) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Filter by company"
+          value={profile}
+          placeholder="All companies"
+          options={Array.from(choices, ([id, name]) => ({ value: id, label: name }))}
+          onChange={setProfile}
+        />
       </div>
       {workspace.invoices.length === 0 ? (
         <div className="ic-empty">
@@ -129,10 +126,12 @@ export function Companies({
   companies,
   save,
   remove,
+  theme,
 }: {
   companies: Company[]
   save: (company: Company) => boolean
   remove: (company: Company) => boolean
+  theme: Theme
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
   const [error, setError] = useState('')
@@ -199,6 +198,7 @@ export function Companies({
               <SenderFields
                 key={selected.id}
                 sender={selected.sender}
+                theme={theme}
                 onChange={(patch) =>
                   setSelected((current) =>
                     current?.id === selected.id

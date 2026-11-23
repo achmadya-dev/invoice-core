@@ -264,7 +264,7 @@ export function InvoiceWorkspace() {
         )}
         {message && (
           <p
-            className={`ic-banner${message.error ? 'ic-error' : ''}`}
+            className={message.error ? 'ic-banner ic-error' : 'ic-banner'}
             role={message.error ? 'alert' : 'status'}
           >
             {message.text}
@@ -387,6 +387,7 @@ export function InvoiceWorkspace() {
         {data && panel === 'companies' && (
           <Companies
             companies={data.companies}
+            theme={data.theme}
             save={(company) => {
               const exists = data.companies.some((entry) => entry.id === company.id)
               const companies = exists

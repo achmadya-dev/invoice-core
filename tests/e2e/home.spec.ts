@@ -1,5 +1,10 @@
 import { readFile } from 'node:fs/promises'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+async function chooseOption(page: Page, label: string, option: string | RegExp) {
+  await page.getByRole('combobox', { name: label, exact: true }).click()
+  await page.getByRole('option', { name: option }).click()
+}
 
 test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info) => {
   const errors: string[] = []
@@ -9,10 +14,16 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoice editor')
   await expect(page.getByText('Sign in', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Save invoice' }).click()
-  await expect(page.getByRole('alert')).toContainText('Enter a sender, client')
+  const validation = page.getByRole('alert')
+  await expect(validation).toContainText('Enter a sender, client')
+  await expect(validation).toHaveClass(/\bic-error\b/)
   await page.getByRole('button', { name: 'Load example' }).click()
+  const template = page.getByRole('combobox', { name: 'Line item template' })
+  await expect(template).toBeVisible()
+  await expect(template).toHaveClass(/\bic-select-trigger-compact\b/)
   const amount = page.locator('.ic-amount dd')
   await expect(amount).toHaveText('$1,600.00')
+  await expect(page.getByRole('table', { name: 'Invoice line items', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Save invoice' }).click()
   await expect(page.getByRole('status')).toHaveText('Invoice saved to history.')
   await page.screenshot({ path: info.outputPath('invoice-desktop.png'), fullPage: true })
@@ -27,7 +38,14 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(amount).toHaveText('—')
   await page.getByLabel('Quantity, item 2').fill('2')
   await expect(amount).toHaveText('$1,637.80')
-  await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption('sent')
+  const status = page.getByRole('combobox', { name: 'Status', exact: true })
+  await status.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('option', { name: 'Sent', exact: true })).toBeVisible()
+  await page.screenshot({ path: info.outputPath('status-dropdown-desktop.png') })
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  await expect(status).toHaveText('Sent')
   const pdf = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download PDF' }).click()
   const downloaded = await pdf
@@ -42,12 +60,12 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await page.getByLabel('Search invoices').fill('something missing')
   await expect(page.getByText('No invoices match these filters.')).toBeVisible()
   await page.getByLabel('Search invoices').fill('Fieldwork')
-  await page.getByLabel('Filter by company').selectOption({ label: 'Personal' })
+  await chooseOption(page, 'Filter by company', 'Personal')
   await expect(page.getByRole('button', { name: 'INV-0001', exact: true })).toBeVisible()
   await expect(page.getByText('sent', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Duplicate INV-0001' }).click()
   await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0002')
-  await expect(page.getByRole('combobox', { name: 'Status', exact: true })).toHaveValue('draft')
+  await expect(page.getByRole('combobox', { name: 'Status', exact: true })).toHaveText('Draft')
   await expect(amount).toHaveText('$1,637.80')
   expect(errors).toEqual([])
 })
@@ -59,7 +77,9 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await page.getByRole('button', { name: 'Companies' }).click()
   await page.getByRole('button', { name: 'Add company' }).click()
   await page.getByLabel('Sender name').fill('Maple Studio')
-  await page.getByLabel('Sender country').selectOption('ID')
+  const senderCountry = page.getByRole('combobox', { name: 'Sender country', exact: true })
+  await senderCountry.fill('Indo')
+  await page.getByRole('option', { name: 'Indonesia', exact: true }).click()
   const logo = page.getByLabel('Company logo')
   await logo.setInputFiles({
     name: 'logo.svg',
@@ -69,17 +89,17 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await expect(page.getByRole('alert')).toContainText('Choose a valid PNG or JPEG')
   await logo.setInputFiles('public/invoice-192.png')
   await expect(page.getByRole('button', { name: 'Remove logo' })).toBeVisible()
-  await page.getByLabel('Default currency').selectOption('IDR')
+  await chooseOption(page, 'Default currency', /^IDR —/)
   await page.getByLabel('Invoice prefix').fill('MAP-')
   await page.getByLabel('Next number').fill('41')
   await page.getByRole('button', { name: 'Save company' }).click()
   await page.getByRole('button', { name: 'Editor', exact: true }).click()
-  await page.getByLabel('Sender profile').selectOption({ label: 'Maple Studio' })
+  await chooseOption(page, 'Sender profile', 'Maple Studio')
   await expect(page.getByLabel('Invoice number')).toHaveValue('MAP-0041')
-  await expect(page.getByRole('combobox', { name: 'Currency', exact: true })).toHaveValue('IDR')
+  await expect(page.getByRole('combobox', { name: 'Currency', exact: true })).toContainText('IDR')
   await expect(page.getByRole('article').getByText('Indonesia')).toBeVisible()
   await page.getByLabel('Client name', { exact: true }).fill('Synthetic Client')
-  await page.getByLabel('Line item template').selectOption('Design project')
+  await chooseOption(page, 'Line item template', 'Design project')
   await page.getByRole('button', { name: 'Apply', exact: true }).click()
   await expect(page.getByLabel('Description, item 1')).toHaveValue('Design services')
   await page.getByRole('button', { name: 'Save invoice' }).click()
@@ -138,6 +158,18 @@ test('mobile switches between editing and the proof without losing input', async
     true,
   )
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  const status = page.getByRole('combobox', { name: 'Status', exact: true })
+  await status.press('Enter')
+  await expect(page.getByRole('option', { name: 'Sent', exact: true })).toBeVisible()
+  await expect(page.locator('.ic-select-popup[data-open]')).toHaveCSS('opacity', '1')
+  expect(
+    await page.locator('.ic-select-popup[data-open]').evaluate((element) => {
+      const { left, right } = element.getBoundingClientRect()
+      return left >= 0 && right <= window.innerWidth
+    }),
+  ).toBe(true)
+  await page.screenshot({ path: info.outputPath('invoice-mobile-status-dropdown.png') })
+  await page.keyboard.press('Escape')
   await expect(page.getByLabel('Quantity, item 2')).toHaveValue('3')
   await page.getByRole('button', { name: 'Add line item' }).press('Enter')
   await expect(page.getByLabel('Description, item 4')).toBeFocused()
