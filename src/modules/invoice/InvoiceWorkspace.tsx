@@ -13,7 +13,7 @@ import {
   type Workspace,
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
-import { Icon, ThemeSelect } from './invoice-ui'
+import { ConfirmModal, Icon, ThemeSelect, type ConfirmState } from './invoice-ui'
 import { Backup, Companies, InvoiceHistory } from './WorkspacePanels'
 import {
   downloadFile,
@@ -67,6 +67,7 @@ export function InvoiceWorkspace() {
   const [view, setView] = useState<'edit' | 'preview'>('edit')
   const [pdfBusyId, setPdfBusyId] = useState<string | null>(null)
   const [offlineReady, setOfflineReady] = useState(false)
+  const [confirmModal, setConfirmModal] = useState<ConfirmState | null>(null)
   const draft = local?.data.draft
 
   useEffect(() => {
@@ -151,21 +152,48 @@ export function InvoiceWorkspace() {
     }
   }
 
-  function replaceDraft(data: Workspace, next: Invoice, dirty = false) {
-    if (
-      data.dirty &&
-      !window.confirm(
-        'Replace the active draft? Changes not saved to invoice history will be lost.',
-      )
-    )
+  function replaceDraft(
+    data: Workspace,
+    next: Invoice,
+    dirty = false,
+    prompt?: {
+      title?: string
+      description?: string
+      confirmLabel?: string
+      cancelLabel?: string
+    },
+  ) {
+    const apply = () => {
+      if (commit({ ...data, draft: next, dirty })) show('editor')
+    }
+    if (!data.dirty) {
+      apply()
       return
-    if (commit({ ...data, draft: next, dirty })) show('editor')
+    }
+    setConfirmModal({
+      title: prompt?.title ?? 'Discard unsaved changes?',
+      description:
+        prompt?.description ??
+        'Replace the active draft? Changes not saved to invoice history will be lost.',
+      confirmLabel: prompt?.confirmLabel ?? 'Replace draft',
+      cancelLabel: prompt?.cancelLabel ?? 'Keep editing',
+      danger: true,
+      onConfirm: apply,
+    })
   }
 
-  function startDraft(data: Workspace) {
+  function startDraft(
+    data: Workspace,
+    prompt?: {
+      title?: string
+      description?: string
+      confirmLabel?: string
+      cancelLabel?: string
+    },
+  ) {
     const company = data.companies[0] ?? newCompany('Personal')
     const companies = data.companies.length ? data.companies : [company]
-    replaceDraft({ ...data, companies }, newInvoice(company, data.invoices))
+    replaceDraft({ ...data, companies }, newInvoice(company, data.invoices), false, prompt)
   }
 
   function saveEditor() {
@@ -203,14 +231,6 @@ export function InvoiceWorkspace() {
     })
   }
 
-  function printInvoice() {
-    const data = current.current?.data
-    if (!data) return
-    const error = invoiceError(data.draft)
-    if (error) setMessage({ text: error, error: true })
-    else window.print()
-  }
-
   function duplicateSavedInvoice(invoice: Invoice) {
     const data = current.current?.data
     if (!data) return
@@ -226,38 +246,41 @@ export function InvoiceWorkspace() {
   }
 
   function deleteInvoice(invoice: Invoice, replaceActiveDraft = false) {
-    const data = current.current?.data
-    if (!data) return
-    if (
-      !window.confirm(
-        `Delete saved invoice ${invoice.number}? This cannot be undone without a backup.`,
-      )
-    )
-      return
-    const remaining = data.invoices.filter((entry) => entry.id !== invoice.id)
-    if (replaceActiveDraft) {
-      const company =
-        data.companies.find((entry) => entry.id === invoice.companyId) ??
-        data.companies[0] ??
-        newCompany('Personal')
-      const companies = data.companies.length ? data.companies : [company]
-      if (
-        commit({
-          ...data,
-          companies,
-          invoices: remaining,
-          draft: newInvoice(company, remaining),
-          dirty: false,
-        })
-      ) {
-        setView('edit')
-        setMessage({ text: 'Invoice removed from history.' })
-      }
-      return
-    }
-    if (commit({ ...data, invoices: remaining })) {
-      setMessage({ text: 'Invoice removed from history.' })
-    }
+    setConfirmModal({
+      title: `Delete invoice ${invoice.number}?`,
+      description:
+        'This removes the saved invoice from history and cannot be undone without a backup.',
+      confirmLabel: 'Delete invoice',
+      danger: true,
+      onConfirm: () => {
+        const data = current.current?.data
+        if (!data) return
+        const remaining = data.invoices.filter((entry) => entry.id !== invoice.id)
+        if (replaceActiveDraft) {
+          const company =
+            data.companies.find((entry) => entry.id === invoice.companyId) ??
+            data.companies[0] ??
+            newCompany('Personal')
+          const companies = data.companies.length ? data.companies : [company]
+          if (
+            commit({
+              ...data,
+              companies,
+              invoices: remaining,
+              draft: newInvoice(company, remaining),
+              dirty: false,
+            })
+          ) {
+            setView('edit')
+            setMessage({ text: 'Invoice removed from history.' })
+          }
+          return
+        }
+        if (commit({ ...data, invoices: remaining })) {
+          setMessage({ text: 'Invoice removed from history.' })
+        }
+      },
+    })
   }
 
   function clearWorkspace() {
@@ -290,7 +313,7 @@ export function InvoiceWorkspace() {
       setMessage({ text: 'PDF downloaded.' })
     } catch {
       setMessage({
-        text: 'The PDF could not be generated. Use Print instead.',
+        text: 'The PDF could not be generated. Try again or use your browser print dialog.',
         error: true,
       })
     } finally {
@@ -301,6 +324,8 @@ export function InvoiceWorkspace() {
   const data = local?.data
   const theme = data?.theme ?? 'system'
   const copy = panelCopy[panel]
+  const isSavedDraft =
+    data && draft ? data.invoices.some((invoice) => invoice.id === draft.id) : false
   return (
     <div className="ic-workspace" data-theme={theme}>
       <header className="ic-topbar">
@@ -341,9 +366,11 @@ export function InvoiceWorkspace() {
           </div>
           {data && panel === 'editor' && draft && (
             <div className="ic-actions ic-heading-actions">
-              <button type="button" className="ic-text-button" onClick={() => startDraft(data)}>
-                <Icon name="plus" /> New invoice
-              </button>
+              {isSavedDraft && (
+                <button type="button" className="ic-text-button" onClick={() => startDraft(data)}>
+                  <Icon name="plus" /> New invoice
+                </button>
+              )}
               <button type="button" className="ic-button" onClick={saveEditor}>
                 Save invoice
               </button>
@@ -389,22 +416,22 @@ export function InvoiceWorkspace() {
             edit={editDraft}
             view={view}
             setView={setView}
-            onLoadExample={
-              !data.dirty && !data.invoices.some((invoice) => invoice.id === data.draft.id)
-                ? loadExample
+            onLoadExample={!data.dirty && !isSavedDraft ? loadExample : undefined}
+            onResetDraft={
+              data.dirty && !isSavedDraft
+                ? () =>
+                    startDraft(data, {
+                      title: 'Discard unsaved changes?',
+                      description:
+                        'Reset this draft back to a blank invoice? Unsaved edits will be lost.',
+                      confirmLabel: 'Reset draft',
+                      cancelLabel: 'Keep editing',
+                    })
                 : undefined
             }
-            onPrint={printInvoice}
-            onDuplicate={
-              data.invoices.some((invoice) => invoice.id === data.draft.id)
-                ? () => duplicateSavedInvoice(data.draft)
-                : undefined
-            }
-            onDelete={
-              data.invoices.some((invoice) => invoice.id === data.draft.id)
-                ? () => deleteInvoice(data.draft, true)
-                : undefined
-            }
+            onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(data.draft) : undefined}
+            onDelete={isSavedDraft ? () => deleteInvoice(data.draft, true) : undefined}
+            requestConfirm={setConfirmModal}
           />
         )}
         {data && panel === 'history' && (
@@ -439,19 +466,25 @@ export function InvoiceWorkspace() {
               if (ok) setMessage({ text: 'Sender profile saved.' })
               return ok
             }}
-            remove={(company) => {
-              if (
-                !window.confirm(
-                  `Delete ${company.sender.name}? Saved invoices keep their existing sender details.`,
-                )
-              )
-                return false
-              const ok = commit({
-                ...data,
-                companies: data.companies.filter((entry) => entry.id !== company.id),
+            requestRemove={(company, onDeleted) => {
+              setConfirmModal({
+                title: `Delete ${company.sender.name}?`,
+                description: 'Saved invoices keep their existing sender details.',
+                confirmLabel: 'Delete company',
+                danger: true,
+                onConfirm: () => {
+                  const latest = current.current?.data
+                  if (!latest) return
+                  const ok = commit({
+                    ...latest,
+                    companies: latest.companies.filter((entry) => entry.id !== company.id),
+                  })
+                  if (ok) {
+                    setMessage({ text: 'Sender profile removed.' })
+                    onDeleted()
+                  }
+                },
               })
-              if (ok) setMessage({ text: 'Sender profile removed.' })
-              return ok
             }}
           />
         )}
@@ -469,6 +502,7 @@ export function InvoiceWorkspace() {
               return ok
             }}
             clear={clearWorkspace}
+            requestConfirm={setConfirmModal}
           />
         )}
         <footer className="ic-footer">
@@ -476,6 +510,7 @@ export function InvoiceWorkspace() {
           {offlineReady && <span role="status">Available offline</span>}
         </footer>
       </main>
+      <ConfirmModal confirm={confirmModal} theme={theme} onClose={() => setConfirmModal(null)} />
     </div>
   )
 }

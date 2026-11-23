@@ -1,3 +1,4 @@
+import { AlertDialog } from '@base-ui/react/alert-dialog'
 import { Combobox } from '@base-ui/react/combobox'
 import { Select } from '@base-ui/react/select'
 import { countryCodes, countryName, currencies, currencyName } from './domain/catalog'
@@ -17,8 +18,6 @@ const icons = {
   plus: 'M12 5v14M5 12h14',
   close: 'm7 7 10 10M17 7 7 17',
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4',
-  print:
-    'M6 9V4h12v5M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v6H6z',
   expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
   collapse: 'M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7',
   arrow: 'M5 12h14m-5-5 5 5-5 5',
@@ -70,7 +69,7 @@ export function CurrencySelect({
   )
 }
 
-export type SelectOption = { value: string; label: string }
+export type SelectOption = { value: string; label: string; group?: string }
 
 export function SelectField({
   label,
@@ -82,6 +81,7 @@ export function SelectField({
   disabled = false,
   span = false,
   triggerClassName,
+  popupClassName,
   align = 'start',
 }: {
   label: string
@@ -93,8 +93,18 @@ export function SelectField({
   disabled?: boolean
   span?: boolean
   triggerClassName?: string
+  popupClassName?: string
   align?: 'start' | 'end'
 }) {
+  const groups: { name: string; items: SelectOption[] }[] = []
+  for (const option of options) {
+    const groupName = option.group ?? ''
+    const last = groups[groups.length - 1]
+    if (last && last.name === groupName) last.items.push(option)
+    else groups.push({ name: groupName, items: [option] })
+  }
+  const hasGroups = groups.some((group) => group.name !== '')
+
   return (
     <Select.Root
       items={options}
@@ -120,21 +130,44 @@ export function SelectField({
           </Select.Icon>
         </Select.Trigger>
         <Select.Positioner className="ic-select-positioner" align={align} sideOffset={4}>
-          <Select.Popup className="ic-select-popup">
+          <Select.Popup className={['ic-select-popup', popupClassName].filter(Boolean).join(' ')}>
             <Select.List className="ic-select-list">
-              {options.map((option) => (
-                <Select.Item
-                  key={option.value}
-                  value={option.value}
-                  label={option.label}
-                  className="ic-select-option"
-                >
-                  <Select.ItemText>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator className="ic-select-indicator">
-                    <Icon name="check" />
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
+              {hasGroups
+                ? groups.map((group) => (
+                    <Select.Group key={group.name || 'default'} className="ic-select-group">
+                      {group.name && (
+                        <Select.GroupLabel className="ic-select-group-label">
+                          {group.name}
+                        </Select.GroupLabel>
+                      )}
+                      {group.items.map((option) => (
+                        <Select.Item
+                          key={option.value}
+                          value={option.value}
+                          label={option.label}
+                          className="ic-select-option"
+                        >
+                          <Select.ItemText>{option.label}</Select.ItemText>
+                          <Select.ItemIndicator className="ic-select-indicator">
+                            <Icon name="check" />
+                          </Select.ItemIndicator>
+                        </Select.Item>
+                      ))}
+                    </Select.Group>
+                  ))
+                : options.map((option) => (
+                    <Select.Item
+                      key={option.value}
+                      value={option.value}
+                      label={option.label}
+                      className="ic-select-option"
+                    >
+                      <Select.ItemText>{option.label}</Select.ItemText>
+                      <Select.ItemIndicator className="ic-select-indicator">
+                        <Icon name="check" />
+                      </Select.ItemIndicator>
+                    </Select.Item>
+                  ))}
             </Select.List>
           </Select.Popup>
         </Select.Positioner>
@@ -437,5 +470,65 @@ export function SenderFields({
         </div>
       )}
     </>
+  )
+}
+
+export type ConfirmState = {
+  title: string
+  description: string
+  confirmLabel: string
+  cancelLabel?: string
+  danger?: boolean
+  onConfirm: () => void
+}
+
+export function ConfirmModal({
+  confirm,
+  theme,
+  onClose,
+}: {
+  confirm: ConfirmState | null
+  theme: Theme
+  onClose: () => void
+}) {
+  return (
+    <AlertDialog.Root
+      open={confirm !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="ic-modal-backdrop" />
+        <AlertDialog.Viewport className="ic-modal-viewport">
+          <AlertDialog.Popup className="ic-modal-popup" data-theme={theme}>
+            {confirm && (
+              <>
+                <AlertDialog.Title className="ic-modal-title">{confirm.title}</AlertDialog.Title>
+                <AlertDialog.Description className="ic-modal-description">
+                  {confirm.description}
+                </AlertDialog.Description>
+                <div className="ic-modal-actions">
+                  <AlertDialog.Close className="ic-button">
+                    {confirm.cancelLabel ?? 'Cancel'}
+                  </AlertDialog.Close>
+                  <button
+                    type="button"
+                    className={`ic-button ${confirm.danger ? 'ic-danger' : 'ic-primary'}`}
+                    onClick={() => {
+                      const action = confirm.onConfirm
+                      onClose()
+                      action()
+                    }}
+                  >
+                    {confirm.confirmLabel}
+                  </button>
+                </div>
+              </>
+            )}
+          </AlertDialog.Popup>
+        </AlertDialog.Viewport>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   )
 }

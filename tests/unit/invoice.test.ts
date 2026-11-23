@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { lineTemplates } from '../../src/modules/invoice/domain/catalog'
 import {
   duplicateInvoice,
   formatBytes,
@@ -159,5 +160,19 @@ describe('local invoice workspace', () => {
     expect(formatBytes(512)).toBe('512 B')
     expect(formatBytes(2560)).toBe('2.5 KB')
     expect(formatBytes(1_572_864)).toBe('1.50 MB')
+  })
+
+  it('provides 14 grouped starter templates across 6 trade categories', () => {
+    expect(lineTemplates).toHaveLength(14)
+    expect(Array.from(new Set(lineTemplates.map((entry) => entry.group)))).toEqual([
+      'Software & IT',
+      'Coaching & Consulting',
+      'Design',
+      'Accounting & Tax',
+      'Finance & Advisory',
+      'General',
+    ])
+    expect(new Set(lineTemplates.map((entry) => entry.name)).size).toBe(14)
+    for (const entry of lineTemplates) expect(entry.lines.length).toBeGreaterThan(0)
   })
 })

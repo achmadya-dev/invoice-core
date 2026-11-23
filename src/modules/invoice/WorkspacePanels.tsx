@@ -16,7 +16,7 @@ import {
   type Theme,
   type Workspace,
 } from './domain/invoice'
-import { CurrencySelect, Icon, SelectField, SenderFields } from './invoice-ui'
+import { CurrencySelect, Icon, SelectField, SenderFields, type ConfirmState } from './invoice-ui'
 import { DecimalField } from './InvoiceEditor'
 import { decodeWorkspace, downloadFile } from './workspace.browser'
 
@@ -181,12 +181,12 @@ export function InvoiceHistory({
 export function Companies({
   companies,
   save,
-  remove,
+  requestRemove,
   theme,
 }: {
   companies: Company[]
   save: (company: Company) => boolean
-  remove: (company: Company) => boolean
+  requestRemove: (company: Company, onDeleted: () => void) => void
   theme: Theme
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
@@ -344,9 +344,7 @@ export function Companies({
                 <button
                   className="ic-text-button"
                   type="button"
-                  onClick={() => {
-                    if (remove(selected)) edit(null)
-                  }}
+                  onClick={() => requestRemove(selected, () => edit(null))}
                 >
                   Delete company
                 </button>
@@ -373,16 +371,16 @@ export function Backup({
   damaged,
   restore,
   clear,
+  requestConfirm,
 }: {
   workspace: Workspace
   storageBytes: number
   damaged: string | null
   restore: (data: Workspace) => boolean
   clear: () => boolean
+  requestConfirm: (confirm: ConfirmState) => void
 }) {
-  const [candidate, setCandidate] = useState<Workspace | null>(null)
   const [error, setError] = useState('')
-  const [confirmClear, setConfirmClear] = useState(false)
   const importAttempt = useRef(0)
   return (
     <div className="ic-company-layout">
@@ -456,17 +454,27 @@ export function Backup({
               const file = event.currentTarget.files?.[0]
               event.currentTarget.value = ''
               const attempt = ++importAttempt.current
-              setCandidate(null)
               setError('')
               if (!file) return
               try {
                 const data = file.size <= maxBackupBytes ? decodeWorkspace(await file.text()) : null
                 if (attempt !== importAttempt.current) return
-                if (data) setCandidate(data)
-                else
+                if (data) {
+                  requestConfirm({
+                    title: 'Restore backup?',
+                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), and one active draft. Replace the local workspace with this backup?`,
+                    confirmLabel: 'Replace local workspace',
+                    cancelLabel: 'Cancel restore',
+                    danger: true,
+                    onConfirm: () => {
+                      restore(data)
+                    },
+                  })
+                } else {
                   setError(
                     'This is not a valid Invoice Core backup (maximum 8 MB). Nothing was replaced.',
                   )
+                }
               } catch {
                 if (attempt === importAttempt.current)
                   setError('The file could not be read. Nothing was replaced.')
@@ -479,28 +487,6 @@ export function Backup({
             {error}
           </p>
         )}
-        {candidate && (
-          <div className="ic-confirm ic-note">
-            <p>
-              {candidate.invoices.length} saved invoice(s), {candidate.companies.length} sender
-              profile(s), and one active draft. Replace this workspace with the selected backup?
-            </p>
-            <div className="ic-actions ic-note">
-              <button
-                className="ic-button ic-primary"
-                type="button"
-                onClick={() => {
-                  if (restore(candidate)) setCandidate(null)
-                }}
-              >
-                Replace local workspace
-              </button>
-              <button className="ic-button" type="button" onClick={() => setCandidate(null)}>
-                Cancel restore
-              </button>
-            </div>
-          </div>
-        )}
       </section>
       <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Reset local data">
         <h2>Reset local data</h2>
@@ -508,43 +494,26 @@ export function Backup({
           Remove all saved invoices, sender profiles, and the active draft from this browser. Export
           a JSON backup first.
         </p>
-        {confirmClear ? (
-          <div className="ic-confirm ic-note">
-            <p>
-              This removes {workspace.invoices.length} saved invoice(s),{' '}
-              {workspace.companies.length} sender profile(s), and the active draft from this
-              browser. Download a JSON backup first.
-            </p>
-            <div className="ic-actions ic-note">
-              <button
-                className="ic-button ic-danger"
-                type="button"
-                onClick={() => {
-                  if (clear()) {
-                    setConfirmClear(false)
-                    setCandidate(null)
-                    setError('')
-                  }
-                }}
-              >
-                Confirm clear workspace
-              </button>
-              <button className="ic-button" type="button" onClick={() => setConfirmClear(false)}>
-                Cancel clear
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="ic-actions ic-note">
-            <button
-              className="ic-button ic-danger"
-              type="button"
-              onClick={() => setConfirmClear(true)}
-            >
-              Clear local workspace
-            </button>
-          </div>
-        )}
+        <div className="ic-actions ic-note">
+          <button
+            className="ic-button ic-danger"
+            type="button"
+            onClick={() =>
+              requestConfirm({
+                title: 'Clear local workspace?',
+                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), and the active draft from this browser. Download a JSON backup first.`,
+                confirmLabel: 'Confirm clear workspace',
+                cancelLabel: 'Cancel clear',
+                danger: true,
+                onConfirm: () => {
+                  if (clear()) setError('')
+                },
+              })
+            }
+          >
+            Clear local workspace
+          </button>
+        </div>
       </section>
     </div>
   )

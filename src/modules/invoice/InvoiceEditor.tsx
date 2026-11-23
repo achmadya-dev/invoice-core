@@ -9,7 +9,14 @@ import {
   type Invoice,
   type Workspace,
 } from './domain/invoice'
-import { ContactFields, CurrencySelect, Icon, SelectField, SenderFields } from './invoice-ui'
+import {
+  ContactFields,
+  CurrencySelect,
+  Icon,
+  SelectField,
+  SenderFields,
+  type ConfirmState,
+} from './invoice-ui'
 import { InvoicePreview } from './InvoicePreview'
 
 type EditInvoice = (edit: (invoice: Invoice) => Invoice) => void
@@ -20,18 +27,20 @@ export function InvoiceEditor({
   view,
   setView,
   onLoadExample,
-  onPrint,
+  onResetDraft,
   onDuplicate,
   onDelete,
+  requestConfirm,
 }: {
   workspace: Workspace
   edit: EditInvoice
   view: 'edit' | 'preview'
   setView: (view: 'edit' | 'preview') => void
   onLoadExample?: () => void
-  onPrint: () => void
+  onResetDraft?: () => void
   onDuplicate?: () => void
   onDelete?: () => void
+  requestConfirm: (confirm: ConfirmState) => void
 }) {
   const draft = workspace.draft
   const [template, setTemplate] = useState('')
@@ -63,7 +72,7 @@ export function InvoiceEditor({
           aria-controls="invoice-editor"
           onClick={() => setView('edit')}
         >
-          Edit
+          <Icon name="edit" /> Edit
         </button>
         <button
           type="button"
@@ -71,7 +80,7 @@ export function InvoiceEditor({
           aria-controls="invoice-preview"
           onClick={() => setView('preview')}
         >
-          Preview
+          <Icon name="document" /> Preview
         </button>
       </nav>
       <div className="ic-layout" data-view={view}>
@@ -84,6 +93,15 @@ export function InvoiceEditor({
               {onLoadExample && (
                 <button type="button" className="ic-panel-button" onClick={onLoadExample}>
                   Load example
+                </button>
+              )}
+              {onResetDraft && (
+                <button
+                  type="button"
+                  className="ic-panel-button ic-panel-button-danger"
+                  onClick={onResetDraft}
+                >
+                  Reset draft
                 </button>
               )}
               <span className={`ic-tag ic-${draft.status}`}>{draft.status}</span>
@@ -343,9 +361,11 @@ export function InvoiceEditor({
                   value={template}
                   placeholder="Choose a template"
                   compact
+                  popupClassName="ic-template-popup"
                   options={lineTemplates.map((entry) => ({
                     value: entry.name,
                     label: entry.name,
+                    group: entry.group,
                   }))}
                   onChange={setTemplate}
                 />
@@ -356,16 +376,24 @@ export function InvoiceEditor({
                   onClick={() => {
                     const chosen = lineTemplates.find((entry) => entry.name === template)
                     if (!chosen) return
+                    const applyTemplate = () => {
+                      set('items', chosen.lines.map(newItem))
+                      setTemplate('')
+                    }
                     const filled = draft.items.some(
                       (item) => item.description || item.rate || !['', '1'].includes(item.quantity),
                     )
-                    if (
-                      filled &&
-                      !window.confirm('Replace the current line items with this template?')
-                    )
+                    if (!filled) {
+                      applyTemplate()
                       return
-                    set('items', chosen.lines.map(newItem))
-                    setTemplate('')
+                    }
+                    requestConfirm({
+                      title: 'Replace current line items?',
+                      description: `Replace the existing line items on this draft with the ${chosen.name} template?`,
+                      confirmLabel: 'Replace line items',
+                      danger: true,
+                      onConfirm: applyTemplate,
+                    })
                   }}
                 >
                   Apply
@@ -469,7 +497,6 @@ export function InvoiceEditor({
           invoice={draft}
           focused={view === 'preview'}
           onToggleFocus={() => setView(view === 'edit' ? 'preview' : 'edit')}
-          onPrint={onPrint}
         />
       </div>
     </>

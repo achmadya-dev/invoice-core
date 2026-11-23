@@ -6,12 +6,10 @@ export function InvoicePreview({
   invoice,
   focused,
   onToggleFocus,
-  onPrint,
 }: {
   invoice: Invoice
   focused: boolean
   onToggleFocus: () => void
-  onPrint: () => void
 }) {
   const proof = invoiceDocument(invoice)
   return (
@@ -21,9 +19,7 @@ export function InvoicePreview({
           <Icon name="document" /> Document preview
         </h2>
         <div className="ic-panel-actions">
-          <button type="button" className="ic-preview-action" onClick={onPrint}>
-            <Icon name="print" /> Print
-          </button>
+          <span className="ic-mono">{invoice.currency}</span>
           <button
             type="button"
             className="ic-preview-action ic-desktop-preview"
