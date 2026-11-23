@@ -29,7 +29,7 @@ const panels = {
   catalog: 'Catalog',
 } as const
 type Panel = keyof typeof panels | 'editor'
-type Message = { text: string; error?: boolean; preview?: boolean }
+type Message = { text: string; error?: boolean }
 
 function panelFromHash(hash: string): Panel {
   if (hash === '#editor') return 'editor'
@@ -40,7 +40,7 @@ function panelFromHash(hash: string): Panel {
 const panelCopy = {
   editor: {
     title: 'Invoice editor',
-    detail: 'Build your invoice and check the preview. Only saved invoices are kept.',
+    detail: 'Edit directly on the invoice. Only saved invoices are kept.',
   },
   invoices: {
     title: 'Invoices',
@@ -251,7 +251,7 @@ export function InvoiceWorkspace() {
     return ok
   }
 
-  async function downloadPdf(target: Invoice, preview = false) {
+  async function downloadPdf(target: Invoice) {
     if (pdfBusyId !== null) return
     setPdfBusyId(target.id)
     setMessage(null)
@@ -263,12 +263,11 @@ export function InvoiceWorkspace() {
         .replace(/[^\p{L}\p{N}._-]+/gu, '-')
         .slice(0, 100)
       downloadFile(blob, `${name || 'invoice'}.pdf`)
-      setMessage({ text: 'PDF downloaded.', preview })
+      setMessage({ text: 'PDF downloaded.' })
     } catch {
       setMessage({
         text: 'The PDF could not be generated. Try again or use your browser print dialog.',
         error: true,
-        preview,
       })
     } finally {
       setPdfBusyId(null)
@@ -308,7 +307,7 @@ export function InvoiceWorkspace() {
         </div>
       </header>
       <main className="ic-shell">
-        <div className="ic-heading">
+        <div className="ic-heading" data-panel={panel}>
           <div>
             {data && panel === 'editor' && (
               <button
@@ -364,9 +363,8 @@ export function InvoiceWorkspace() {
             view={view}
             setView={setView}
             onSave={saveEditor}
-            formNotice={message && !message.preview ? message : undefined}
-            previewNotice={message?.preview ? message : undefined}
-            onDownload={() => void downloadPdf(draft, true)}
+            notice={message ?? undefined}
+            onDownload={() => void downloadPdf(draft)}
             pdfBusy={pdfBusyId !== null}
             onLoadExample={!editor?.edited && !isSavedDraft ? loadExample : undefined}
             onResetDraft={

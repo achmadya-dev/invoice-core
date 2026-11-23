@@ -433,10 +433,14 @@ export function SenderFields({
   sender,
   onChange,
   theme,
+  showName = true,
+  showPaymentDetails = true,
 }: {
   sender: Sender
   onChange: (patch: Partial<Sender>) => void
   theme: Theme
+  showName?: boolean
+  showPaymentDetails?: boolean
 }) {
   const [logoError, setLogoError] = useState('')
   const readAttempt = useRef(0)
@@ -448,7 +452,13 @@ export function SenderFields({
   )
   return (
     <>
-      <ContactFields label="Sender" contact={sender} onChange={onChange} theme={theme} />
+      <ContactFields
+        label="Sender"
+        contact={sender}
+        onChange={onChange}
+        theme={theme}
+        showName={showName}
+      />
       <label className="ic-field">
         Website
         <input
@@ -465,15 +475,17 @@ export function SenderFields({
           onChange={(event) => onChange({ taxId: event.target.value })}
         />
       </label>
-      <label className="ic-field ic-span">
-        Payment details
-        <textarea
-          maxLength={1500}
-          rows={2}
-          value={sender.paymentDetails}
-          onChange={(event) => onChange({ paymentDetails: event.target.value })}
-        />
-      </label>
+      {showPaymentDetails && (
+        <label className="ic-field ic-span">
+          Payment details
+          <textarea
+            maxLength={1500}
+            rows={2}
+            value={sender.paymentDetails}
+            onChange={(event) => onChange({ paymentDetails: event.target.value })}
+          />
+        </label>
+      )}
       <label className="ic-field ic-span">
         Company logo (PNG or JPEG, up to 256 KB)
         <input
