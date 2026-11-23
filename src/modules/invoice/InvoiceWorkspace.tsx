@@ -7,12 +7,14 @@ import {
   newItem,
   newWorkspace,
   saveDraft,
+  saveLineItemTemplate,
   updateInvoiceStatus,
   type Invoice,
   type InvoiceStatus,
   type Workspace,
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
+import { TemplatesPanel } from './TemplatesPanel'
 import { ConfirmModal, Icon, ThemeSelect, type ConfirmState } from './invoice-ui'
 import { Backup, Companies, InvoiceHistory } from './WorkspacePanels'
 import {
@@ -28,6 +30,7 @@ import { loadPdfRenderer } from './pdf.browser'
 const panels = {
   editor: 'Editor',
   history: 'History',
+  templates: 'Templates',
   companies: 'Companies',
   backup: 'Backup',
 } as const
@@ -36,7 +39,9 @@ type Message = { text: string; error?: boolean }
 
 function panelFromHash(hash: string): Panel {
   const value = hash.replace(/^#/, '')
-  return value === 'history' || value === 'companies' || value === 'backup' ? value : 'editor'
+  return value === 'history' || value === 'templates' || value === 'companies' || value === 'backup'
+    ? value
+    : 'editor'
 }
 
 const panelCopy = {
@@ -47,6 +52,10 @@ const panelCopy = {
   history: {
     title: 'Invoice history',
     detail: 'Find, reopen, or duplicate an invoice saved on this device.',
+  },
+  templates: {
+    title: 'Line item templates',
+    detail: 'Save reusable bundles of descriptions, quantities, and rates for future invoices.',
   },
   companies: {
     title: 'Companies',
@@ -431,6 +440,7 @@ export function InvoiceWorkspace() {
             }
             onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(data.draft) : undefined}
             onDelete={isSavedDraft ? () => deleteInvoice(data.draft, true) : undefined}
+            onManageTemplates={() => show('templates')}
             requestConfirm={setConfirmModal}
           />
         )}
@@ -451,6 +461,42 @@ export function InvoiceWorkspace() {
             }}
             duplicate={duplicateSavedInvoice}
             remove={(invoice) => deleteInvoice(invoice)}
+          />
+        )}
+        {data && panel === 'templates' && (
+          <TemplatesPanel
+            templates={data.templates}
+            defaultCurrency={data.draft.currency}
+            save={(template) => {
+              const latest = current.current?.data
+              if (!latest) return { ok: false }
+              const result = saveLineItemTemplate(latest, template)
+              if (!result.ok) return result
+              if (!commit(result.data)) return { ok: false }
+              setMessage({ text: 'Template saved.' })
+              return { ok: true }
+            }}
+            requestRemove={(template, onDeleted) => {
+              setConfirmModal({
+                title: `Delete ${template.name}?`,
+                description: 'Existing invoice drafts and saved invoices keep their line items.',
+                confirmLabel: 'Delete template',
+                danger: true,
+                onConfirm: () => {
+                  const latest = current.current?.data
+                  if (!latest) return
+                  if (
+                    commit({
+                      ...latest,
+                      templates: latest.templates.filter(({ id }) => id !== template.id),
+                    })
+                  ) {
+                    setMessage({ text: 'Template removed.' })
+                    onDeleted()
+                  }
+                },
+              })
+            }}
           />
         )}
         {data && panel === 'companies' && (
@@ -497,7 +543,7 @@ export function InvoiceWorkspace() {
               const ok = commit(restored, { restore: true })
               if (ok)
                 setMessage({
-                  text: 'Backup restored. Open the editor or history to see the restored records.',
+                  text: 'Backup restored. Open the workspace tabs to see the restored records.',
                 })
               return ok
             }}

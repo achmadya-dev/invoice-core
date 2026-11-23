@@ -9,6 +9,7 @@ import {
   maxBackupBytes,
   maxCompanies,
   maxInvoices,
+  maxTemplates,
   newCompany,
   type Company,
   type Invoice,
@@ -400,6 +401,12 @@ export function Backup({
             </dd>
           </div>
           <div>
+            <dt>Custom templates</dt>
+            <dd className="ic-mono">
+              {workspace.templates.length} / {maxTemplates}
+            </dd>
+          </div>
+          <div>
             <dt>Storage used</dt>
             <dd className="ic-mono">{formatBytes(storageBytes)}</dd>
           </div>
@@ -408,8 +415,8 @@ export function Backup({
       <section className="ic-editor ic-panel ic-panel-pad">
         <h2>Export a backup</h2>
         <p className="ic-muted ic-note">
-          Download a JSON copy of this draft, history, company profiles, and settings. Store it
-          somewhere private.
+          Download a JSON copy of this draft, history, company profiles, custom templates, and
+          settings. Store it somewhere private.
         </p>
         <div className="ic-actions ic-note">
           <button
@@ -462,7 +469,7 @@ export function Backup({
                 if (data) {
                   requestConfirm({
                     title: 'Restore backup?',
-                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), and one active draft. Replace the local workspace with this backup?`,
+                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), ${data.templates.length} custom template(s), and one active draft. Replace the local workspace with this backup?`,
                     confirmLabel: 'Replace local workspace',
                     cancelLabel: 'Cancel restore',
                     danger: true,
@@ -491,8 +498,8 @@ export function Backup({
       <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Reset local data">
         <h2>Reset local data</h2>
         <p className="ic-muted ic-note">
-          Remove all saved invoices, sender profiles, and the active draft from this browser. Export
-          a JSON backup first.
+          Remove all saved invoices, sender profiles, custom templates, and the active draft from
+          this browser. Export a JSON backup first.
         </p>
         <div className="ic-actions ic-note">
           <button
@@ -501,7 +508,7 @@ export function Backup({
             onClick={() =>
               requestConfirm({
                 title: 'Clear local workspace?',
-                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), and the active draft from this browser. Download a JSON backup first.`,
+                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), ${workspace.templates.length} custom template(s), and the active draft from this browser. Download a JSON backup first.`,
                 confirmLabel: 'Confirm clear workspace',
                 cancelLabel: 'Cancel clear',
                 danger: true,

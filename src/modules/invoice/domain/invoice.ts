@@ -6,6 +6,7 @@ export const themes = ['system', 'light', 'dark'] as const
 export const maxItems = 100
 export const maxInvoices = 500
 export const maxCompanies = 50
+export const maxTemplates = 50
 export const maxBackupBytes = 8 * 1024 * 1024
 export const maxLogoBytes = 256 * 1024
 export const currencySchema = z.enum(currencies)
@@ -54,6 +55,12 @@ const itemSchema = z.strictObject({
   quantity: decimalInput,
   rate: decimalInput,
 })
+const templateSchema = z.strictObject({
+  id,
+  name: label,
+  currency: currencySchema,
+  items: z.array(itemSchema).min(1).max(maxItems),
+})
 const invoiceSchema = z
   .strictObject({
     id,
@@ -81,6 +88,7 @@ export type Contact = z.infer<typeof contactSchema>
 export type Sender = z.infer<typeof senderSchema>
 export type Company = z.infer<typeof companySchema>
 export type LineItem = z.infer<typeof itemSchema>
+export type LineItemTemplate = z.infer<typeof templateSchema>
 export type Invoice = z.infer<typeof invoiceSchema>
 export type InvoiceStatus = (typeof invoiceStatuses)[number]
 export type Theme = (typeof themes)[number]
@@ -93,23 +101,39 @@ function numberKey(invoice: Invoice) {
   return `${invoice.companyId}:${invoice.number.trim().toLowerCase()}`
 }
 
+function templateKey(template: LineItemTemplate) {
+  return `${template.currency}:${template.name.trim().toLowerCase()}`
+}
+
+const workspaceV1 = z.strictObject({
+  version: z.literal(1),
+  companies: z.array(companySchema).max(maxCompanies),
+  invoices: z.array(invoiceSchema).max(maxInvoices),
+  draft: invoiceSchema,
+  dirty: z.boolean(),
+  theme: z.enum(themes),
+})
+const workspaceV2 = workspaceV1.extend({
+  version: z.literal(2),
+  templates: z.array(templateSchema).max(maxTemplates),
+})
+
 // Working drafts may hold incomplete fields; saved records obey the same rules as export.
 export const workspaceSchema = z
-  .strictObject({
-    version: z.literal(1),
-    companies: z.array(companySchema).max(maxCompanies),
-    invoices: z.array(invoiceSchema).max(maxInvoices),
-    draft: invoiceSchema,
-    dirty: z.boolean(),
-    theme: z.enum(themes),
+  .discriminatedUnion('version', [workspaceV1, workspaceV2])
+  .transform((workspace): z.infer<typeof workspaceV2> => {
+    return workspace.version === 1 ? { ...workspace, version: 2, templates: [] } : workspace
   })
   .refine(
     (workspace) =>
       unique(workspace.companies.map((company) => company.id)) &&
       unique(workspace.invoices.map((invoice) => invoice.id)) &&
       unique(workspace.invoices.map(numberKey)) &&
+      unique(workspace.templates.map((template) => template.id)) &&
+      unique(workspace.templates.map(templateKey)) &&
       workspace.companies.every((company) => !companyError(company)) &&
-      workspace.invoices.every((invoice) => !invoiceError(invoice)),
+      workspace.invoices.every((invoice) => !invoiceError(invoice)) &&
+      workspace.templates.every((template) => !templateError(template)),
   )
 
 export type Workspace = z.infer<typeof workspaceSchema>
@@ -133,6 +157,10 @@ export function newCompany(name = ''): Company {
 
 export function newItem(description = ''): LineItem {
   return { id: crypto.randomUUID(), description, quantity: '1', rate: '' }
+}
+
+export function newLineItemTemplate(currency: Currency): LineItemTemplate {
+  return { id: crypto.randomUUID(), name: '', currency, items: [newItem()] }
 }
 
 export function nextInvoiceNumber(company: Company, invoices: Invoice[]) {
@@ -182,10 +210,11 @@ export function newInvoice(company: Company, invoices: Invoice[], now = new Date
 export function newWorkspace(): Workspace {
   const company = newCompany('Personal')
   return {
-    version: 1,
+    version: 2,
     theme: 'system',
     companies: [company],
     invoices: [],
+    templates: [],
     draft: newInvoice(company, []),
     dirty: false,
   }
@@ -240,6 +269,65 @@ export function decimalValid(value: string, kind: 'quantity' | 'amount' | 'perce
     (kind === 'quantity' || parsed >= 0n) &&
     (kind !== 'percent' || parsed <= percentBase)
   )
+}
+
+function templateError(template: LineItemTemplate) {
+  if (!template.name.trim()) return 'Enter a template name.'
+  if (!template.items.length || template.items.some((item) => !item.description.trim()))
+    return 'Add at least one line item and give each item a description.'
+  if (
+    template.items.some(
+      (item) => !decimalValid(item.quantity, 'quantity') || !decimalValid(item.rate, 'amount'),
+    )
+  )
+    return 'Correct the highlighted quantities or rates.'
+  if (!unique(template.items.map((item) => item.id))) return 'Each template line must be unique.'
+  return null
+}
+
+export function saveLineItemTemplate(
+  workspace: Workspace,
+  template: LineItemTemplate,
+): { ok: true; data: Workspace } | { ok: false; message: string } {
+  const normalized = { ...template, name: template.name.trim() }
+  const error = templateError(normalized)
+  if (error) return { ok: false, message: error }
+  if (!templateSchema.safeParse(normalized).success)
+    return { ok: false, message: 'The template exceeds the allowed field or line limits.' }
+  const exists = workspace.templates.some((entry) => entry.id === normalized.id)
+  if (!exists && workspace.templates.length >= maxTemplates) {
+    return { ok: false, message: 'Remove a template before saving a new one.' }
+  }
+  if (
+    workspace.templates.some(
+      (entry) => entry.id !== normalized.id && templateKey(entry) === templateKey(normalized),
+    )
+  ) {
+    return { ok: false, message: 'That template name is already used for this currency.' }
+  }
+  const templates = exists
+    ? workspace.templates.map((entry) => (entry.id === normalized.id ? normalized : entry))
+    : [...workspace.templates, normalized]
+  return { ok: true, data: { ...workspace, templates } }
+}
+
+export function applyLineItemTemplate(
+  invoice: Invoice,
+  template: LineItemTemplate,
+): { ok: true; invoice: Invoice } | { ok: false; message: string } {
+  if (invoice.currency !== template.currency) {
+    return {
+      ok: false,
+      message: `This template uses ${template.currency}. Choose a ${invoice.currency} template or change the invoice currency first.`,
+    }
+  }
+  return {
+    ok: true,
+    invoice: {
+      ...invoice,
+      items: template.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+    },
+  }
 }
 
 export function invoiceError(invoice: Invoice) {

@@ -108,7 +108,7 @@ describe('local invoice workspace', () => {
     expect(decodeWorkspace(JSON.stringify(workspace))?.draft.discount).toBe('abc')
     expect(decodeWorkspace('{}')).toBeNull()
     expect(decodeWorkspace('not json')).toBeNull()
-    expect(decodeWorkspace(JSON.stringify({ ...workspace, version: 2 }))).toBeNull()
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, version: 3 }))).toBeNull()
     expect(
       decodeWorkspace(JSON.stringify({ ...workspace, invoices: [workspace.draft] })),
     ).toBeNull()

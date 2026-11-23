@@ -484,6 +484,13 @@
 .ic-section h3 {
   margin-bottom: 10px;
 }
+.ic-line-heading {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ic-line-heading h3 {
+  margin-bottom: 0;
+}
 .ic-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1119,7 +1126,7 @@
 }
 .ic-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -1413,10 +1420,12 @@
   }
   .ic-nav {
     gap: 0;
+    flex-wrap: wrap;
     justify-content: space-between;
   }
   .ic-nav button {
-    padding-inline: 8px;
+    padding-inline: 5px;
+    font-size: 12px;
   }
   .ic-panel-bar {
     flex-wrap: wrap;
