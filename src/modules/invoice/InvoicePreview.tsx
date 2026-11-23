@@ -4,12 +4,14 @@ import { Icon } from './invoice-ui'
 
 export function InvoicePreview({
   invoice,
-  focused,
-  onToggleFocus,
+  onDownload,
+  pdfBusy,
+  notice,
 }: {
   invoice: Invoice
-  focused: boolean
-  onToggleFocus: () => void
+  onDownload: () => void
+  pdfBusy: boolean
+  notice?: { text: string; error?: boolean }
 }) {
   const proof = invoiceDocument(invoice)
   return (
@@ -18,17 +20,6 @@ export function InvoicePreview({
         <h2 id="preview-title">
           <Icon name="document" /> Document preview
         </h2>
-        <div className="ic-panel-actions">
-          <span className="ic-mono">{invoice.currency}</span>
-          <button
-            type="button"
-            className="ic-preview-action ic-desktop-preview"
-            aria-pressed={focused}
-            onClick={onToggleFocus}
-          >
-            <Icon name={focused ? 'collapse' : 'expand'} /> {focused ? 'Split view' : 'Expand'}
-          </button>
-        </div>
       </div>
       <div className="ic-proof-stage">
         <article className="ic-proof" aria-label="Invoice document">
@@ -106,9 +97,7 @@ export function InvoicePreview({
               <dd>{proof.total}</dd>
             </div>
           </dl>
-          {!proof.valid && (
-            <p className="ic-proof-warning">Correct the highlighted amounts to see the total.</p>
-          )}
+          {proof.warning && <p className="ic-proof-warning">{proof.warning}</p>}
           {proof.extras.length > 0 && (
             <div className="ic-doc-extras">
               {proof.extras.map((entry) => (
@@ -124,10 +113,19 @@ export function InvoicePreview({
             <span>{invoice.currency}</span>
           </footer>
         </article>
-        <div className="ic-stage-foot">
-          <span>Live preview</span>
-          <span className="ic-mono">PRINT PROOF</span>
-        </div>
+      </div>
+      <div className="ic-preview-footer">
+        {notice && (
+          <p
+            className={notice.error ? 'ic-error' : 'ic-muted'}
+            role={notice.error ? 'alert' : 'status'}
+          >
+            {notice.text}
+          </p>
+        )}
+        <button type="button" className="ic-button" disabled={pdfBusy} onClick={onDownload}>
+          <Icon name="download" /> {pdfBusy ? 'Preparing PDF…' : 'Download PDF'}
+        </button>
       </div>
     </section>
   )

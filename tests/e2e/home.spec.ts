@@ -17,12 +17,11 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoices')
   await expect(page.getByRole('navigation', { name: 'Workspace' }).getByRole('button')).toHaveText([
     'Invoices',
-    'Products',
-    'Companies',
+    'Catalog',
   ])
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoice editor')
-  await expect(page.getByLabel('Invoice number')).toHaveValue('')
+  await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0001')
   await expect(page.getByRole('combobox', { name: 'Client', exact: true })).toHaveValue('')
   await expect(page.getByText('Sign in', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /print/i })).toHaveCount(0)
@@ -30,7 +29,8 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   const editor = page.locator('#invoice-editor')
   const preview = page.locator('#invoice-preview')
   await expect(editor.getByRole('button', { name: 'Load example' })).toBeVisible()
-  await expect(preview.getByRole('button', { name: 'Expand', exact: true })).toBeVisible()
+  await expect(preview.getByRole('button', { name: 'Download PDF' })).toBeVisible()
+  await expect(preview.getByRole('button', { name: 'Expand', exact: true })).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   const validation = page.getByRole('alert')
@@ -50,12 +50,14 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(amount).toHaveText('$1,600.00')
   await expect(page.getByRole('table', { name: 'Invoice line items', exact: true })).toBeVisible()
 
-  await preview.getByRole('button', { name: 'Expand', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Edit invoice' })).not.toBeVisible()
-  const split = preview.getByRole('button', { name: 'Split view', exact: true })
-  await expect(split).toHaveAttribute('aria-pressed', 'true')
-  await split.click()
-  await expect(page.getByRole('heading', { name: 'Edit invoice' })).toBeVisible()
+  await page.getByText('Invoice details', { exact: true }).click()
+  await expect(page.getByLabel('Invoice number')).toBeHidden()
+  await page.getByText('Invoice details', { exact: true }).click()
+  await expect(page.getByLabel('Invoice number')).toHaveValue('EXAMPLE-001')
+  await page.getByText('Line items', { exact: true }).click()
+  await expect(page.getByLabel('Quantity, item 2')).toBeHidden()
+  await page.getByText('Line items', { exact: true }).click()
+  await expect(page.getByLabel('Quantity, item 2')).toHaveValue('2')
 
   await page.locator('summary').filter({ hasText: 'Discount, tax, and shipping' }).click()
   await page.getByLabel('Discount (%)', { exact: true }).fill('10')
@@ -67,14 +69,6 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(amount).toHaveText('—')
   await page.getByLabel('Quantity, item 2').fill('2')
   await expect(amount).toHaveText('$1,637.80')
-  const status = page.getByRole('combobox', { name: 'Status', exact: true })
-  await status.focus()
-  await page.keyboard.press('Enter')
-  await expect(page.getByRole('option', { name: 'Sent', exact: true })).toBeVisible()
-  await page.screenshot({ path: info.outputPath('status-dropdown-desktop.png') })
-  await page.keyboard.press('ArrowDown')
-  await page.keyboard.press('Enter')
-  await expect(status).toHaveText('Sent')
   const pdf = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download PDF' }).click()
   const downloaded = await pdf
@@ -93,17 +87,8 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await page.getByLabel('Search invoices').fill('Fieldwork')
   await chooseOption(page, 'Filter by company', 'Northline Studio')
   await expect(page.getByRole('button', { name: 'EXAMPLE-001', exact: true })).toBeVisible()
-  await expect(page.getByText('Showing 1 of 1 saved invoice(s)')).toBeVisible()
-
-  const rowStatus = page.getByRole('combobox', { name: 'Status for EXAMPLE-001', exact: true })
-  await expect(rowStatus).toHaveText('Sent')
-  await chooseOption(page, 'Status for EXAMPLE-001', 'Paid')
-  await expect(rowStatus).toHaveText('Paid')
-  await expect(page.getByRole('status')).toHaveText('Marked EXAMPLE-001 as paid.')
-
-  await chooseOption(page, 'Filter by status', 'Draft')
-  await expect(page.getByText('No invoices match these filters.')).toBeVisible()
-  await chooseOption(page, 'Filter by status', 'Paid')
+  await expect(page.getByText(/Showing 1–1 of 1 invoices/)).toBeVisible()
+  await expect(page.getByRole('combobox', { name: /status/i })).toHaveCount(0)
   await chooseOption(page, 'Filter by company', 'All companies')
   await expect(page.getByRole('button', { name: 'EXAMPLE-001', exact: true })).toBeVisible()
 
@@ -123,14 +108,13 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await page.getByRole('button', { name: 'Back to invoices' }).click()
 
   await page.getByRole('button', { name: 'Duplicate EXAMPLE-001' }).click()
-  await expect(page.getByLabel('Invoice number')).toHaveValue('Copy of EXAMPLE-001')
-  await expect(page.getByRole('combobox', { name: 'Status', exact: true })).toHaveText('Draft')
+  await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0001')
   await expect(amount).toHaveText('$1,637.80')
   await page.getByRole('button', { name: 'Back to invoices' }).click()
-  await expect(page.getByText('Showing 1 of 1 saved invoice(s)')).toBeVisible()
+  await expect(page.getByText(/Showing 1–1 of 1 invoices/)).toBeVisible()
   await page.getByRole('button', { name: 'Resume draft' }).click()
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
-  await expect(page.getByText('Showing 2 of 2 saved invoice(s)')).toBeVisible()
+  await expect(page.getByText(/Showing 1–2 of 2 invoices/)).toBeVisible()
   await expect(original).toBeVisible()
   expect(errors).toEqual([])
 })
@@ -139,7 +123,7 @@ test('uses company defaults, preserves historical sender details, and verifies r
   page,
 }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Companies' }).click()
+  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
   await page.getByRole('button', { name: 'Add company' }).click()
   await expect(page.getByRole('dialog', { name: 'New company' })).toBeVisible()
   await page.getByLabel('Sender name').fill('Maple Studio')
@@ -173,7 +157,7 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await expect(page.getByLabel('Description, item 1')).toHaveValue('Design services')
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('status')).toHaveText('Invoice saved.')
-  await page.getByRole('button', { name: 'Companies' }).click()
+  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
   await page.getByRole('button', { name: 'Edit Maple Studio' }).click()
   await expect(page.getByRole('dialog', { name: 'Edit company' })).toBeVisible()
   await page.getByLabel('Sender name').fill('Maple Studio Updated')
@@ -211,9 +195,6 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await restoreDialog.getByRole('button', { name: 'Replace local workspace' }).click()
   await expect(restoreDialog).toHaveCount(0)
   await expect(page.getByRole('status')).toContainText('Backup restored')
-  await chooseOption(page, 'Theme', 'Dark')
-  await page.reload()
-  await expect(page.getByRole('combobox', { name: 'Theme', exact: true })).toHaveText('Dark')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoices')
   await page.getByRole('button', { name: 'MAP-0041', exact: true }).click()
   await expect(client).toHaveValue('Synthetic Client')
@@ -255,9 +236,9 @@ test('mobile switches between editing and the proof without losing input', async
     true,
   )
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
-  const status = page.getByRole('combobox', { name: 'Status', exact: true })
-  await status.press('Enter')
-  await expect(page.getByRole('option', { name: 'Sent', exact: true })).toBeVisible()
+  const currency = page.getByRole('combobox', { name: 'Currency', exact: true })
+  await currency.press('Enter')
+  await expect(page.getByRole('option', { name: /^USD —/ })).toBeVisible()
   await expect(page.locator('.ic-select-popup[data-open]')).toHaveCSS('opacity', '1')
   expect(
     await page.locator('.ic-select-popup[data-open]').evaluate((element) => {
@@ -265,7 +246,7 @@ test('mobile switches between editing and the proof without losing input', async
       return left >= 0 && right <= window.innerWidth
     }),
   ).toBe(true)
-  await page.screenshot({ path: info.outputPath('invoice-mobile-status-dropdown.png') })
+  await page.screenshot({ path: info.outputPath('invoice-mobile-currency-dropdown.png') })
   await page.keyboard.press('Escape')
   await expect(page.getByLabel('Quantity, item 2')).toHaveValue('3')
   await page.getByRole('button', { name: 'Add line item' }).press('Enter')

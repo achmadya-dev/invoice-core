@@ -28,11 +28,19 @@ export function ProductsPanel({
     setError('')
   }
   return (
-    <section className="ic-editor ic-panel" aria-label="Product catalog">
+    <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="products-title">
+      <div className="ic-panel-bar">
+        <h2 id="products-title">Products</h2>
+      </div>
       <div className="ic-master-toolbar ic-panel-pad">
         <label className="ic-field">
           Search products
-          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <input
+            type="search"
+            value={query}
+            placeholder="Name, description, or currency"
+            onChange={(event) => setQuery(event.target.value)}
+          />
         </label>
         <button
           className="ic-button ic-primary"
@@ -54,12 +62,11 @@ export function ProductsPanel({
           {matches.map((product) => (
             <li className="ic-record" key={product.id}>
               <div>
-                <h2>{product.name}</h2>
-                <p>{product.description}</p>
+                <h3>{product.name}</h3>
+                <p>
+                  {product.description} · {product.rate || '0'} {product.currency}
+                </p>
               </div>
-              <span className="ic-mono">
-                {product.rate || '0'} {product.currency}
-              </span>
               <div className="ic-actions">
                 <button
                   className="ic-button"

@@ -51,7 +51,7 @@ export function invoiceDocument(invoice: Invoice) {
     })),
     summary,
     total: totals ? money(totals.total) : '—',
-    valid: Boolean(totals),
+    warning: totals ? '' : 'Correct the highlighted amounts to see the total.',
     extras: [
       { label: 'Notes', body: invoice.notes },
       { label: 'Terms', body: invoice.terms },

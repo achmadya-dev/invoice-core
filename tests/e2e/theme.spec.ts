@@ -7,15 +7,21 @@ test('theme picker supports Base UI contrast, keyboard selection, system mode, a
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('/')
 
-  const theme = page.getByRole('combobox', { name: 'Theme', exact: true })
+  const backup = page.getByRole('button', { name: 'Backup', exact: true })
+  const dialog = page.getByRole('dialog', { name: 'Backup' })
+  const theme = dialog.getByRole('combobox', { name: 'Theme', exact: true })
   const workspace = page.locator('.ic-workspace')
-  const popup = page.locator('.ic-theme-popup[data-open]')
-  const mountedPopup = page.locator('.ic-theme-popup')
+  const popup = dialog.locator('.ic-select-popup[data-open]')
+  const mountedPopup = dialog.locator('.ic-select-popup')
 
+  await expect(
+    page.getByRole('navigation', { name: 'Workspace' }).getByRole('combobox'),
+  ).toHaveCount(0)
+  await backup.click()
   await expect(theme).toBeEnabled()
   await expect(theme).toHaveText('System')
 
-  await page.getByRole('button', { name: 'Companies', exact: true }).focus()
+  await dialog.getByRole('button', { name: 'Close dialog' }).focus()
   await page.keyboard.press('Tab')
   await expect(theme).toBeFocused()
   await expect(theme).toHaveCSS('outline-style', 'solid')
@@ -26,8 +32,8 @@ test('theme picker supports Base UI contrast, keyboard selection, system mode, a
   await expect(page.getByRole('option')).toHaveText(['System', 'Light', 'Dark'])
 
   const lightColors = await page.evaluate(() => {
-    const menu = document.querySelector('.ic-theme-popup[data-open]')
-    const unselected = Array.from(document.querySelectorAll('.ic-theme-option')).find(
+    const menu = document.querySelector('.ic-select-popup[data-open]')
+    const unselected = Array.from(document.querySelectorAll('.ic-select-option')).find(
       (option) => !option.hasAttribute('data-selected') && !option.hasAttribute('data-highlighted'),
     )
     if (!menu || !unselected) return null
@@ -75,6 +81,7 @@ test('theme picker supports Base UI contrast, keyboard selection, system mode, a
 
   await page.setViewportSize({ width: 320, height: 780 })
   await page.reload()
+  await backup.click()
   await expect(theme).toHaveText('Dark')
   await expect(workspace).toHaveCSS('color-scheme', 'dark')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(

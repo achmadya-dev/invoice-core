@@ -138,7 +138,7 @@ describe('product catalog', () => {
       taxRate: '8',
     }
     expect(draft).toMatchObject({
-      number: '',
+      number: 'INV-0001',
       issueDate: '',
       dueDate: '',
       client: { name: '' },
@@ -160,7 +160,7 @@ describe('product catalog', () => {
     })
     expect(applyCompanyDefaults(priced, company, [priced])).toMatchObject({
       currency: 'USD',
-      number: '',
+      number: 'INV-0001',
       taxRate: '',
     })
   })

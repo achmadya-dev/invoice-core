@@ -104,7 +104,7 @@ function numberKey(invoice: Invoice) {
   return JSON.stringify([invoiceSenderKey(invoice), invoice.number.trim().toLowerCase()])
 }
 
-export function invoiceSenderKey(invoice: Invoice) {
+export function invoiceSenderKey(invoice: Pick<Invoice, 'companyId' | 'sender'>) {
   return invoice.companyId === manualCompanyId
     ? `manual:${invoice.sender.name.trim().toLowerCase()}`
     : invoice.companyId
@@ -197,19 +197,43 @@ export function newProduct(currency: Currency): Product {
   return { ...newItem(), name: '', currency }
 }
 
+function nextNumber(used: Set<string>, prefix: string, padding: number, start = 1) {
+  let sequence = start
+  while (sequence <= 1_000_000) {
+    const number = `${prefix}${String(sequence).padStart(padding, '0')}`.trimStart()
+    if (!used.has(number.toLowerCase())) return { number, sequence }
+    sequence += 1
+  }
+  return { number: '', sequence }
+}
+
 export function nextInvoiceNumber(company: Company, invoices: Invoice[]) {
   const used = new Set(
     invoices
       .filter((invoice) => invoice.companyId === company.id)
       .map((invoice) => invoice.number.trim().toLowerCase()),
   )
-  let sequence = company.nextNumber
-  while (sequence <= 1_000_000) {
-    const number = `${company.prefix}${String(sequence).padStart(company.padding, '0')}`.trimStart()
-    if (!used.has(number.toLowerCase())) return { number, sequence }
-    sequence += 1
-  }
-  return { number: '', sequence }
+  return nextNumber(used, company.prefix, company.padding, company.nextNumber)
+}
+
+export function suggestInvoiceNumber(
+  draft: Pick<Invoice, 'companyId' | 'sender'>,
+  invoices: Invoice[],
+  company?: Company,
+) {
+  if (company) return nextInvoiceNumber(company, invoices).number
+  const key = invoiceSenderKey(draft)
+  const unspecifiedSender = draft.companyId === manualCompanyId && !draft.sender.name.trim()
+  const used = new Set(
+    invoices
+      .filter((invoice) =>
+        unspecifiedSender
+          ? invoice.companyId === manualCompanyId
+          : invoiceSenderKey(invoice) === key,
+      )
+      .map((invoice) => invoice.number.trim().toLowerCase()),
+  )
+  return nextNumber(used, 'INV-', 4).number
 }
 
 function localDate(date: Date, days = 0) {
@@ -228,7 +252,11 @@ export function newInvoice(
     companyId: company?.id ?? manualCompanyId,
     sender: company?.sender ?? blankSender,
     client: blankContact,
-    number: company ? nextInvoiceNumber(company, invoices).number : '',
+    number: suggestInvoiceNumber(
+      { companyId: company?.id ?? manualCompanyId, sender: company?.sender ?? blankSender },
+      invoices,
+      company,
+    ),
     issueDate: company ? localDate(now) : '',
     dueDate: company ? localDate(now, 14) : '',
     currency: company?.currency ?? 'USD',
@@ -261,6 +289,7 @@ export function applyCompanyDefaults(
   invoice: Invoice,
   company: Company,
   invoices: Invoice[],
+  previousCompany?: Company,
 ): Invoice {
   const sender = { companyId: company.id, sender: company.sender }
   if (invoices.some(({ id }) => id === invoice.id)) return { ...invoice, ...sender }
@@ -272,7 +301,10 @@ export function applyCompanyDefaults(
   return {
     ...invoice,
     ...sender,
-    number: nextInvoiceNumber(company, invoices).number,
+    number:
+      !invoice.number || invoice.number === suggestInvoiceNumber(invoice, invoices, previousCompany)
+        ? nextInvoiceNumber(company, invoices).number
+        : invoice.number,
     currency: hasPrices ? invoice.currency : company.currency,
     taxLabel: company.taxLabel,
     taxRate: company.taxRate,
@@ -287,20 +319,11 @@ export function duplicateInvoice(
   invoices: Invoice[],
   now = new Date(),
 ): Invoice {
-  const copyNumber = `Copy of ${source.number}`.slice(0, 110)
-  let fallback = copyNumber
-  let suffix = 2
-  const used = new Set(
-    invoices
-      .filter((invoice) => invoiceSenderKey(invoice) === invoiceSenderKey(source))
-      .map((invoice) => invoice.number.trim().toLowerCase()),
-  )
-  while (used.has(fallback.toLowerCase())) fallback = `${copyNumber} (${suffix++})`
   return {
     ...source,
     id: crypto.randomUUID(),
     status: 'draft',
-    number: company ? nextInvoiceNumber(company, invoices).number : fallback,
+    number: suggestInvoiceNumber(source, invoices, company),
     issueDate: localDate(now),
     dueDate: localDate(now, 14),
     items: source.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
