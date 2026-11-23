@@ -9,10 +9,6 @@
 - Calculate and round each line to the currency's minor-unit precision, half away from zero. Apply one fixed or percentage discount to a positive subtotal, no greater than that subtotal. Apply tax to the post-discount amount, then add shipping. A nonpositive subtotal does not receive a discount. Switching currencies changes units and rounding, not numeric inputs or exchange rates.
 - Example: USD lines of `1.005` and `2.005` become `$1.01` and `$2.01`. With a 10% discount, 25% tax, and `$0.35` shipping, the total is `$3.75`. Preview and PDF use the same calculation; PDF uses currency codes.
 
-## Authentication
-
-An administrator can create ordinary user accounts; ordinary users cannot create accounts. Email and username are required when an administrator creates an account. Usernames are normalized to lowercase for login and uniqueness. Accounts do not provide ownership or access control for browser-local invoices.
-
 ## Undecided
 
 Tenant isolation, tax compliance rules, accounting ledgers, approvals, and business audit rules are not implemented. Configure taxes according to the applicable rules; the invoice calculator does not determine what tax to collect.

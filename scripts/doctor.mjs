@@ -18,7 +18,7 @@ try {
   )
 }
 
-for (const file of ['.env', 'node_modules', 'bun.lock', 'AGENTS.md'])
+for (const file of ['node_modules', 'bun.lock', 'AGENTS.md'])
   console.log(`${existsSync(file) ? 'OK' : 'MISSING'} ${file}`)
 try {
   execFileSync('git', ['rev-parse', '--is-inside-work-tree'], { stdio: 'pipe' })

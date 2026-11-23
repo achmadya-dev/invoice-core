@@ -1,4 +1,4 @@
-const CACHE = 'invoice-core-shell-v1'
+const CACHE = 'invoice-core-shell-v2'
 const shellPath = '/'
 const publicFiles = new Set([
   '/invoice.webmanifest',
@@ -66,7 +66,7 @@ self.addEventListener('message', (event) => {
           )
         ).filter(Boolean)
         if (missing.length) await cache.addAll(missing)
-        // Only the anonymous invoice shell is saved. Account, API and mutations are never cached.
+        // Store only the public invoice shell; never cache user data or mutations.
         const shell = await fetch(shellPath, { credentials: 'omit', cache: 'reload' })
         if (
           !shell.ok ||

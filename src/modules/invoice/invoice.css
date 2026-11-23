@@ -184,16 +184,7 @@
 }
 .ic-topbar-options {
   margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 16px;
   flex: none;
-}
-.ic-topbar-options a {
-  color: #fff;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  font-size: 13px;
 }
 .ic-topbar-options select#invoice-theme {
   background: #342a57;
@@ -739,9 +730,6 @@
     order: 3;
     flex-basis: 100%;
   }
-  .ic-topbar-options {
-    gap: 12px;
-  }
   .ic-heading {
     padding-block: 25px 16px;
   }
@@ -814,15 +802,9 @@
   .ic-nav button {
     padding-inline: 8px;
   }
-  .ic-topbar-options {
-    gap: 8px;
-  }
   .ic-topbar-options select#invoice-theme {
     font-size: 12px;
     padding-inline: 3px;
-  }
-  .ic-topbar-options a {
-    font-size: 12px;
   }
   .ic-panel-bar,
   .ic-editor-body,

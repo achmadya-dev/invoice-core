@@ -4,8 +4,10 @@ import { loadPdfRenderer } from './pdf.browser'
 export async function prepareOffline(): Promise<boolean> {
   if (!('serviceWorker' in navigator)) return false
   try {
-    await navigator.serviceWorker.register('/invoice-sw.js', { scope: '/' })
-    const registration = await navigator.serviceWorker.ready
+    const registration = await navigator.serviceWorker.register('/invoice-sw.js', { scope: '/' })
+    // Do not prepare the new shell using an older worker's cache during an update.
+    const worker = registration.installing ?? registration.waiting ?? registration.active
+    if (!worker || !(await waitForActivation(worker))) return false
     if (document.readyState !== 'complete') {
       await new Promise<void>((resolve) =>
         window.addEventListener('load', () => resolve(), { once: true }),
@@ -36,15 +38,26 @@ export async function prepareOffline(): Promise<boolean> {
       }
       const timeout = window.setTimeout(() => finish(false), 30_000)
       channel.port1.onmessage = (event: MessageEvent<unknown>) => finish(event.data === true)
-      if (!registration.active) {
-        finish(false)
-        return
-      }
-      registration.active.postMessage({ type: 'prepare-invoice-shell', paths: [...paths] }, [
-        channel.port2,
-      ])
+      worker.postMessage({ type: 'prepare-invoice-shell', paths: [...paths] }, [channel.port2])
     })
   } catch {
     return false
   }
+}
+
+function waitForActivation(worker: ServiceWorker): Promise<boolean> {
+  return new Promise((resolve) => {
+    const finish = (active: boolean) => {
+      window.clearTimeout(timeout)
+      worker.removeEventListener('statechange', check)
+      resolve(active)
+    }
+    const check = () => {
+      if (worker.state === 'activated') finish(true)
+      if (worker.state === 'redundant') finish(false)
+    }
+    const timeout = window.setTimeout(() => finish(false), 30_000)
+    worker.addEventListener('statechange', check)
+    check()
+  })
 }

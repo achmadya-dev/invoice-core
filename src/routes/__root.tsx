@@ -1,16 +1,7 @@
-import {
-  createRootRoute,
-  HeadContent,
-  Outlet,
-  Scripts,
-  Link,
-  useRouterState,
-} from '@tanstack/react-router'
-import { cn } from '../lib/cn'
+import { createRootRoute, HeadContent, Link, Outlet, Scripts } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import styleUrl from '../styles.css?url'
-
-const focusRing =
-  'focus-visible:outline-[3px] focus-visible:outline-[#6ca085] focus-visible:outline-offset-3'
+import invoiceStyles from '../modules/invoice/invoice.css?url'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -19,60 +10,60 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Invoice Core' },
     ],
-    links: [{ rel: 'stylesheet', href: styleUrl }],
+    links: [
+      { rel: 'stylesheet', href: styleUrl },
+      { rel: 'stylesheet', href: invoiceStyles },
+      { rel: 'icon', href: '/invoice-mark.svg', type: 'image/svg+xml' },
+    ],
   }),
   component: Root,
   notFoundComponent: () => (
-    <main className="mx-auto max-w-280 px-7 py-12">
-      <h1 className="text-[clamp(38px,6vw,64px)] leading-[1.08] font-bold tracking-[-0.045em]">
-        Page not found
-      </h1>
-      <Link to="/" className={cn('mt-6 inline-block underline underline-offset-4', focusRing)}>
-        Back to home
+    <RouteMessage title="Page not found" detail="Open the Invoice Core editor to continue.">
+      <Link to="/" className="ic-button ic-primary">
+        Back to editor
       </Link>
-    </main>
+    </RouteMessage>
   ),
   errorComponent: () => (
-    <main className="mx-auto max-w-280 px-7 py-12">
-      <h1 className="text-[clamp(38px,6vw,64px)] leading-[1.08] font-bold tracking-[-0.045em]">
-        The app couldn't complete this request
-      </h1>
-      <p className="mt-5 max-w-142.5 text-lg leading-[1.7] text-[#5c6e66]">
-        Try reloading this page. If the problem continues, check the server logs.
-      </p>
-      <a href="/" className={cn('mt-6 inline-block underline underline-offset-4', focusRing)}>
-        Reload
+    <RouteMessage title="Could not open Invoice Core" detail="Reload the page to try again.">
+      <a href="/" className="ic-button ic-primary">
+        Reload editor
       </a>
-    </main>
+    </RouteMessage>
   ),
 })
 
+function RouteMessage({
+  title,
+  detail,
+  children,
+}: {
+  title: string
+  detail: string
+  children: ReactNode
+}) {
+  return (
+    <div className="ic-workspace" data-theme="system">
+      <main className="ic-shell">
+        <div className="ic-heading">
+          <div>
+            <h1>{title}</h1>
+            <p>{detail}</p>
+          </div>
+        </div>
+        {children}
+      </main>
+    </div>
+  )
+}
+
 function Root() {
-  const invoiceHome = useRouterState({ select: (state) => state.location.pathname === '/' })
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-[#f6f7f3] font-sans text-[#18332d] [font-synthesis:none]">
-        {!invoiceHome && (
-          <header className="mx-auto flex max-w-280 flex-wrap items-center justify-between gap-5 border-b border-[#d9e2db] px-7 py-7 min-[651px]:flex-nowrap">
-            <Link
-              to="/"
-              className={cn(
-                'text-sm font-bold tracking-[0.15em] text-inherit no-underline',
-                focusRing,
-              )}
-            >
-              Invoice Core
-            </Link>
-            <nav aria-label="Account" className="flex items-center gap-4">
-              <Link to="/login" className={cn('text-sm underline underline-offset-4', focusRing)}>
-                Sign in
-              </Link>
-            </nav>
-          </header>
-        )}
+      <body>
         <Outlet />
         <Scripts />
       </body>

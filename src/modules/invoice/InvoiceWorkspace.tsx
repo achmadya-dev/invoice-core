@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import {
   duplicateInvoice,
@@ -220,7 +219,6 @@ export function InvoiceWorkspace() {
               <option value="light">Light theme</option>
               <option value="dark">Dark theme</option>
             </select>
-            <Link to="/login">Sign in</Link>
           </div>
         </div>
       </header>

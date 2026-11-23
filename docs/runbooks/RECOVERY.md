@@ -1,46 +1,21 @@
-# Recovery planning
+# Invoice Core recovery
 
-## Development
+## Browser-local data
 
-The default SQLite file is `.data/app.sqlite`. Back it up before modifying or replacing it; do not commit it. Optional development PostgreSQL and MySQL services have separate persistent local volumes. Stop services with `docker compose stop`. Do not run `docker compose down -v` unless you intend to delete local volumes. The PostgreSQL and MySQL test services use `tmpfs`; their data is lost when stopped. Auth migrations are explicit and are not applied automatically.
+Before an origin change, rollback, or clearing browser data, use **Backup → Download backup** from the browser profile that holds the invoices. Backups may include contact and payment details; keep them private. Restore replaces the workspace only after validation and confirmation.
+
+- If stored JSON cannot be read, use **Download unreadable data** before restoring a known-good backup.
+- If another tab changed the workspace, export the stale tab's draft before reloading.
+- For an origin change, confirm the new URL, restore the backup in the intended profile, and check a representative invoice, company, and history record.
 
 ## Application rollback
 
-Keep the previous immutable build artifact. Before a rollout, verify that the older application still works with the expanded schema. Reverting code does not roll back data or third-party effects.
+Keep the previous immutable build. Verify it against a disposable browser profile and synthetic backup before using it for recovery. Reverting code does not roll back browser data. If an older offline shell interferes, unregister the Invoice Core worker and delete only its `invoice-core-shell-*` **Cache Storage** entries. Do not clear Local Storage. Verify the online revision before reopening the editor.
 
-## Browser-local invoice recovery
+## Retired database
 
-Before an origin change, rollback, or clearing browser data, use **Backup → Download backup** from the same browser profile that holds the invoices. Backups include contact and payment details; treat them as private files. Restore replaces the workspace only after validation and confirmation. If stored JSON cannot be read, use **Download unreadable data** to retain the original before restoring a known-good backup. If a stale tab reports that another tab changed the workspace, export that tab's draft before reloading.
+The current app cannot connect to or migrate the old database. Existing tables, files, and volumes remain untouched. The original SQL is preserved in [the migration archive](../../db/migrations/README.md). If old account data requires recovery or disposal, first verify the target and approve a separate plan and backup. Do not run the archived SQL or remove Docker volumes as part of an application rollback.
 
-Rolling back the code does not remove browser data or cached offline code. If a rollback removes the invoice app, unregister the Invoice Core service worker and delete only its `invoice-core-shell-*` **Cache Storage** entry in the browser; do not clear Local Storage. Verify the online revision before using the app again.
+## Release readiness
 
-## Database changes
-
-```mermaid
-flowchart LR
-    Inspect["Inspect target and compatibility"] --> Backup["Back up and verify recovery plan"]
-    Backup --> Expand["Expand schema"]
-    Expand --> Migrate["Backfill / migrate"]
-    Migrate --> Switch["Switch application"]
-    Switch --> Contract["Contract in a separate reviewed release"]
-```
-
-This is a planning sequence, not permission to run migrations or delete data. Confirm the target and obtain any action-specific authorization before execution.
-
-Prefer expand → backfill/migrate → switch → contract across separately reviewed releases. Do not edit an applied SQL migration. Add a forward repair migration when needed. Test lock duration and compatibility with both old and new application versions. PostgreSQL and SQLite runners apply migrations transactionally. MySQL DDL can commit independently; an incomplete attempt blocks further migrations and requires manual investigation and repair. Never blindly remove its attempt marker. Large backfills and non-transactional work require dedicated procedures. Switching providers does not move data; plan and verify export, import and reconciliation separately.
-
-The bundled auth migrations are intended for a new template database. Before adding them to a project that already has migrations or auth tables, review numbering and schema compatibility and create appropriate new forward-only migrations; do not rename or edit migrations that have already been applied. Back up first and never run against an unknown target.
-
-Earlier template revisions used a combined `001_auth.sql` for SQLite/PostgreSQL and older names for MySQL auth migrations. The current split filenames are not an in-place upgrade for databases with that recorded history. Preserve both data and history, inspect the exact applied checksums and schema, and design a reviewed, provider-specific reconciliation before running the new set. Do not remove history rows or rerun CREATE statements blindly.
-
-## Before the first production release
-
-Record the owner, deployment target, backup schedule, restore procedure, tested RPO/RTO, incident contacts, and recovery-drill evidence. The template does not provision these. Never restore production blindly; reconcile legitimate transactions that occurred after the backup.
-
-## Administrator bootstrap recovery
-
-Bootstrap is deliberately one-time and leaves a durable guard before creating the account. If creation is interrupted, it may leave a guard with no administrator. Do not delete the guard and retry blindly: first inspect whether an administrator, credential account, or partial account exists; record and review a safe, database-specific repair plan and obtain the appropriate authorization. Losing all administrators also requires an explicitly reviewed recovery process. Restore the auth secret from secure storage; replacing it may invalidate sessions or other protected values.
-
-## External side effects
-
-Payments, emails, and machine commands may require compensating actions and reconciliation instead of rollback. Work with domain owners to design idempotency and audit before enabling real integrations.
+Record the deployment target and owner, and verify HTTPS, offline reopening, and backup restoration with synthetic data. Payments and invoice delivery are not provided by this application.

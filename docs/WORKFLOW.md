@@ -2,7 +2,7 @@
 
 ## Sources of truth
 
-Code and repository documentation describe the current system. Issues capture requests and acceptance criteria; pull requests capture changes and verification evidence. Use `docs/tasks/TEMPLATE.md` for a versioned local plan when GitHub is unavailable, or when an issue cannot carry a necessary local plan. Do not commit completed task logs into the starter by default; see `docs/tasks/README.md`. Link records instead of duplicating information that will quickly go stale.
+Code and repository documentation describe the current system. Issues capture requests and acceptance criteria; pull requests capture changes and verification evidence. Use `docs/tasks/TEMPLATE.md` for a versioned local plan when GitHub is unavailable, or when an issue cannot carry a necessary local plan. Do not commit completed task logs by default; see `docs/tasks/README.md`. Link records instead of duplicating information that will quickly go stale.
 
 ## Progress without status bookkeeping
 
@@ -59,7 +59,7 @@ Delete only the eligible task branch, using normal non-force deletion. If any ch
 
 1. Keep one task per branch and preserve existing user changes.
 2. Implement a small, testable slice. Tests must prove expected behavior and important failure cases.
-3. Run `bun run check` and relevant database/browser checks. For database-backed full-stack changes, run `bun run verify` when the disposable test prerequisites are available.
+3. Run `bun run check` and the relevant browser and production checks. Use `bun run verify` to run the complete invoice workspace suite with Chromium.
 4. Update domain, ADR, or runbook documents when behavior or the architecture contract changes.
 5. Record actual commands, results, limitations, and the revision tested. Explain failures; do not weaken tests.
 6. Use the commit format in `docs/COMMITS.md`. Keep unrelated changes in separate commits.

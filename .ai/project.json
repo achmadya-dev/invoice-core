@@ -1,8 +1,7 @@
 {
   "schemaVersion": 1,
-  "name": "ai-project-template",
-  "templateVersion": "0.1.0",
-  "stack": "tanstack-start-bun-sqlite",
+  "name": "invoice-core",
+  "stack": "tanstack-start-bun",
   "workflow": "docs/WORKFLOW.md",
   "agentInstructions": "AGENTS.md",
   "commands": {

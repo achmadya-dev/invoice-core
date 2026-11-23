@@ -7,6 +7,7 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoice editor')
+  await expect(page.getByText('Sign in', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Save invoice' }).click()
   await expect(page.getByRole('alert')).toContainText('Enter a sender, client')
   await page.getByRole('button', { name: 'Load example' }).click()

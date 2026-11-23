@@ -11,7 +11,7 @@ export default defineConfig({
   webServer: {
     command: 'bun run start',
     url: 'http://127.0.0.1:3121',
-    env: { HOST: '127.0.0.1', PORT: '3121', DATABASE_URL: '' },
+    env: { HOST: '127.0.0.1', PORT: '3121' },
     reuseExistingServer: false,
   },
 })
