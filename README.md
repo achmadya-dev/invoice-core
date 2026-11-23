@@ -1,6 +1,6 @@
 # Invoice Core
 
-A local-first invoice editor with a live preview, downloadable A4 PDF, reusable company profiles, and searchable history. There is no login, server database, or cloud sync.
+A local-first invoice editor with direct editing on the invoice sheet, downloadable A4 PDF, reusable company profiles, and searchable history. There is no login, server database, or cloud sync.
 
 ## Run locally
 
@@ -15,8 +15,8 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000). No `.env` file or database 
 
 ## Use the workspace
 
-- **Invoices:** search, create, reopen, or duplicate invoices. Use **Create invoice** or **Save changes** in the editor to commit your draft to the list. On mobile, switch between Edit and Preview.
-- **Catalog:** manage Companies and Products, including product groups with multiple line items. Choose a company in Invoice details or add a product from Line items. The form can also be filled manually.
+- **Invoices:** search, create, reopen, or duplicate invoices. Edit directly on the sheet, switch to Preview for the read-only document, or use **Create invoice** or **Save changes** to keep your work.
+- **Catalog:** manage Companies and Products, including product groups with multiple line items. Choose a company near the invoice header or add a product from Line items. The sheet can also be filled manually.
 - **PDF:** download directly or use **Print / Save as PDF** for scripts not covered by the embedded Latin, Greek, and Cyrillic font.
 - **Backup:** use **Invoices → Backup** to download a private JSON copy of the workspace before clearing site data or moving to another address.
 - **Offline:** supported browsers can reopen and install the production workspace after **Available offline** appears. Use HTTPS or localhost.

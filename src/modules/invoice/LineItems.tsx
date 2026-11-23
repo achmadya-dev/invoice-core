@@ -8,12 +8,14 @@ export function LineItems({
   currency,
   caption,
   empty,
+  amounts,
 }: {
   items: LineItem[]
   edit: (update: (items: LineItem[]) => LineItem[]) => void
   currency: Currency
   caption: string
   empty: string
+  amounts?: readonly string[]
 }) {
   const id = useId()
   const addButtonId = `${id}-add-line`
@@ -34,22 +36,36 @@ export function LineItems({
         {items.length === 0 ? (
           <p className="ic-muted">{empty}</p>
         ) : (
-          <table className="ic-item-table">
+          <table
+            className={amounts ? 'ic-item-table ic-sheet-table' : 'ic-item-table'}
+            role="table"
+          >
             <caption className="sr-only">{caption}</caption>
-            <thead>
-              <tr>
-                <th scope="col">Description</th>
-                <th scope="col">Qty</th>
-                <th scope="col">Rate</th>
-                <th scope="col">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th scope="col" role="columnheader">
+                  Description
+                </th>
+                <th scope="col" role="columnheader">
+                  Qty
+                </th>
+                <th scope="col" role="columnheader">
+                  Rate
+                </th>
+                {amounts && (
+                  <th scope="col" role="columnheader">
+                    Amount
+                  </th>
+                )}
+                <th scope="col" role="columnheader">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup">
               {items.map((item, index) => (
-                <tr key={item.id}>
-                  <td>
+                <tr key={item.id} role="row">
+                  <td role="cell">
                     <input
                       id={descriptionId(item.id)}
                       aria-label={`Description, item ${index + 1}`}
@@ -60,7 +76,12 @@ export function LineItems({
                     />
                   </td>
                   {(['quantity', 'rate'] as const).map((key) => (
-                    <td key={key}>
+                    <td key={key} role="cell">
+                      {amounts && (
+                        <span className="ic-row-label" aria-hidden="true">
+                          {key === 'quantity' ? 'Qty' : 'Rate'}
+                        </span>
+                      )}
                       <input
                         aria-label={`${key === 'quantity' ? 'Quantity' : 'Rate'}, item ${index + 1}`}
                         aria-invalid={
@@ -75,7 +96,15 @@ export function LineItems({
                       />
                     </td>
                   ))}
-                  <td>
+                  {amounts && (
+                    <td className="ic-line-amount" role="cell">
+                      <span className="ic-row-label" aria-hidden="true">
+                        Amount
+                      </span>
+                      {amounts[index]}
+                    </td>
+                  )}
+                  <td role="cell">
                     <button
                       className="ic-icon-button"
                       type="button"

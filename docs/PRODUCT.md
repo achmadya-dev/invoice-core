@@ -6,9 +6,9 @@ Invoice Core is a browser-local invoice editor for freelancers, independent stud
 
 **Invoices** is the landing list. Search or filter saved invoices by company. The list is paginated and sorts by newest issue date first. Download PDFs, reopen, duplicate, or delete records. **Create invoice** always opens a fresh form with a suggested number. Duplicating opens a new form populated from the source invoice with a new number. Open a saved invoice and use **Save changes** to update it. Unsaved changes are kept only while the editor is open; leaving it or reloading discards them.
 
-Use **Company** in **Invoice details** to copy sender defaults. In **Line items**, use **Add product** to insert an entire group of items in the invoice currency. All fields and line items remain editable and can be entered manually. The **Client** field searches prior invoices or accepts a new name inline. **Catalog** includes searchable **Products** and **Companies** panels with dialogs for editing. From **Invoices → Backup**, change theme, export saved records, restore a validated backup, or confirm clearing the workspace.
+Edit directly on the invoice sheet. Use **Company** near the header to copy sender defaults, and **Add product** next to the item table to insert an entire group in the invoice currency. The **Client** field searches prior invoices or accepts a new name inline. Edit **Notes**, **Terms**, and **Payment details** at the bottom of the sheet. **Catalog** includes searchable **Products** and **Companies** panels with dialogs for editing. From **Invoices → Backup**, change theme, export saved records, restore a validated backup, or confirm clearing the workspace.
 
-The preview and A4 PDF use the same invoice values and money formatting. Download a PDF directly from the current preview even when the draft is incomplete; this does not save the invoice. On mobile, switch between Edit and Preview without losing the draft.
+Switch to **Preview** for a read-only document and back to **Edit** without losing inputs. Only one sheet is visible at a time. You can download the A4 PDF from either mode, even when the draft is incomplete; this does not save the invoice. The editor, preview, and PDF use the same invoice values and money formatting.
 
 ## Data and access
 

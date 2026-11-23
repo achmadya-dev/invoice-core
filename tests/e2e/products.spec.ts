@@ -29,12 +29,8 @@ test('groups multiple product defaults and adds all of them beside the invoice l
   const nav = page.getByRole('navigation', { name: 'Workspace' })
   await nav.getByRole('button', { name: 'Invoices' }).click()
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
-  const details = page
-    .locator('details')
-    .filter({ has: page.getByText('Invoice details', { exact: true }) })
-  const lines = page
-    .locator('details')
-    .filter({ has: page.getByText('Line items', { exact: true }) })
+  const details = page.getByRole('group', { name: 'Invoice details' })
+  const lines = page.getByRole('region', { name: 'Line items' })
   await expect(details.getByRole('combobox', { name: 'Company', exact: true })).toBeVisible()
   const picker = lines.getByRole('combobox', { name: 'Add product', exact: true })
   const currency = page.getByRole('combobox', { name: 'Currency', exact: true })
@@ -53,6 +49,7 @@ test('groups multiple product defaults and adds all of them beside the invoice l
   await expect(page.getByLabel('Rate, item 1')).toHaveValue('100')
   await expect(page.getByLabel('Description, item 2')).toHaveValue('Priority response')
   await expect(page.getByLabel('Rate, item 2')).toHaveValue('25')
+  await expect(lines.getByRole('cell', { name: '$250.00', exact: true })).toBeVisible()
   await picker.fill('main')
   await picker.press('ArrowDown')
   await picker.press('Enter')
@@ -110,7 +107,11 @@ test('searches recent clients and adds new clients in the same field', async ({ 
   await client.fill('Manual Entry')
   await page.getByLabel('Invoice number').click()
   await expect(client).toHaveValue('Manual Entry')
-  await expect(page.getByRole('article').getByText('Manual Entry')).toBeVisible()
+  await page.getByRole('button', { name: 'Preview', exact: true }).click()
+  await expect(
+    page.getByRole('article', { name: 'Invoice document' }).getByText('Manual Entry'),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await client.fill('Discarded query')
   await client.press('Escape')
   await expect(client).toHaveValue('Manual Entry')

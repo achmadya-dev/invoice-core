@@ -71,7 +71,7 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
     'Local Offline Client',
   )
   await page.getByLabel('Quantity, item 2').fill('3')
-  await expect(page.locator('.ic-amount dd')).toHaveText('$1,875.00')
+  await expect(page.locator('#invoice-editor .ic-amount dd')).toHaveText('$1,875.00')
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download PDF' }).click()
   expect((await readFile(await (await download).path())).subarray(0, 5).toString()).toBe('%PDF-')

@@ -18,7 +18,7 @@ test('downloaded PDF matches the preview amounts and keeps all lines before the 
   await page.goto('/')
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await page.getByRole('button', { name: 'Load example' }).click()
-  await expect(page.locator('.ic-amount dd')).toHaveText('$1,600.00')
+  await expect(page.locator('#invoice-editor .ic-amount dd')).toHaveText('$1,600.00')
   const downloadText = async () => {
     const pending = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download PDF' }).click()
@@ -26,7 +26,15 @@ test('downloaded PDF matches the preview amounts and keeps all lines before the 
       encoding: 'utf8',
     })
   }
-  expect(await downloadText()).toContain('$1,600.00')
+  const initialText = await downloadText()
+  expect(initialText).toContain('$1,600.00')
+  expect(initialText).not.toMatch(/Notes|Terms|Payment details/i)
+  await page.getByLabel('Notes', { exact: true }).fill('For the design team')
+  await page.getByLabel('Terms', { exact: true }).fill('Due in 14 days')
+  await page.getByLabel('Payment details', { exact: true }).fill('Use reference SAMPLE-001')
+  const withDetails = await downloadText()
+  for (const text of ['For the design team', 'Due in 14 days', 'Use reference SAMPLE-001'])
+    expect(withDetails).toContain(text)
 
   const descriptions = Array.from(
     { length: 60 },
@@ -50,7 +58,7 @@ test('downloaded PDF matches the preview amounts and keeps all lines before the 
   })
   await page.goto('/')
   await page.getByRole('button', { name: 'EXAMPLE-001', exact: true }).click()
-  await expect(page.locator('.ic-amount dd')).toHaveText('$600.00')
+  await expect(page.locator('#invoice-editor .ic-amount dd')).toHaveText('$600.00')
 
   const text = await downloadText()
   expect(text.split('\f').filter((content) => content.trim()).length).toBeGreaterThan(1)
