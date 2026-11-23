@@ -178,9 +178,10 @@ export function InvoiceWorkspace() {
   }
 
   const data = local?.data
+  const theme = data?.theme ?? 'system'
   const copy = panelCopy[panel]
   return (
-    <div className="ic-workspace" data-theme={data?.theme ?? 'system'}>
+    <div className="ic-workspace" data-theme={theme}>
       <header className="ic-topbar">
         <div className="ic-shell ic-topbar-inner">
           <button type="button" className="ic-brand" onClick={() => show('editor')}>
@@ -202,23 +203,30 @@ export function InvoiceWorkspace() {
               </button>
             ))}
           </nav>
-          <div className="ic-topbar-options">
+          <div className="ic-theme-picker">
             <label className="sr-only" htmlFor="invoice-theme">
               Theme
             </label>
+            <span className="ic-theme-icon">
+              <Icon name={theme} />
+            </span>
             <select
               id="invoice-theme"
-              value={data?.theme ?? 'system'}
+              className="ic-theme-select"
+              value={theme}
               disabled={!data}
               onChange={(event) => {
-                const theme = themes.find((value) => value === event.target.value)
-                if (data && theme) commit({ ...data, theme }, { keepDraft: true })
+                const nextTheme = themes.find((value) => value === event.target.value)
+                if (data && nextTheme) commit({ ...data, theme: nextTheme }, { keepDraft: true })
               }}
             >
-              <option value="system">System theme</option>
-              <option value="light">Light theme</option>
-              <option value="dark">Dark theme</option>
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
             </select>
+            <span className="ic-theme-chevron">
+              <Icon name="chevron" />
+            </span>
           </div>
         </div>
       </header>

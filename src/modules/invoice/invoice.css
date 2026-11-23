@@ -182,15 +182,67 @@
 .ic-nav button[aria-current] {
   border-color: var(--ic-stamp);
 }
-.ic-topbar-options {
-  margin-left: auto;
+.ic-theme-picker {
+  position: relative;
+  margin-inline-start: auto;
   flex: none;
 }
-.ic-topbar-options select#invoice-theme {
-  background: #342a57;
-  color: #fff;
-  border-color: #73698e;
+.ic-workspace .ic-theme-select {
+  appearance: none;
+  display: block;
   width: auto;
+  min-width: 108px;
+  min-height: 44px;
+  padding: 7px 28px 7px 34px;
+  border-color: #867aa4;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  color-scheme: dark;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.ic-theme-select:not(:disabled):hover {
+  border-color: #aea1c8;
+  background: #ffffff14;
+}
+.ic-theme-select:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+.ic-theme-icon,
+.ic-theme-chevron {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  color: #e6ddf4;
+  pointer-events: none;
+}
+.ic-theme-icon {
+  inset-inline-start: 11px;
+}
+.ic-theme-chevron {
+  inset-inline-end: 9px;
+}
+.ic-theme-chevron .ic-icon {
+  width: 14px;
+  height: 14px;
+}
+@media (forced-colors: active) {
+  .ic-workspace .ic-theme-select {
+    appearance: auto;
+    padding-inline: 9px;
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+  .ic-theme-icon,
+  .ic-theme-chevron {
+    display: none;
+  }
 }
 
 .ic-heading {
@@ -801,10 +853,6 @@
   }
   .ic-nav button {
     padding-inline: 8px;
-  }
-  .ic-topbar-options select#invoice-theme {
-    font-size: 12px;
-    padding-inline: 3px;
   }
   .ic-panel-bar,
   .ic-editor-body,

@@ -16,6 +16,11 @@ const icons = {
   close: 'm7 7 10 10M17 7 7 17',
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4',
   arrow: 'M5 12h14m-5-5 5 5-5 5',
+  system: 'M3 5h18v12H3zM12 17v3m-4 0h8',
+  light:
+    'M16 12a4 4 0 1 1-8 0 4 4 0 1 1 8 0ZM12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5',
+  dark: 'M20.8 14.4A9 9 0 0 1 9.6 3.2a9 9 0 1 0 11.2 11.2Z',
+  chevron: 'm6 9 6 6 6-6',
 } as const
 
 export function Icon({ name }: { name: keyof typeof icons }) {
