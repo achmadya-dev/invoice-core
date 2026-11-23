@@ -1,22 +1,22 @@
 import { useState } from 'react'
-import { lineTemplates } from './domain/catalog'
 import {
-  applyLineItemTemplate,
-  decimalValid,
+  addProductLine,
+  applyCompanyDefaults,
   invoiceStatuses,
-  newInvoice,
-  newItem,
+  manualCompanyId,
   type Invoice,
   type Workspace,
 } from './domain/invoice'
 import {
   ContactFields,
   CurrencySelect,
+  DecimalField,
   Icon,
+  SearchField,
   SelectField,
   SenderFields,
-  type ConfirmState,
 } from './invoice-ui'
+import { ClientField } from './ClientField'
 import { InvoicePreview } from './InvoicePreview'
 import { LineItems } from './LineItems'
 
@@ -31,8 +31,6 @@ export function InvoiceEditor({
   onResetDraft,
   onDuplicate,
   onDelete,
-  onManageTemplates,
-  requestConfirm,
 }: {
   workspace: Workspace
   edit: EditInvoice
@@ -42,63 +40,35 @@ export function InvoiceEditor({
   onResetDraft?: () => void
   onDuplicate?: () => void
   onDelete?: () => void
-  onManageTemplates: () => void
-  requestConfirm: (confirm: ConfirmState) => void
 }) {
   const draft = workspace.draft
-  const [template, setTemplate] = useState('')
-  const [templateError, setTemplateError] = useState('')
+  const [productQuery, setProductQuery] = useState('')
+  const [productError, setProductError] = useState('')
   const saved = workspace.invoices.some((invoice) => invoice.id === draft.id)
   const companyExists = workspace.companies.some((company) => company.id === draft.companyId)
-  const previousClients = new Map<string, Invoice['client']>()
-  for (const invoice of workspace.invoices) {
-    const key = invoice.client.name.trim().toLowerCase()
-    if (key && !previousClients.has(key)) previousClients.set(key, invoice.client)
-  }
+  const productSearch = productQuery.trim().toLowerCase()
+  const products = workspace.products.filter((product) =>
+    [product.name, product.description, product.currency].some((value) =>
+      value.toLowerCase().includes(productSearch),
+    ),
+  )
   function set<K extends keyof Invoice>(key: K, value: Invoice[K]) {
     edit((current) => ({ ...current, [key]: value }))
   }
   function setDate(key: 'issueDate' | 'dueDate', value: string) {
     if (value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value)) set(key, value)
   }
-  function applyTemplate() {
-    const custom = workspace.templates.find((entry) => entry.id === template)
-    const starter = lineTemplates.find((entry) => entry.name === template)
-    const chosen = custom ?? starter
-    if (!chosen) return
-
-    let items: Invoice['items']
-    if (custom) {
-      const result = applyLineItemTemplate(draft, custom)
-      if (!result.ok) {
-        setTemplateError(result.message)
-        return
-      }
-      items = result.invoice.items
-    } else if (starter) {
-      items = starter.lines.map(newItem)
+  function selectProduct(id: string) {
+    const product = workspace.products.find((entry) => entry.id === id)
+    if (!product) return
+    const result = addProductLine(draft, product)
+    setProductQuery('')
+    if (result.ok) {
+      set('items', result.invoice.items)
+      setProductError('')
     } else {
-      return
+      setProductError(result.message)
     }
-    const apply = () => {
-      set('items', items)
-      setTemplate('')
-      setTemplateError('')
-    }
-    const filled = draft.items.some(
-      (item) => item.description || item.rate || !['', '1'].includes(item.quantity),
-    )
-    if (!filled) {
-      apply()
-      return
-    }
-    requestConfirm({
-      title: 'Replace current line items?',
-      description: `Replace the existing line items on this draft with the ${chosen.name} template?`,
-      confirmLabel: 'Replace line items',
-      danger: true,
-      onConfirm: apply,
-    })
   }
 
   return (
@@ -146,22 +116,15 @@ export function InvoiceEditor({
             </div>
           </div>
           <div className="ic-editor-body">
-            <section className="ic-section" aria-labelledby="details-title">
-              <h3 id="details-title">Invoice details</h3>
+            <section className="ic-section" aria-labelledby="defaults-title">
+              <h3 id="defaults-title">Company and products</h3>
               <div className="ic-fields">
-                <label className="ic-field">
-                  Invoice number
-                  <input
-                    value={draft.number}
-                    maxLength={120}
-                    onChange={(event) => set('number', event.target.value)}
-                  />
-                </label>
                 <SelectField
-                  label="Sender profile"
+                  label="Company"
                   value={draft.companyId}
                   options={[
-                    ...(!companyExists
+                    { value: manualCompanyId, label: 'Enter sender manually' },
+                    ...(!companyExists && draft.companyId !== manualCompanyId
                       ? [
                           {
                             value: draft.companyId,
@@ -175,28 +138,60 @@ export function InvoiceEditor({
                     })),
                   ]}
                   onChange={(companyId) => {
-                    const company = workspace.companies.find((entry) => entry.id === companyId)
-                    if (!company) return
-                    edit((current) => {
-                      const defaults = newInvoice(company, workspace.invoices)
-                      return {
-                        ...current,
-                        companyId: company.id,
-                        sender: company.sender,
-                        ...(saved
-                          ? {}
-                          : {
-                              number: defaults.number,
-                              currency: defaults.currency,
-                              taxRate: defaults.taxRate,
-                              taxLabel: defaults.taxLabel,
-                              notes: current.notes || defaults.notes,
-                              terms: current.terms || defaults.terms,
-                            }),
-                      }
-                    })
+                    if (companyId === manualCompanyId) set('companyId', manualCompanyId)
+                    else {
+                      const company = workspace.companies.find((entry) => entry.id === companyId)
+                      if (company)
+                        edit((invoice) =>
+                          applyCompanyDefaults(invoice, company, workspace.invoices),
+                        )
+                    }
+                    setProductError('')
                   }}
                 />
+                <SearchField
+                  label="Add product"
+                  query={productQuery}
+                  options={products.map((product) => ({
+                    value: product.id,
+                    label: product.name,
+                    detail: `${product.currency}${product.description !== product.name ? ` · ${product.description}` : ''}`,
+                  }))}
+                  placeholder="Search products"
+                  empty={
+                    workspace.products.length
+                      ? 'No matching products.'
+                      : 'No products yet. Add one from the Products tab.'
+                  }
+                  theme={workspace.theme}
+                  onQuery={(query) => {
+                    setProductQuery(query)
+                    setProductError('')
+                  }}
+                  onSelect={selectProduct}
+                  onDismiss={() => setProductQuery('')}
+                />
+              </div>
+              {productError && (
+                <p className="ic-error ic-note" role="alert">
+                  {productError}
+                </p>
+              )}
+              <p className="ic-muted ic-note">
+                Optional. Enter sender details and line items manually if you prefer.
+              </p>
+            </section>
+            <section className="ic-section" aria-labelledby="details-title">
+              <h3 id="details-title">Invoice details</h3>
+              <div className="ic-fields">
+                <label className="ic-field">
+                  Invoice number
+                  <input
+                    value={draft.number}
+                    maxLength={120}
+                    onChange={(event) => set('number', event.target.value)}
+                  />
+                </label>
                 <label className="ic-field">
                   Issue date
                   <input
@@ -217,7 +212,7 @@ export function InvoiceEditor({
                   value={draft.currency}
                   onChange={(value) => {
                     set('currency', value)
-                    setTemplateError('')
+                    setProductError('')
                   }}
                 />
                 <SelectField
@@ -232,36 +227,19 @@ export function InvoiceEditor({
                     if (match) set('status', match)
                   }}
                 />
-                <label className="ic-field ic-span">
-                  Client name
-                  <input
-                    value={draft.client.name}
-                    maxLength={120}
-                    placeholder="Client or business name"
-                    onChange={(event) => {
-                      const name = event.target.value
-                      edit((current) => ({ ...current, client: { ...current.client, name } }))
-                    }}
+                <div className="ic-span">
+                  <ClientField
+                    client={draft.client}
+                    invoices={workspace.invoices}
+                    theme={workspace.theme}
+                    onChange={(client) => set('client', client)}
                   />
-                </label>
-                {previousClients.size > 0 && (
-                  <SelectField
-                    label="Reuse a previous client"
-                    value=""
-                    placeholder="Select a client"
-                    span
-                    options={Array.from(previousClients.entries(), ([key, contact]) => ({
-                      value: key,
-                      label: contact.name,
-                    }))}
-                    onChange={(key) => {
-                      const contact = previousClients.get(key)
-                      if (contact) set('client', contact)
-                    }}
-                  />
-                )}
+                </div>
               </div>
-              <details className="ic-detail">
+              <details
+                className="ic-detail"
+                open={draft.companyId === manualCompanyId || undefined}
+              >
                 <summary>Sender details</summary>
                 <div className="ic-fields">
                   <SenderFields
@@ -283,6 +261,7 @@ export function InvoiceEditor({
                   <ContactFields
                     label="Billing contact"
                     contact={draft.client}
+                    showName={false}
                     theme={workspace.theme}
                     onChange={(patch) =>
                       edit((current) => ({ ...current, client: { ...current.client, ...patch } }))
@@ -292,56 +271,14 @@ export function InvoiceEditor({
               </details>
             </section>
             <section className="ic-section" aria-labelledby="lines-title">
-              <div className="ic-actions ic-line-heading">
-                <h3 id="lines-title">Line items</h3>
-                <button type="button" className="ic-text-button" onClick={onManageTemplates}>
-                  Manage templates
-                </button>
-              </div>
+              <h3 id="lines-title">Line items</h3>
               <LineItems
                 items={draft.items}
                 edit={(update) => edit((current) => ({ ...current, items: update(current.items) }))}
                 currency={draft.currency}
                 caption="Invoice line items"
-                empty="Add a line item or apply a template."
-              >
-                <SelectField
-                  label="Line item template"
-                  value={template}
-                  placeholder="Choose a template"
-                  compact
-                  popupClassName="ic-template-popup"
-                  options={[
-                    ...workspace.templates.map((entry) => ({
-                      value: entry.id,
-                      label: `${entry.name} (${entry.currency})`,
-                      group: 'My templates',
-                    })),
-                    ...lineTemplates.map((entry) => ({
-                      value: entry.name,
-                      label: entry.name,
-                      group: entry.group,
-                    })),
-                  ]}
-                  onChange={(value) => {
-                    setTemplate(value)
-                    setTemplateError('')
-                  }}
-                />
-                <button
-                  className="ic-button"
-                  type="button"
-                  disabled={!template}
-                  onClick={applyTemplate}
-                >
-                  Apply
-                </button>
-              </LineItems>
-              {templateError && (
-                <p className="ic-error ic-note" role="alert">
-                  {templateError}
-                </p>
-              )}
+                empty="Add a line manually or choose a product above."
+              />
             </section>
             <section className="ic-section" aria-label="Adjustments and notes">
               <details className="ic-detail">
@@ -440,31 +377,5 @@ export function InvoiceEditor({
         />
       </div>
     </>
-  )
-}
-
-export function DecimalField({
-  label,
-  value,
-  kind,
-  onChange,
-}: {
-  label: string
-  value: string
-  kind: 'amount' | 'percent'
-  onChange: (value: string) => void
-}) {
-  return (
-    <label className="ic-field">
-      {label}
-      <input
-        inputMode="decimal"
-        maxLength={16}
-        aria-invalid={!decimalValid(value, kind)}
-        placeholder="0"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
   )
 }

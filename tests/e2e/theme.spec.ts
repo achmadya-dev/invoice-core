@@ -15,7 +15,7 @@ test('theme picker supports Base UI contrast, keyboard selection, system mode, a
   await expect(theme).toBeEnabled()
   await expect(theme).toHaveText('System')
 
-  await page.getByRole('button', { name: 'Backup', exact: true }).focus()
+  await page.getByRole('button', { name: 'Companies', exact: true }).focus()
   await page.keyboard.press('Tab')
   await expect(theme).toBeFocused()
   await expect(theme).toHaveCSS('outline-style', 'solid')

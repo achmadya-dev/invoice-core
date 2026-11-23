@@ -4,7 +4,7 @@ import { InvoiceWorkspace } from '../modules/invoice/InvoiceWorkspace'
 export const Route = createFileRoute('/')({
   head: () => ({
     meta: [
-      { title: 'Invoice Core — Invoice editor' },
+      { title: 'Invoice Core — Invoices' },
       { name: 'description', content: 'Create, review, and export invoices on your device.' },
       { name: 'theme-color', content: '#282049' },
     ],

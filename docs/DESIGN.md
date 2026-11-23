@@ -8,8 +8,8 @@
 - Bricolage Grotesque gives headings and the wordmark their shape; system sans keeps form labels and inputs familiar; tabular and monospace figures distinguish amounts and record references.
 - The amount slip is the strongest mark inside the invoice. Screen-only controls stay outside the document. PDF uses the same document data and calculation as preview, with a paginated A4 layout.
 - The header theme control uses a Base UI Select showing the active mode with a short label, icon, theme-aware popup menu, and visible keyboard focus.
-- Editor document actions stay in one header row (`New invoice`, `Save invoice`, `Download PDF`); contextual `Load example` sits in the editor panel bar while desktop `Expand` / `Split view` lives in the preview panel bar.
-- Use Base UI Select controls for labeled form choices and a searchable country combobox. Keep editable invoice lines in a semantic table that fits narrow screens; dates and numeric entries remain native inputs.
+- Invoices opens on the searchable list with `Create invoice` and `Backup`. Keep `Create invoice` or `Save changes` and `Download PDF` above the form. Keep `Load example` in the editor bar and `Expand` / `Split view` in the preview bar. The white proof uses a small gutter and a shadow for separation.
+- Place optional company and product defaults above invoice details. Use labeled Base UI controls for company selection and searchable country, product, and client choices. Keep editable lines in a semantic table that fits narrow screens. Manage products, companies, and backups in dialogs.
 - The brand mark is original. [Bricolage Grotesque](../public/licenses/OFL-Bricolage-Grotesque.txt) and [Noto Sans](../public/licenses/OFL-Noto-Sans.txt) ship under the SIL Open Font License. No source code or visual assets from Gogo Invoice are copied.
 
 ## Usage

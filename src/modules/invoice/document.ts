@@ -14,9 +14,9 @@ export function contactLines(contact: Contact) {
   )
 }
 
-export function invoiceDocument(invoice: Invoice, display: 'symbol' | 'code' = 'symbol') {
+export function invoiceDocument(invoice: Invoice) {
   const totals = invoiceTotals(invoice)
-  const money = (value: bigint) => formatMoney(value, invoice.currency, display)
+  const money = (value: bigint) => formatMoney(value, invoice.currency)
   const summary = totals ? [{ label: 'Subtotal', amount: money(totals.subtotal) }] : []
   if (totals && totals.discount !== 0n)
     summary.push({ label: 'Discount', amount: money(-totals.discount) })

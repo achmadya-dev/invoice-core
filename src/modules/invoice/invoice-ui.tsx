@@ -1,10 +1,18 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog'
 import { Combobox } from '@base-ui/react/combobox'
+import { Dialog } from '@base-ui/react/dialog'
 import { Select } from '@base-ui/react/select'
 import { countryCodes, countryName, currencies, currencyName } from './domain/catalog'
-import { themes, type Contact, type Currency, type Sender, type Theme } from './domain/invoice'
+import {
+  decimalValid,
+  themes,
+  type Contact,
+  type Currency,
+  type Sender,
+  type Theme,
+} from './domain/invoice'
 import { readLogo } from './workspace.browser'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 const countryOptions = countryCodes
   .map((code) => ({ code, name: countryName(code) }))
@@ -69,52 +77,189 @@ export function CurrencySelect({
   )
 }
 
-export type SelectOption = { value: string; label: string; group?: string }
+type SelectOption = { value: string; label: string }
+
+export function DecimalField({
+  label,
+  value,
+  kind,
+  onChange,
+}: {
+  label: string
+  value: string
+  kind: 'quantity' | 'amount' | 'percent'
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="ic-field">
+      {label}
+      <input
+        inputMode="decimal"
+        maxLength={16}
+        aria-invalid={!decimalValid(value, kind)}
+        placeholder="0"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  )
+}
+
+type SearchOption = { value: string; label: string; detail?: string }
+
+export function SearchField({
+  label,
+  query,
+  options,
+  placeholder,
+  empty,
+  theme,
+  disabled,
+  onQuery,
+  onSelect,
+  onDismiss,
+}: {
+  label: string
+  query: string
+  options: SearchOption[]
+  placeholder: string
+  empty: string
+  theme: Theme
+  disabled?: boolean
+  onQuery: (query: string) => void
+  onSelect: (value: string) => void
+  onDismiss?: (cancelled: boolean) => void
+}) {
+  const id = useId()
+  return (
+    <Combobox.Root<SearchOption>
+      items={options}
+      filter={null}
+      value={null}
+      disabled={disabled}
+      inputValue={query}
+      onInputValueChange={(value, details) => {
+        // The library clears its selection on popup cleanup; only actual edits change our draft.
+        if (details.reason === 'input-change') onQuery(value)
+      }}
+      onValueChange={(option) => {
+        if (option) onSelect(option.value)
+      }}
+      onOpenChange={(open, details) => {
+        if (!open && details.reason !== 'item-press') onDismiss?.(details.reason === 'escape-key')
+      }}
+    >
+      <div className="ic-field">
+        <label htmlFor={id}>{label}</label>
+        <Combobox.InputGroup className="ic-country-group ic-search-group">
+          <Combobox.Input
+            id={id}
+            className="ic-country-input"
+            placeholder={placeholder}
+            maxLength={120}
+          />
+          <Combobox.Trigger
+            className="ic-country-trigger"
+            aria-label={`Show ${label.toLowerCase()} options`}
+          >
+            <Icon name="chevron" />
+          </Combobox.Trigger>
+        </Combobox.InputGroup>
+        <Combobox.Portal>
+          <Combobox.Positioner
+            className="ic-country-positioner"
+            sideOffset={4}
+            collisionPadding={12}
+          >
+            <Combobox.Popup className="ic-country-popup" data-theme={theme}>
+              <Combobox.Empty>
+                <div className="ic-country-empty">{empty}</div>
+              </Combobox.Empty>
+              <Combobox.List className="ic-country-list">
+                {(option: SearchOption) => (
+                  <Combobox.Item
+                    key={option.value}
+                    value={option}
+                    className="ic-country-option ic-search-option"
+                  >
+                    <span>{option.label}</span>
+                    {option.detail && <small>{option.detail}</small>}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </div>
+    </Combobox.Root>
+  )
+}
+
+export function WorkspaceDialog({
+  open,
+  title,
+  description,
+  theme,
+  onClose,
+  children,
+}: {
+  open: boolean
+  title: string
+  description: string
+  theme: Theme
+  onClose: () => void
+  children: ReactNode
+}) {
+  return (
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose()
+      }}
+    >
+      <Dialog.Portal>
+        <Dialog.Backdrop className="ic-modal-backdrop" />
+        <Dialog.Viewport className="ic-modal-viewport">
+          <Dialog.Popup className="ic-modal-popup ic-workspace-dialog" data-theme={theme}>
+            <div className="ic-dialog-heading">
+              <Dialog.Title className="ic-modal-title">{title}</Dialog.Title>
+              <Dialog.Close className="ic-icon-button" aria-label="Close dialog">
+                <Icon name="close" />
+              </Dialog.Close>
+            </div>
+            <Dialog.Description className="ic-modal-description">{description}</Dialog.Description>
+            {children}
+          </Dialog.Popup>
+        </Dialog.Viewport>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
 
 export function SelectField({
   label,
   value,
   options,
   onChange,
-  placeholder,
   compact = false,
-  disabled = false,
-  span = false,
   triggerClassName,
-  popupClassName,
-  align = 'start',
 }: {
   label: string
   value: string
   options: SelectOption[]
   onChange: (value: string) => void
-  placeholder?: string
   compact?: boolean
-  disabled?: boolean
-  span?: boolean
   triggerClassName?: string
-  popupClassName?: string
-  align?: 'start' | 'end'
 }) {
-  const groups: { name: string; items: SelectOption[] }[] = []
-  for (const option of options) {
-    const groupName = option.group ?? ''
-    const last = groups[groups.length - 1]
-    if (last && last.name === groupName) last.items.push(option)
-    else groups.push({ name: groupName, items: [option] })
-  }
-  const hasGroups = groups.some((group) => group.name !== '')
-
   return (
     <Select.Root
       items={options}
-      value={value === '' && placeholder ? null : value}
-      disabled={disabled}
+      value={value}
       onValueChange={(nextValue) => {
         if (typeof nextValue === 'string') onChange(nextValue)
       }}
     >
-      <div className={compact ? 'ic-select-compact' : span ? 'ic-field ic-span' : 'ic-field'}>
+      <div className={compact ? 'ic-select-compact' : 'ic-field'}>
         <Select.Label className={compact ? 'sr-only' : undefined}>{label}</Select.Label>
         <Select.Trigger
           className={[
@@ -124,50 +269,27 @@ export function SelectField({
             .filter(Boolean)
             .join(' ')}
         >
-          <Select.Value placeholder={placeholder} />
+          <Select.Value />
           <Select.Icon className="ic-select-icon">
             <Icon name="chevron" />
           </Select.Icon>
         </Select.Trigger>
-        <Select.Positioner className="ic-select-positioner" align={align} sideOffset={4}>
-          <Select.Popup className={['ic-select-popup', popupClassName].filter(Boolean).join(' ')}>
+        <Select.Positioner className="ic-select-positioner" align="start" sideOffset={4}>
+          <Select.Popup className="ic-select-popup">
             <Select.List className="ic-select-list">
-              {hasGroups
-                ? groups.map((group) => (
-                    <Select.Group key={group.name || 'default'} className="ic-select-group">
-                      {group.name && (
-                        <Select.GroupLabel className="ic-select-group-label">
-                          {group.name}
-                        </Select.GroupLabel>
-                      )}
-                      {group.items.map((option) => (
-                        <Select.Item
-                          key={option.value}
-                          value={option.value}
-                          label={option.label}
-                          className="ic-select-option"
-                        >
-                          <Select.ItemText>{option.label}</Select.ItemText>
-                          <Select.ItemIndicator className="ic-select-indicator">
-                            <Icon name="check" />
-                          </Select.ItemIndicator>
-                        </Select.Item>
-                      ))}
-                    </Select.Group>
-                  ))
-                : options.map((option) => (
-                    <Select.Item
-                      key={option.value}
-                      value={option.value}
-                      label={option.label}
-                      className="ic-select-option"
-                    >
-                      <Select.ItemText>{option.label}</Select.ItemText>
-                      <Select.ItemIndicator className="ic-select-indicator">
-                        <Icon name="check" />
-                      </Select.ItemIndicator>
-                    </Select.Item>
-                  ))}
+              {options.map((option) => (
+                <Select.Item
+                  key={option.value}
+                  value={option.value}
+                  label={option.label}
+                  className="ic-select-option"
+                >
+                  <Select.ItemText>{option.label}</Select.ItemText>
+                  <Select.ItemIndicator className="ic-select-indicator">
+                    <Icon name="check" />
+                  </Select.ItemIndicator>
+                </Select.Item>
+              ))}
             </Select.List>
           </Select.Popup>
         </Select.Positioner>
@@ -324,22 +446,26 @@ export function ContactFields({
   contact,
   onChange,
   theme,
+  showName = true,
 }: {
   label: string
   contact: Contact
   onChange: (patch: Partial<Contact>) => void
   theme: Theme
+  showName?: boolean
 }) {
   return (
     <>
-      <label className="ic-field">
-        {label} name
-        <input
-          maxLength={120}
-          value={contact.name}
-          onChange={(event) => onChange({ name: event.target.value })}
-        />
-      </label>
+      {showName && (
+        <label className="ic-field">
+          {label} name
+          <input
+            maxLength={120}
+            value={contact.name}
+            onChange={(event) => onChange({ name: event.target.value })}
+          />
+        </label>
+      )}
       <label className="ic-field">
         {label} email
         <input
@@ -499,8 +625,8 @@ export function ConfirmModal({
       }}
     >
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="ic-modal-backdrop" />
-        <AlertDialog.Viewport className="ic-modal-viewport">
+        <AlertDialog.Backdrop className="ic-modal-backdrop ic-confirm-backdrop" />
+        <AlertDialog.Viewport className="ic-modal-viewport ic-confirm-viewport">
           <AlertDialog.Popup className="ic-modal-popup" data-theme={theme}>
             {confirm && (
               <>

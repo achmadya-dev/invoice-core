@@ -1,15 +1,16 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   companyError,
   formatBytes,
   formatDate,
   formatMoney,
+  invoiceSenderKey,
   invoiceStatuses,
   invoiceTotals,
   maxBackupBytes,
   maxCompanies,
   maxInvoices,
-  maxTemplates,
+  maxProducts,
   newCompany,
   type Company,
   type Invoice,
@@ -17,8 +18,15 @@ import {
   type Theme,
   type Workspace,
 } from './domain/invoice'
-import { CurrencySelect, Icon, SelectField, SenderFields, type ConfirmState } from './invoice-ui'
-import { DecimalField } from './InvoiceEditor'
+import {
+  CurrencySelect,
+  DecimalField,
+  Icon,
+  SelectField,
+  SenderFields,
+  WorkspaceDialog,
+  type ConfirmState,
+} from './invoice-ui'
 import { decodeWorkspace, downloadFile } from './workspace.browser'
 
 export function InvoiceHistory({
@@ -29,7 +37,6 @@ export function InvoiceHistory({
   updateStatus,
   duplicate,
   remove,
-  newDraft,
 }: {
   workspace: Workspace
   pdfBusyId: string | null
@@ -38,18 +45,18 @@ export function InvoiceHistory({
   updateStatus: (invoice: Invoice, status: InvoiceStatus) => void
   duplicate: (invoice: Invoice) => void
   remove: (invoice: Invoice) => void
-  newDraft: () => void
 }) {
   const [query, setQuery] = useState('')
   const [profile, setProfile] = useState('')
   const [statusFilter, setStatusFilter] = useState<'' | InvoiceStatus>('')
   const choices = new Map(workspace.companies.map((company) => [company.id, company.sender.name]))
   for (const invoice of workspace.invoices)
-    if (!choices.has(invoice.companyId)) choices.set(invoice.companyId, invoice.sender.name)
+    if (!choices.has(invoiceSenderKey(invoice)))
+      choices.set(invoiceSenderKey(invoice), invoice.sender.name)
   const search = query.trim().toLowerCase()
   const filtered = workspace.invoices.filter(
     (invoice) =>
-      (!profile || invoice.companyId === profile) &&
+      (!profile || invoiceSenderKey(invoice) === profile) &&
       (!statusFilter || invoice.status === statusFilter) &&
       [invoice.number, invoice.client.name, invoice.sender.name, invoice.status].some((value) =>
         value.toLowerCase().includes(search),
@@ -101,9 +108,6 @@ export function InvoiceHistory({
         <div className="ic-empty">
           <h2>No saved invoices yet</h2>
           <p>Save your first invoice to keep it in your local history.</p>
-          <button className="ic-button" type="button" onClick={newDraft}>
-            Go to editor
-          </button>
         </div>
       ) : filtered.length === 0 ? (
         <p className="ic-empty">No invoices match these filters.</p>
@@ -182,12 +186,12 @@ export function InvoiceHistory({
 export function Companies({
   companies,
   save,
-  requestRemove,
+  remove,
   theme,
 }: {
   companies: Company[]
   save: (company: Company) => boolean
-  requestRemove: (company: Company, onDeleted: () => void) => void
+  remove: (company: Company) => void
   theme: Theme
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
@@ -205,52 +209,59 @@ export function Companies({
       return
     }
     if (save(selected)) edit(null)
+    else setError('Company could not be saved. Check browser storage and try again.')
   }
   return (
-    <div className="ic-company-layout">
-      <section className="ic-editor ic-panel" aria-label="Companies">
-        <div className="ic-panel-bar">
-          <h2>Sender profiles</h2>
-        </div>
-        <ul className="ic-profile-list">
-          {companies.map((company) => (
-            <li key={company.id}>
+    <section className="ic-editor ic-panel" aria-label="Company profiles">
+      <div className="ic-panel-bar">
+        <h2>Sender profiles</h2>
+        <button
+          type="button"
+          className="ic-button ic-primary"
+          disabled={companies.length >= maxCompanies}
+          onClick={() => edit(newCompany())}
+        >
+          <Icon name="plus" /> Add company
+        </button>
+      </div>
+      <ul className="ic-records">
+        {companies.map((company) => (
+          <li key={company.id} className="ic-record">
+            <h2>{company.sender.name}</h2>
+            <span className="ic-mono">{company.currency}</span>
+            <div className="ic-actions">
               <button
+                className="ic-button"
                 type="button"
-                className="ic-profile"
-                aria-pressed={selected?.id === company.id}
+                aria-label={`Edit ${company.sender.name}`}
                 onClick={() => edit(company)}
               >
-                <span>{company.sender.name}</span>
-                <span className="ic-mono">{company.currency}</span>
+                Edit
               </button>
-            </li>
-          ))}
-        </ul>
-        {companies.length === 0 && (
-          <p className="ic-empty">Add a company to reuse its sender details.</p>
-        )}
-        <div className="ic-panel-pad">
-          <button
-            type="button"
-            className="ic-button"
-            disabled={companies.length >= maxCompanies}
-            onClick={() => edit(newCompany())}
-          >
-            <Icon name="plus" /> Add company
-          </button>
-        </div>
-      </section>
-      {selected ? (
-        <section className="ic-editor ic-panel" aria-label="Company details">
-          <div className="ic-panel-bar">
-            <h2>
-              {companies.some((company) => company.id === selected.id)
-                ? 'Edit company'
-                : 'New company'}
-            </h2>
-          </div>
-          <form className="ic-panel-pad" onSubmit={submit}>
+              <button
+                className="ic-text-button"
+                type="button"
+                aria-label={`Delete ${company.sender.name}`}
+                onClick={() => remove(company)}
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {companies.length === 0 && (
+        <p className="ic-empty">Add a company to reuse its sender details.</p>
+      )}
+      <WorkspaceDialog
+        open={selected !== null}
+        title={companies.some(({ id }) => id === selected?.id) ? 'Edit company' : 'New company'}
+        description="Set sender details, numbering, and defaults for new invoices."
+        theme={theme}
+        onClose={() => edit(null)}
+      >
+        {selected && (
+          <form className="ic-dialog-body" onSubmit={submit}>
             <div className="ic-fields">
               <SenderFields
                 key={selected.id}
@@ -334,35 +345,18 @@ export function Companies({
                 {error}
               </p>
             )}
-            <div className="ic-actions ic-note">
-              <button className="ic-button ic-primary" type="submit">
-                Save company
-              </button>
+            <div className="ic-modal-actions">
               <button className="ic-button" type="button" onClick={() => edit(null)}>
                 Cancel
               </button>
-              {companies.some((company) => company.id === selected.id) && (
-                <button
-                  className="ic-text-button"
-                  type="button"
-                  onClick={() => requestRemove(selected, () => edit(null))}
-                >
-                  Delete company
-                </button>
-              )}
+              <button className="ic-button ic-primary" type="submit">
+                Save company
+              </button>
             </div>
           </form>
-        </section>
-      ) : (
-        <section className="ic-editor ic-empty">
-          <h2>Choose a sender profile</h2>
-          <p>
-            Set a numbering series, logo, and invoice defaults. Saved invoices keep their original
-            sender details.
-          </p>
-        </section>
-      )}
-    </div>
+        )}
+      </WorkspaceDialog>
+    </section>
   )
 }
 
@@ -383,8 +377,14 @@ export function Backup({
 }) {
   const [error, setError] = useState('')
   const importAttempt = useRef(0)
+  useEffect(
+    () => () => {
+      importAttempt.current += 1
+    },
+    [],
+  )
   return (
-    <div className="ic-company-layout">
+    <div className="ic-company-layout ic-dialog-body">
       <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Local storage">
         <h2>Local storage</h2>
         <dl className="ic-stats">
@@ -401,9 +401,9 @@ export function Backup({
             </dd>
           </div>
           <div>
-            <dt>Custom templates</dt>
+            <dt>Products</dt>
             <dd className="ic-mono">
-              {workspace.templates.length} / {maxTemplates}
+              {workspace.products.length} / {maxProducts}
             </dd>
           </div>
           <div>
@@ -415,8 +415,8 @@ export function Backup({
       <section className="ic-editor ic-panel ic-panel-pad">
         <h2>Export a backup</h2>
         <p className="ic-muted ic-note">
-          Download a JSON copy of this draft, history, company profiles, custom templates, and
-          settings. Store it somewhere private.
+          Download a JSON copy of this draft, history, company profiles, products, and settings.
+          Store it somewhere private.
         </p>
         <div className="ic-actions ic-note">
           <button
@@ -469,7 +469,7 @@ export function Backup({
                 if (data) {
                   requestConfirm({
                     title: 'Restore backup?',
-                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), ${data.templates.length} custom template(s), and one active draft. Replace the local workspace with this backup?`,
+                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), ${data.products.length} product(s), and one active draft. Replace the local workspace with this backup?`,
                     confirmLabel: 'Replace local workspace',
                     cancelLabel: 'Cancel restore',
                     danger: true,
@@ -498,8 +498,8 @@ export function Backup({
       <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Reset local data">
         <h2>Reset local data</h2>
         <p className="ic-muted ic-note">
-          Remove all saved invoices, sender profiles, custom templates, and the active draft from
-          this browser. Export a JSON backup first.
+          Remove all saved invoices, sender profiles, products, and the active draft from this
+          browser. Export a JSON backup first.
         </p>
         <div className="ic-actions ic-note">
           <button
@@ -508,7 +508,7 @@ export function Backup({
             onClick={() =>
               requestConfirm({
                 title: 'Clear local workspace?',
-                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), ${workspace.templates.length} custom template(s), and the active draft from this browser. Download a JSON backup first.`,
+                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), ${workspace.products.length} product(s), and the active draft from this browser. Download a JSON backup first.`,
                 confirmLabel: 'Confirm clear workspace',
                 cancelLabel: 'Cancel clear',
                 danger: true,

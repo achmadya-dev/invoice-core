@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import { useId } from 'react'
 import { decimalValid, maxItems, newItem, type Currency, type LineItem } from './domain/invoice'
 import { Icon } from './invoice-ui'
 
@@ -8,14 +8,12 @@ export function LineItems({
   currency,
   caption,
   empty,
-  children,
 }: {
   items: LineItem[]
   edit: (update: (items: LineItem[]) => LineItem[]) => void
   currency: Currency
   caption: string
   empty: string
-  children?: ReactNode
 }) {
   const id = useId()
   const addButtonId = `${id}-add-line`
@@ -111,7 +109,6 @@ export function LineItems({
         >
           <Icon name="plus" /> Add line item
         </button>
-        {children}
       </div>
       <p id={helpId} className="ic-muted ic-note">
         Use up to three decimal places. Rates use {currency}.

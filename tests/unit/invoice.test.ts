@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { lineTemplates } from '../../src/modules/invoice/domain/catalog'
 import {
   duplicateInvoice,
   formatBytes,
   formatMoney,
   formatRate,
   invoiceTotals,
+  newCompany,
+  newInvoice,
   newItem,
   newWorkspace,
   saveDraft,
@@ -18,12 +19,15 @@ const now = new Date('2026-10-12T12:00:00.000Z')
 
 function filledDraft(patch: Partial<Invoice> = {}) {
   const workspace = newWorkspace()
+  const company = newCompany('Example Studio')
+  const draft = newInvoice(company, [], now)
   return {
     ...workspace,
+    companies: [company],
     dirty: true,
     draft: {
-      ...workspace.draft,
-      client: { ...workspace.draft.client, name: 'Example Client' },
+      ...draft,
+      client: { ...draft.client, name: 'Example Client' },
       items: [{ ...newItem('Work'), quantity: '2', rate: '45' }],
       ...patch,
     },
@@ -108,7 +112,7 @@ describe('local invoice workspace', () => {
     expect(decodeWorkspace(JSON.stringify(workspace))?.draft.discount).toBe('abc')
     expect(decodeWorkspace('{}')).toBeNull()
     expect(decodeWorkspace('not json')).toBeNull()
-    expect(decodeWorkspace(JSON.stringify({ ...workspace, version: 3 }))).toBeNull()
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, version: 4 }))).toBeNull()
     expect(
       decodeWorkspace(JSON.stringify({ ...workspace, invoices: [workspace.draft] })),
     ).toBeNull()
@@ -160,19 +164,5 @@ describe('local invoice workspace', () => {
     expect(formatBytes(512)).toBe('512 B')
     expect(formatBytes(2560)).toBe('2.5 KB')
     expect(formatBytes(1_572_864)).toBe('1.50 MB')
-  })
-
-  it('provides 14 grouped starter templates across 6 trade categories', () => {
-    expect(lineTemplates).toHaveLength(14)
-    expect(Array.from(new Set(lineTemplates.map((entry) => entry.group)))).toEqual([
-      'Software & IT',
-      'Coaching & Consulting',
-      'Design',
-      'Accounting & Tax',
-      'Finance & Advisory',
-      'General',
-    ])
-    expect(new Set(lineTemplates.map((entry) => entry.name)).size).toBe(14)
-    for (const entry of lineTemplates) expect(entry.lines.length).toBeGreaterThan(0)
   })
 })
