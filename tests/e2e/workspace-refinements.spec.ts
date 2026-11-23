@@ -53,8 +53,7 @@ test('uses matching searchable catalog panels and stacks them on small screens',
   const product = {
     ...newProduct('USD'),
     name: 'Design retainer',
-    description: 'Design',
-    rate: '45',
+    items: [{ ...newItem('Design'), rate: '45' }],
   }
   const data = { ...newWorkspace(), companies: [newCompany('North Studio')], products: [product] }
   await page.addInitScript(({ key, json }) => localStorage.setItem(key, json), {
@@ -109,4 +108,31 @@ test('downloads an incomplete preview without saving it to history', async ({ pa
   await page.screenshot({ path: info.outputPath('editor-desktop.png'), fullPage: true })
   await page.getByRole('button', { name: 'Back to invoices' }).click()
   await expect(page.getByRole('heading', { name: 'No saved invoices yet' })).toBeVisible()
+})
+
+test('never resumes or backs up an unsaved form and always creates a fresh invoice', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const create = page.getByRole('button', { name: 'Create invoice', exact: true })
+  const client = page.getByRole('combobox', { name: 'Client', exact: true })
+  await create.click()
+  await page.getByRole('button', { name: 'Load example' }).click()
+  await expect(client).toHaveValue('Fieldwork Press')
+  expect(await page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull()
+  await page.reload()
+  await expect(client).toHaveValue('')
+  await page.getByLabel('Description, item 1').fill('Unsaved service')
+  await page.getByRole('button', { name: 'Back to invoices' }).click()
+  await expect(page.getByRole('button', { name: 'Resume draft' })).toHaveCount(0)
+  await create.click()
+  await expect(page.getByRole('alertdialog')).toHaveCount(0)
+  await expect(page.getByLabel('Description, item 1')).toHaveValue('')
+  await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0001')
+  await page.getByRole('button', { name: 'Back to invoices' }).click()
+  await page.getByRole('button', { name: 'Backup', exact: true }).click()
+  const pending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download backup' }).click()
+  const backup = JSON.parse(await readFile(await (await pending).path(), 'utf8'))
+  expect(backup).toEqual({ version: 4, companies: [], invoices: [], products: [], theme: 'system' })
 })

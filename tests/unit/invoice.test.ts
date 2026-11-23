@@ -9,8 +9,7 @@ import {
   newInvoice,
   newItem,
   newWorkspace,
-  saveDraft,
-  updateInvoiceStatus,
+  saveInvoice,
   type Invoice,
 } from '../../src/modules/invoice/domain/invoice'
 import { decodeWorkspace } from '../../src/modules/invoice/workspace.browser'
@@ -22,9 +21,7 @@ function filledDraft(patch: Partial<Invoice> = {}) {
   const company = newCompany('Example Studio')
   const draft = newInvoice(company, [], now)
   return {
-    ...workspace,
-    companies: [company],
-    dirty: true,
+    workspace: { ...workspace, companies: [company] },
     draft: {
       ...draft,
       client: { ...draft.client, name: 'Example Client' },
@@ -77,50 +74,48 @@ describe('invoice money', () => {
 
 describe('local invoice workspace', () => {
   it('reserves auto numbers once, rejects collisions, and duplicates as a new draft', () => {
-    const first = saveDraft(filledDraft(), now)
+    const { workspace, draft } = filledDraft()
+    const first = saveInvoice(workspace, draft, now)
     if (!first.ok) throw new Error(first.message)
     expect(first.data.companies[0]?.nextNumber).toBe(2)
-    const edited = saveDraft(first.data, now)
+    const [original] = first.data.invoices
+    if (!original) throw new Error('Expected a saved invoice')
+    const edited = saveInvoice(first.data, original, now)
     if (!edited.ok) throw new Error(edited.message)
     expect(edited.data.companies[0]?.nextNumber).toBe(2)
     expect(edited.data.invoices).toHaveLength(1)
-    const duplicate = duplicateInvoice(
-      first.data.draft,
-      first.data.companies[0],
-      first.data.invoices,
-      now,
-    )
+    const duplicate = duplicateInvoice(original, first.data.companies[0], first.data.invoices, now)
     expect(duplicate.number).toBe('INV-0002')
     expect(duplicate.status).toBe('draft')
-    expect(duplicate.items[0]?.id).not.toBe(first.data.draft.items[0]?.id)
-    expect(
-      saveDraft({ ...first.data, draft: { ...duplicate, number: ' inv-0001 ' } }, now),
-    ).toMatchObject({ ok: false })
+    expect(duplicate.items[0]?.id).not.toBe(original.items[0]?.id)
+    expect(saveInvoice(first.data, { ...duplicate, number: ' inv-0001 ' }, now)).toMatchObject({
+      ok: false,
+    })
   })
 
   it('normalizes leading spaces in a suggested number without removing its separator', () => {
-    const workspace = filledDraft({ number: 'Studio 0001' })
+    const { workspace, draft } = filledDraft({ number: 'Studio 0001' })
     const companies = workspace.companies.map((company) => ({ ...company, prefix: '  Studio ' }))
-    const result = saveDraft({ ...workspace, companies }, now)
+    const result = saveInvoice({ ...workspace, companies }, draft, now)
     if (!result.ok) throw new Error(result.message)
     expect(result.data.companies[0]?.nextNumber).toBe(2)
   })
 
-  it('validates the entire backup, never accepts remote logos, and keeps incomplete drafts', () => {
-    const workspace = filledDraft({ discount: 'abc' })
-    expect(saveDraft(workspace, now)).toMatchObject({ ok: false })
-    expect(decodeWorkspace(JSON.stringify(workspace))?.draft.discount).toBe('abc')
+  it('validates saved invoices and rejects remote logos and draft fields in current backups', () => {
+    const { workspace, draft } = filledDraft()
+    const invalid = { ...draft, discount: 'abc' }
+    expect(saveInvoice(workspace, invalid, now)).toMatchObject({ ok: false })
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, draft }))).toBeNull()
     expect(decodeWorkspace('{}')).toBeNull()
     expect(decodeWorkspace('not json')).toBeNull()
-    expect(decodeWorkspace(JSON.stringify({ ...workspace, version: 4 }))).toBeNull()
-    expect(
-      decodeWorkspace(JSON.stringify({ ...workspace, invoices: [workspace.draft] })),
-    ).toBeNull()
-    const draft = {
-      ...workspace.draft,
-      sender: { ...workspace.draft.sender, logo: 'https://example.invalid/logo.png' },
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, version: 5 }))).toBeNull()
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, invoices: [invalid] }))).toBeNull()
+    const remote = {
+      ...draft,
+      sender: { ...draft.sender, logo: 'https://example.invalid/logo.png' },
     }
-    expect(decodeWorkspace(JSON.stringify({ ...workspace, draft }))).toBeNull()
+    expect(saveInvoice(workspace, remote, now)).toMatchObject({ ok: false })
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, invoices: [remote] }))).toBeNull()
     expect(
       decodeWorkspace(
         JSON.stringify({
@@ -132,33 +127,21 @@ describe('local invoice workspace', () => {
   })
 
   it('refuses an invoice with reversed dates or missing items', () => {
-    const { draft, ...workspace } = filledDraft({ issueDate: '2026-10-12', dueDate: '2026-10-11' })
-    expect(saveDraft({ ...workspace, draft }, now)).toMatchObject({
+    const { draft, workspace } = filledDraft({ issueDate: '2026-10-12', dueDate: '2026-10-11' })
+    expect(saveInvoice(workspace, draft, now)).toMatchObject({
       ok: false,
       message: 'The due date must not precede the issue date.',
     })
-    expect(
-      saveDraft({ ...workspace, draft: { ...draft, dueDate: '', items: [] } }, now),
-    ).toMatchObject({ ok: false })
+    expect(saveInvoice(workspace, { ...draft, dueDate: '', items: [] }, now)).toMatchObject({
+      ok: false,
+    })
   })
 
-  it('updates saved invoice status, syncs clean active drafts, and formats byte counts', () => {
-    const saved = saveDraft(filledDraft(), now)
+  it('keeps legacy status in saved records and formats byte counts', () => {
+    const { workspace, draft } = filledDraft({ status: 'paid' })
+    const saved = saveInvoice(workspace, draft, now)
     if (!saved.ok) throw new Error(saved.message)
-    const invoiceId = saved.data.draft.id
-    const later = new Date('2026-10-13T08:00:00.000Z')
-
-    const paid = updateInvoiceStatus(saved.data, invoiceId, 'paid', later)
-    expect(paid.invoices[0]?.status).toBe('paid')
-    expect(paid.invoices[0]?.updatedAt).toBe(later.toISOString())
-    expect(paid.draft.status).toBe('paid')
-
-    const dirtyDraft = { ...paid, dirty: true, draft: { ...paid.draft, status: 'draft' as const } }
-    const sent = updateInvoiceStatus(dirtyDraft, invoiceId, 'sent', later)
-    expect(sent.invoices[0]?.status).toBe('sent')
-    expect(sent.draft.status).toBe('draft')
-
-    expect(updateInvoiceStatus(saved.data, 'missing-id', 'paid', later)).toBe(saved.data)
+    expect(decodeWorkspace(JSON.stringify(saved.data))?.invoices[0]?.status).toBe('paid')
 
     expect(formatBytes(-5)).toBe('0 B')
     expect(formatBytes(512)).toBe('512 B')

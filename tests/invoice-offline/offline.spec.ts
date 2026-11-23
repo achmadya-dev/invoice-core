@@ -5,7 +5,7 @@ import {
   newInvoice,
   newItem,
   newWorkspace,
-  saveDraft,
+  saveInvoice,
 } from '../../src/modules/invoice/domain/invoice'
 
 test('keeps a saved workspace, retires the old shell, and exports PDF offline', async ({
@@ -15,10 +15,9 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
   const workspace = newWorkspace()
   const company = newCompany('Offline Studio')
   const draft = newInvoice(company, [])
-  const initial = saveDraft({
-    ...workspace,
-    companies: [company],
-    draft: {
+  const initial = saveInvoice(
+    { ...workspace, companies: [company] },
+    {
       ...draft,
       client: { ...draft.client, name: 'Local Offline Client' },
       items: [
@@ -26,19 +25,19 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
         { ...newItem('Illustration'), quantity: '2', rate: '275' },
       ],
     },
-  })
+  )
   if (!initial.ok) throw new Error(initial.message)
 
   // Seed the previous release's storage and cache on the same origin before booting the app.
   await page.goto('/invoice-mark.svg')
-  const { companies, invoices, draft: active, theme, dirty } = initial.data
+  const { companies, invoices, theme } = initial.data
   await page.evaluate(
     async (seed) => {
       localStorage.setItem('invoice-core:workspace:v1', seed)
       const old = await caches.open('invoice-core-shell-v1')
       await old.put('/', new Response('<html><body><a href="/login">Sign in</a></body></html>'))
     },
-    JSON.stringify({ version: 1, companies, invoices, draft: active, theme, dirty }),
+    JSON.stringify({ version: 1, companies, invoices, draft, theme, dirty: false }),
   )
 
   await page.goto('/')
@@ -76,4 +75,7 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download PDF' }).click()
   expect((await readFile(await (await download).path())).subarray(0, 5).toString()).toBe('%PDF-')
+  await page.getByRole('button', { name: 'Back to invoices' }).click()
+  await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
+  await expect(page.getByLabel('Quantity, item 2')).toHaveValue('2')
 })

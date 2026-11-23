@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import {
-  addProductLine,
+  addProductLines,
   applyCompanyDefaults,
   manualCompanyId,
+  matchesProduct,
   suggestInvoiceNumber,
   type Invoice,
   type Workspace,
@@ -24,6 +25,7 @@ type EditInvoice = (edit: (invoice: Invoice) => Invoice) => void
 type Notice = { text: string; error?: boolean }
 
 export function InvoiceEditor({
+  draft,
   workspace,
   edit,
   view,
@@ -38,6 +40,7 @@ export function InvoiceEditor({
   onDuplicate,
   onDelete,
 }: {
+  draft: Invoice
   workspace: Workspace
   edit: EditInvoice
   view: 'edit' | 'preview'
@@ -52,17 +55,12 @@ export function InvoiceEditor({
   onDuplicate?: () => void
   onDelete?: () => void
 }) {
-  const draft = workspace.draft
   const [productQuery, setProductQuery] = useState('')
   const [productError, setProductError] = useState('')
   const saved = workspace.invoices.some((invoice) => invoice.id === draft.id)
   const company = workspace.companies.find((entry) => entry.id === draft.companyId)
   const productSearch = productQuery.trim().toLowerCase()
-  const products = workspace.products.filter((product) =>
-    [product.name, product.description, product.currency].some((value) =>
-      value.toLowerCase().includes(productSearch),
-    ),
-  )
+  const products = workspace.products.filter((product) => matchesProduct(product, productSearch))
   function set<K extends keyof Invoice>(key: K, value: Invoice[K]) {
     edit((current) => ({ ...current, [key]: value }))
   }
@@ -72,7 +70,7 @@ export function InvoiceEditor({
   function selectProduct(id: string) {
     const product = workspace.products.find((entry) => entry.id === id)
     if (!product) return
-    const result = addProductLine(draft, product)
+    const result = addProductLines(draft, product)
     setProductQuery('')
     if (result.ok) {
       set('items', result.invoice.items)
@@ -117,8 +115,8 @@ export function InvoiceEditor({
             </div>
           </div>
           <div className="ic-editor-body">
-            <section className="ic-section" aria-labelledby="defaults-title">
-              <h3 id="defaults-title">Company and products</h3>
+            <details className="ic-section ic-fold" open>
+              <summary>Invoice details</summary>
               <div className="ic-fields">
                 <SelectField
                   label="Company"
@@ -159,41 +157,13 @@ export function InvoiceEditor({
                     setProductError('')
                   }}
                 />
-                <SearchField
-                  label="Add product"
-                  query={productQuery}
-                  options={products.map((product) => ({
-                    value: product.id,
-                    label: product.name,
-                    detail: `${product.currency}${product.description !== product.name ? ` · ${product.description}` : ''}`,
-                  }))}
-                  placeholder="Search products"
-                  empty={
-                    workspace.products.length
-                      ? 'No matching products.'
-                      : 'No products yet. Add one in Catalog.'
-                  }
-                  theme={workspace.theme}
-                  onQuery={(query) => {
-                    setProductQuery(query)
+                <CurrencySelect
+                  value={draft.currency}
+                  onChange={(value) => {
+                    set('currency', value)
                     setProductError('')
                   }}
-                  onSelect={selectProduct}
-                  onDismiss={() => setProductQuery('')}
                 />
-              </div>
-              {productError && (
-                <p className="ic-error ic-note" role="alert">
-                  {productError}
-                </p>
-              )}
-              <p className="ic-muted ic-note">
-                Optional. Enter sender details and line items manually if you prefer.
-              </p>
-            </section>
-            <details className="ic-section ic-fold" open>
-              <summary>Invoice details</summary>
-              <div className="ic-fields">
                 <div className="ic-number-field ic-span">
                   <label className="ic-field">
                     Invoice number
@@ -231,13 +201,6 @@ export function InvoiceEditor({
                     onChange={(event) => setDate('dueDate', event.target.value)}
                   />
                 </label>
-                <CurrencySelect
-                  value={draft.currency}
-                  onChange={(value) => {
-                    set('currency', value)
-                    setProductError('')
-                  }}
-                />
                 <div className="ic-span">
                   <ClientField
                     client={draft.client}
@@ -247,51 +210,86 @@ export function InvoiceEditor({
                   />
                 </div>
               </div>
-              <details
-                className="ic-detail"
-                open={draft.companyId === manualCompanyId || undefined}
-              >
-                <summary>Sender details</summary>
-                <div className="ic-fields">
-                  <SenderFields
-                    sender={draft.sender}
-                    theme={workspace.theme}
-                    onChange={(patch) =>
-                      edit((current) => {
-                        const next = { ...current, sender: { ...current.sender, ...patch } }
-                        if (
-                          saved ||
-                          current.companyId !== manualCompanyId ||
-                          patch.name === undefined
-                        )
-                          return next
-                        const previous = suggestInvoiceNumber(current, workspace.invoices)
-                        return current.number && current.number !== previous
-                          ? next
-                          : { ...next, number: suggestInvoiceNumber(next, workspace.invoices) }
-                      })
-                    }
-                  />
-                </div>
-                <p className="ic-muted ic-note">Changes here apply to this invoice only.</p>
-              </details>
-              <details className="ic-detail">
-                <summary>Billing details</summary>
-                <div className="ic-fields">
-                  <ContactFields
-                    label="Billing contact"
-                    contact={draft.client}
-                    showName={false}
-                    theme={workspace.theme}
-                    onChange={(patch) =>
-                      edit((current) => ({ ...current, client: { ...current.client, ...patch } }))
-                    }
-                  />
-                </div>
-              </details>
+              <div className="ic-contact-sections">
+                <details
+                  className="ic-detail ic-contact-section"
+                  open={draft.companyId === manualCompanyId || undefined}
+                >
+                  <summary>Sender details</summary>
+                  <div className="ic-fields">
+                    <SenderFields
+                      sender={draft.sender}
+                      theme={workspace.theme}
+                      onChange={(patch) =>
+                        edit((current) => {
+                          const next = { ...current, sender: { ...current.sender, ...patch } }
+                          if (
+                            saved ||
+                            current.companyId !== manualCompanyId ||
+                            patch.name === undefined
+                          )
+                            return next
+                          const previous = suggestInvoiceNumber(current, workspace.invoices)
+                          return current.number && current.number !== previous
+                            ? next
+                            : { ...next, number: suggestInvoiceNumber(next, workspace.invoices) }
+                        })
+                      }
+                    />
+                  </div>
+                  <p className="ic-muted ic-note">Changes here apply to this invoice only.</p>
+                </details>
+                <details className="ic-detail ic-contact-section">
+                  <summary>Billing details</summary>
+                  <div className="ic-fields">
+                    <ContactFields
+                      label="Billing contact"
+                      contact={draft.client}
+                      showName={false}
+                      theme={workspace.theme}
+                      onChange={(patch) =>
+                        edit((current) => ({ ...current, client: { ...current.client, ...patch } }))
+                      }
+                    />
+                  </div>
+                </details>
+              </div>
             </details>
             <details className="ic-section ic-fold" open>
               <summary>Line items</summary>
+              <div className="ic-item-picker">
+                <SearchField
+                  label="Add product"
+                  query={productQuery}
+                  options={products.map((product) => ({
+                    value: product.id,
+                    label: product.name,
+                    detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
+                  }))}
+                  placeholder="Search product or item"
+                  empty={
+                    workspace.products.length
+                      ? 'No matching products.'
+                      : 'No products yet. Add one in Catalog.'
+                  }
+                  theme={workspace.theme}
+                  onQuery={(query) => {
+                    setProductQuery(query)
+                    setProductError('')
+                  }}
+                  onSelect={selectProduct}
+                  onDismiss={() => setProductQuery('')}
+                />
+                {productError ? (
+                  <p className="ic-error ic-note" role="alert">
+                    {productError}
+                  </p>
+                ) : (
+                  <p className="ic-muted ic-note">
+                    Adds all items in the selected product. You can still edit each line.
+                  </p>
+                )}
+              </div>
               <LineItems
                 items={draft.items}
                 edit={(update) => edit((current) => ({ ...current, items: update(current.items) }))}

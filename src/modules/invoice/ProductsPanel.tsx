@@ -1,16 +1,15 @@
 import { useState } from 'react'
-import { maxProducts, newProduct, type Currency, type Product, type Theme } from './domain/invoice'
-import { CurrencySelect, DecimalField, Icon, WorkspaceDialog } from './invoice-ui'
+import { matchesProduct, maxProducts, newProduct, type Product, type Theme } from './domain/invoice'
+import { CurrencySelect, Icon, WorkspaceDialog } from './invoice-ui'
+import { LineItems } from './LineItems'
 
 export function ProductsPanel({
   products,
-  defaultCurrency,
   theme,
   save,
   remove,
 }: {
   products: Product[]
-  defaultCurrency: Currency
   theme: Theme
   save: (product: Product) => { ok: true } | { ok: false; message?: string }
   remove: (product: Product) => void
@@ -20,9 +19,7 @@ export function ProductsPanel({
   const [error, setError] = useState('')
   const existing = products.some(({ id }) => id === selected?.id)
   const search = query.trim().toLowerCase()
-  const matches = products.filter(({ name, description, currency }) =>
-    [name, description, currency].some((value) => value.toLowerCase().includes(search)),
-  )
+  const matches = products.filter((product) => matchesProduct(product, search))
   function edit(product: Product | null) {
     setSelected(product)
     setError('')
@@ -46,7 +43,7 @@ export function ProductsPanel({
           className="ic-button ic-primary"
           type="button"
           disabled={products.length >= maxProducts}
-          onClick={() => edit(newProduct(defaultCurrency))}
+          onClick={() => edit(newProduct('USD'))}
         >
           <Icon name="plus" /> Add product
         </button>
@@ -64,7 +61,8 @@ export function ProductsPanel({
               <div>
                 <h3>{product.name}</h3>
                 <p>
-                  {product.description} · {product.rate || '0'} {product.currency}
+                  {product.items.length} {product.items.length === 1 ? 'item' : 'items'} ·{' '}
+                  {product.currency}
                 </p>
               </div>
               <div className="ic-actions">
@@ -92,7 +90,7 @@ export function ProductsPanel({
       <WorkspaceDialog
         open={selected !== null}
         title={existing ? 'Edit product' : 'New product'}
-        description="These defaults are copied into a new invoice line when you pick this product."
+        description="Group the items you sell together. Selecting this product on an invoice adds every item below."
         theme={theme}
         onClose={() => edit(null)}
       >
@@ -111,7 +109,7 @@ export function ProductsPanel({
             }}
           >
             <div className="ic-fields">
-              <label className="ic-field ic-span">
+              <label className="ic-field">
                 Product name
                 <input
                   maxLength={120}
@@ -120,34 +118,27 @@ export function ProductsPanel({
                   required
                 />
               </label>
-              <label className="ic-field ic-span">
-                Invoice line description
-                <textarea
-                  maxLength={240}
-                  rows={2}
-                  value={selected.description}
-                  onChange={(event) => edit({ ...selected, description: event.target.value })}
-                  required
-                />
-              </label>
               <CurrencySelect
                 label="Product currency"
                 value={selected.currency}
                 onChange={(currency) => edit({ ...selected, currency })}
               />
-              <DecimalField
-                label="Default quantity"
-                kind="quantity"
-                value={selected.quantity}
-                onChange={(quantity) => edit({ ...selected, quantity })}
-              />
-              <DecimalField
-                label="Default rate"
-                kind="amount"
-                value={selected.rate}
-                onChange={(rate) => edit({ ...selected, rate })}
-              />
             </div>
+            <fieldset className="ic-bundle-items">
+              <legend>Included items</legend>
+              <LineItems
+                items={selected.items}
+                edit={(update) => {
+                  setSelected((current) =>
+                    current ? { ...current, items: update(current.items) } : current,
+                  )
+                  setError('')
+                }}
+                currency={selected.currency}
+                caption="Product line items"
+                empty="Add at least one item to this product."
+              />
+            </fieldset>
             {error && (
               <p className="ic-error ic-note" role="alert">
                 {error}

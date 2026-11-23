@@ -59,7 +59,7 @@ export function writeWorkspace(
     if (localStorage.getItem(storageKey) !== current.raw) {
       return {
         ok: false,
-        message: 'The workspace changed in another tab. Export this tab’s draft before reloading.',
+        message: 'The workspace changed in another tab. Reload to see its latest saved data.',
       }
     }
     const raw = JSON.stringify(data)

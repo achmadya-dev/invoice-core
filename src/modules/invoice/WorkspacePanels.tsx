@@ -442,8 +442,8 @@ export function Backup({
       <section className="ic-editor ic-panel ic-panel-pad">
         <h2>Export a backup</h2>
         <p className="ic-muted ic-note">
-          Download a JSON copy of this draft, history, company profiles, products, and settings.
-          Store it somewhere private.
+          Download a JSON copy of saved invoices, company profiles, products, and settings. Store it
+          somewhere private.
         </p>
         <div className="ic-actions ic-note">
           <button
@@ -496,7 +496,7 @@ export function Backup({
                 if (data) {
                   requestConfirm({
                     title: 'Restore backup?',
-                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), ${data.products.length} product(s), and one active draft. Replace the local workspace with this backup?`,
+                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), and ${data.products.length} product(s). Replace the local workspace with this backup?`,
                     confirmLabel: 'Replace local workspace',
                     cancelLabel: 'Cancel restore',
                     danger: true,
@@ -525,8 +525,8 @@ export function Backup({
       <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Reset local data">
         <h2>Reset local data</h2>
         <p className="ic-muted ic-note">
-          Remove all saved invoices, sender profiles, products, and the active draft from this
-          browser. Export a JSON backup first.
+          Remove all saved invoices, sender profiles, and products from this browser. Export a JSON
+          backup first.
         </p>
         <div className="ic-actions ic-note">
           <button
@@ -535,7 +535,7 @@ export function Backup({
             onClick={() =>
               requestConfirm({
                 title: 'Clear local workspace?',
-                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), ${workspace.products.length} product(s), and the active draft from this browser. Download a JSON backup first.`,
+                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), and ${workspace.products.length} product(s) from this browser. Download a JSON backup first.`,
                 confirmLabel: 'Confirm clear workspace',
                 cancelLabel: 'Cancel clear',
                 danger: true,
