@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test'
 
 test('home has no automatically detectable accessibility violations', async ({ page }) => {
   await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Invoices', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Create invoice', exact: true })).toBeEnabled()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Edit invoice' })).toBeVisible()
 
   const results = await new AxeBuilder({ page }).analyze()

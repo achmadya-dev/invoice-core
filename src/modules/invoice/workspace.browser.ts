@@ -6,6 +6,7 @@ import {
   type Workspace,
 } from './domain/invoice'
 
+// Keep the existing key so the versioned decoder can open workspaces from earlier releases.
 export const storageKey = 'invoice-core:workspace:v1'
 
 export function decodeWorkspace(raw: string): Workspace | null {

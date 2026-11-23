@@ -4,11 +4,15 @@ Invoice Core is a browser-local invoice editor for freelancers, independent stud
 
 ## Main workflow
 
-Choose a sender profile, enter invoice and billing details, add line items, and check the live document before saving or downloading it as an A4 PDF. On mobile, switch between Edit and Preview without losing work. The app keeps one active draft automatically; Save invoice adds or updates a record in history. History supports search, company and status filtering, inline status updates, direct PDF download, reopening, duplication, and deletion. Backup shows local storage usage and supports JSON export, validated restore, and confirmed workspace clearing.
+**Invoices** is the landing list. Search or filter saved invoices, update their status, download PDFs, reopen, duplicate, or delete records. **Create invoice** opens a blank draft; duplicating opens a new draft populated from the source invoice. Neither action adds a record until the draft is explicitly created. Open a saved invoice and use **Save changes** to update it. One active draft is kept locally; return to it using **Resume draft**.
+
+Use the optional **Company** and **Add product** pickers at the top of the editor to copy sender defaults or add a single priced line from the catalog. Everything can also be entered manually. The **Client** field searches prior invoices or accepts a new name inline. **Products** and **Companies** use dialogs for editing. From **Invoices → Backup**, export JSON, restore a validated backup, or confirm clearing the workspace.
+
+The preview and A4 PDF use the same invoice values and money formatting. On mobile, switch between Edit and Preview without losing the draft.
 
 ## Data and access
 
-No login is required. Invoice data, company profiles, logos, and theme are stored in the browser profile for the current origin. They are not encrypted by the app or synchronized. Use a dedicated browser profile on a shared device and edit the workspace in one tab at a time. Export a private JSON backup before clearing site data, moving origins, or replacing the workspace. Restore accepts Invoice Core backups only.
+No login is required. Invoice data, products, company profiles, logos, and theme are stored in the browser profile for the current origin. They are not encrypted by the app or synchronized. Use a dedicated browser profile on a shared device and edit the workspace in one tab at a time. Export a private JSON backup before clearing site data, moving origins, or replacing the workspace. Restore accepts Invoice Core backups only.
 
 The built workspace can be installed and reopened offline in supported browsers after preparation on HTTPS or localhost.
 

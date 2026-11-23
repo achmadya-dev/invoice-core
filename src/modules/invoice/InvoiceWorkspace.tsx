@@ -2,18 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import {
   duplicateInvoice,
   invoiceError,
-  newCompany,
   newInvoice,
   newItem,
   newWorkspace,
   saveDraft,
+  saveProduct,
   updateInvoiceStatus,
   type Invoice,
   type InvoiceStatus,
   type Workspace,
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
-import { ConfirmModal, Icon, ThemeSelect, type ConfirmState } from './invoice-ui'
+import { ProductsPanel } from './ProductsPanel'
+import { ConfirmModal, Icon, ThemeSelect, WorkspaceDialog, type ConfirmState } from './invoice-ui'
 import { Backup, Companies, InvoiceHistory } from './WorkspacePanels'
 import {
   downloadFile,
@@ -26,17 +27,18 @@ import { prepareOffline } from './offline.browser'
 import { loadPdfRenderer } from './pdf.browser'
 
 const panels = {
-  editor: 'Editor',
-  history: 'History',
+  invoices: 'Invoices',
+  products: 'Products',
   companies: 'Companies',
-  backup: 'Backup',
 } as const
-type Panel = keyof typeof panels
+type Panel = keyof typeof panels | 'editor'
 type Message = { text: string; error?: boolean }
 
 function panelFromHash(hash: string): Panel {
-  const value = hash.replace(/^#/, '')
-  return value === 'history' || value === 'companies' || value === 'backup' ? value : 'editor'
+  if (hash === '#editor') return 'editor'
+  if (hash === '#products' || hash === '#templates') return 'products'
+  if (hash === '#companies') return 'companies'
+  return 'invoices'
 }
 
 const panelCopy = {
@@ -44,17 +46,17 @@ const panelCopy = {
     title: 'Invoice editor',
     detail: 'Build your invoice and check the document as you type.',
   },
-  history: {
-    title: 'Invoice history',
+  invoices: {
+    title: 'Invoices',
     detail: 'Find, reopen, or duplicate an invoice saved on this device.',
+  },
+  products: {
+    title: 'Products',
+    detail: 'Manage the products and services you add to invoices.',
   },
   companies: {
     title: 'Companies',
     detail: 'Manage sender profiles, numbering, and reusable invoice defaults.',
-  },
-  backup: {
-    title: 'Backup',
-    detail: 'Take a copy of your workspace or restore it from a previous backup.',
   },
 }
 
@@ -63,7 +65,9 @@ export function InvoiceWorkspace() {
   const current = useRef<LocalWorkspace | null>(null)
   const [storageWarning, setStorageWarning] = useState('')
   const [message, setMessage] = useState<Message | null>(null)
-  const [panel, setPanel] = useState<Panel>('editor')
+  const [panel, setPanel] = useState<Panel>('invoices')
+  const [backupOpen, setBackupOpen] = useState(false)
+  const [backupConfirm, setBackupConfirm] = useState<ConfirmState | null>(null)
   const [view, setView] = useState<'edit' | 'preview'>('edit')
   const [pdfBusyId, setPdfBusyId] = useState<string | null>(null)
   const [offlineReady, setOfflineReady] = useState(false)
@@ -76,6 +80,7 @@ export function InvoiceWorkspace() {
     setLocal(initial)
     setStorageWarning(initial.warning)
     setPanel(panelFromHash(window.location.hash))
+    setBackupOpen(window.location.hash === '#backup')
     const crossTab = (event: StorageEvent) => {
       if (
         (event.key === storageKey || event.key === null) &&
@@ -88,6 +93,8 @@ export function InvoiceWorkspace() {
     }
     const syncFromLocation = () => {
       setPanel(panelFromHash(window.location.hash))
+      setBackupOpen(window.location.hash === '#backup')
+      setBackupConfirm(null)
       setView('edit')
       setMessage(null)
     }
@@ -142,7 +149,9 @@ export function InvoiceWorkspace() {
     setPanel(next)
     setView('edit')
     setMessage(null)
-    const nextHash = next === 'editor' ? '' : `#${next}`
+    setBackupOpen(false)
+    setBackupConfirm(null)
+    const nextHash = next === 'invoices' ? '' : `#${next}`
     if (window.location.hash !== nextHash) {
       window.history.pushState(
         null,
@@ -191,9 +200,7 @@ export function InvoiceWorkspace() {
       cancelLabel?: string
     },
   ) {
-    const company = data.companies[0] ?? newCompany('Personal')
-    const companies = data.companies.length ? data.companies : [company]
-    replaceDraft({ ...data, companies }, newInvoice(company, data.invoices), false, prompt)
+    replaceDraft(data, newInvoice(undefined, data.invoices), false, prompt)
   }
 
   function saveEditor() {
@@ -201,12 +208,18 @@ export function InvoiceWorkspace() {
     if (!data) return
     const result = saveDraft(data)
     if (!result.ok) setMessage({ text: result.message, error: true })
-    else if (commit(result.data)) setMessage({ text: 'Invoice saved to history.' })
+    else if (commit(result.data)) {
+      show('invoices')
+      setMessage({ text: 'Invoice saved.' })
+    }
   }
 
   function loadExample() {
     editDraft((invoice) => ({
       ...invoice,
+      number: invoice.number || 'EXAMPLE-001',
+      issueDate: invoice.issueDate || '2026-11-23',
+      dueDate: invoice.dueDate || '2026-12-07',
       sender: {
         ...invoice.sender,
         name: 'Northline Studio',
@@ -245,7 +258,7 @@ export function InvoiceWorkspace() {
     )
   }
 
-  function deleteInvoice(invoice: Invoice, replaceActiveDraft = false) {
+  function deleteInvoice(invoice: Invoice) {
     setConfirmModal({
       title: `Delete invoice ${invoice.number}?`,
       description:
@@ -256,28 +269,16 @@ export function InvoiceWorkspace() {
         const data = current.current?.data
         if (!data) return
         const remaining = data.invoices.filter((entry) => entry.id !== invoice.id)
-        if (replaceActiveDraft) {
-          const company =
-            data.companies.find((entry) => entry.id === invoice.companyId) ??
-            data.companies[0] ??
-            newCompany('Personal')
-          const companies = data.companies.length ? data.companies : [company]
-          if (
-            commit({
-              ...data,
-              companies,
-              invoices: remaining,
-              draft: newInvoice(company, remaining),
-              dirty: false,
-            })
-          ) {
-            setView('edit')
-            setMessage({ text: 'Invoice removed from history.' })
-          }
-          return
-        }
-        if (commit({ ...data, invoices: remaining })) {
-          setMessage({ text: 'Invoice removed from history.' })
+        const deletingActive = data.draft.id === invoice.id
+        if (
+          commit({
+            ...data,
+            invoices: remaining,
+            ...(deletingActive && !data.dirty ? { draft: newInvoice(undefined, remaining) } : {}),
+          })
+        ) {
+          show('invoices')
+          setMessage({ text: 'Invoice deleted.' })
         }
       },
     })
@@ -289,7 +290,10 @@ export function InvoiceWorkspace() {
       { ...fresh, theme: current.current?.data.theme ?? 'system' },
       { restore: true },
     )
-    if (ok) setMessage({ text: 'Local workspace cleared.' })
+    if (ok) {
+      show('invoices')
+      setMessage({ text: 'Local workspace cleared.' })
+    }
     return ok
   }
 
@@ -330,19 +334,21 @@ export function InvoiceWorkspace() {
     <div className="ic-workspace" data-theme={theme}>
       <header className="ic-topbar">
         <div className="ic-shell ic-topbar-inner">
-          <button type="button" className="ic-brand" onClick={() => show('editor')}>
+          <button type="button" className="ic-brand" onClick={() => show('invoices')}>
             <span className="ic-brand-mark">
               <Icon name="mark" />
             </span>{' '}
             Invoice Core
           </button>
           <nav className="ic-nav" aria-label="Workspace">
-            {(Object.keys(panels) as Panel[]).map((key) => (
+            {(Object.keys(panels) as (keyof typeof panels)[]).map((key) => (
               <button
                 key={key}
                 type="button"
                 disabled={!data}
-                aria-current={key === panel ? 'page' : undefined}
+                aria-current={
+                  key === (panel === 'editor' ? 'invoices' : panel) ? 'page' : undefined
+                }
                 onClick={() => show(key)}
               >
                 {panels[key]}
@@ -366,17 +372,15 @@ export function InvoiceWorkspace() {
           </div>
           {data && panel === 'editor' && draft && (
             <div className="ic-actions ic-heading-actions">
-              {isSavedDraft && (
-                <button type="button" className="ic-text-button" onClick={() => startDraft(data)}>
-                  <Icon name="plus" /> New invoice
-                </button>
-              )}
-              <button type="button" className="ic-button" onClick={saveEditor}>
-                Save invoice
+              <button type="button" className="ic-text-button" onClick={() => show('invoices')}>
+                Back to invoices
+              </button>
+              <button type="button" className="ic-button ic-primary" onClick={saveEditor}>
+                {isSavedDraft ? 'Save changes' : 'Create invoice'}
               </button>
               <button
                 type="button"
-                className="ic-button ic-primary"
+                className="ic-button"
                 disabled={pdfBusyId !== null}
                 onClick={() => void downloadPdf(draft)}
               >
@@ -385,10 +389,24 @@ export function InvoiceWorkspace() {
               </button>
             </div>
           )}
-          {data && panel === 'history' && (
-            <button type="button" className="ic-button ic-primary" onClick={() => startDraft(data)}>
-              <Icon name="plus" /> New invoice
-            </button>
+          {data && panel === 'invoices' && (
+            <div className="ic-actions ic-heading-actions">
+              <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>
+                Backup
+              </button>
+              {data.dirty && (
+                <button type="button" className="ic-button" onClick={() => show('editor')}>
+                  Resume draft
+                </button>
+              )}
+              <button
+                type="button"
+                className="ic-button ic-primary"
+                onClick={() => startDraft(data)}
+              >
+                <Icon name="plus" /> Create invoice
+              </button>
+            </div>
           )}
         </div>
         {storageWarning && (
@@ -430,17 +448,15 @@ export function InvoiceWorkspace() {
                 : undefined
             }
             onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(data.draft) : undefined}
-            onDelete={isSavedDraft ? () => deleteInvoice(data.draft, true) : undefined}
-            requestConfirm={setConfirmModal}
+            onDelete={isSavedDraft ? () => deleteInvoice(data.draft) : undefined}
           />
         )}
-        {data && panel === 'history' && (
+        {data && panel === 'invoices' && (
           <InvoiceHistory
             workspace={data}
             pdfBusyId={pdfBusyId}
-            newDraft={() => show('editor')}
             open={(invoice) => {
-              if (invoice.id === data.draft.id && !data.dirty) show('editor')
+              if (invoice.id === data.draft.id) show('editor')
               else replaceDraft(data, invoice)
             }}
             downloadPdf={(invoice) => void downloadPdf(invoice)}
@@ -451,6 +467,42 @@ export function InvoiceWorkspace() {
             }}
             duplicate={duplicateSavedInvoice}
             remove={(invoice) => deleteInvoice(invoice)}
+          />
+        )}
+        {data && panel === 'products' && (
+          <ProductsPanel
+            products={data.products}
+            defaultCurrency={data.draft.currency}
+            theme={theme}
+            save={(product) => {
+              const latest = current.current?.data
+              if (!latest) return { ok: false }
+              const result = saveProduct(latest, product)
+              if (!result.ok) return result
+              if (!commit(result.data)) return { ok: false }
+              setMessage({ text: 'Product saved.' })
+              return { ok: true }
+            }}
+            remove={(product) => {
+              setConfirmModal({
+                title: `Delete ${product.name}?`,
+                description: 'Existing invoice drafts and saved invoices keep their line items.',
+                confirmLabel: 'Delete product',
+                danger: true,
+                onConfirm: () => {
+                  const latest = current.current?.data
+                  if (!latest) return
+                  if (
+                    commit({
+                      ...latest,
+                      products: latest.products.filter(({ id }) => id !== product.id),
+                    })
+                  ) {
+                    setMessage({ text: 'Product removed.' })
+                  }
+                },
+              })
+            }}
           />
         )}
         {data && panel === 'companies' && (
@@ -466,7 +518,7 @@ export function InvoiceWorkspace() {
               if (ok) setMessage({ text: 'Sender profile saved.' })
               return ok
             }}
-            requestRemove={(company, onDeleted) => {
+            remove={(company) => {
               setConfirmModal({
                 title: `Delete ${company.sender.name}?`,
                 description: 'Saved invoices keep their existing sender details.',
@@ -481,29 +533,46 @@ export function InvoiceWorkspace() {
                   })
                   if (ok) {
                     setMessage({ text: 'Sender profile removed.' })
-                    onDeleted()
                   }
                 },
               })
             }}
           />
         )}
-        {data && panel === 'backup' && (
-          <Backup
-            workspace={data}
-            storageBytes={new Blob([local?.raw ?? JSON.stringify(data)]).size}
-            damaged={local.damaged ? local.raw : null}
-            restore={(restored) => {
-              const ok = commit(restored, { restore: true })
-              if (ok)
-                setMessage({
-                  text: 'Backup restored. Open the editor or history to see the restored records.',
-                })
-              return ok
+        {data && panel === 'invoices' && (
+          <WorkspaceDialog
+            open={backupOpen}
+            title="Backup"
+            description="Export, restore, or clear the workspace on this device."
+            theme={theme}
+            onClose={() => {
+              setBackupOpen(false)
+              setBackupConfirm(null)
             }}
-            clear={clearWorkspace}
-            requestConfirm={setConfirmModal}
-          />
+          >
+            {backupOpen && (
+              <Backup
+                workspace={data}
+                storageBytes={new Blob([local?.raw ?? JSON.stringify(data)]).size}
+                damaged={local.damaged ? local.raw : null}
+                restore={(restored) => {
+                  const ok = commit(restored, { restore: true })
+                  if (ok) {
+                    show('invoices')
+                    setMessage({ text: 'Backup restored.' })
+                  }
+                  return ok
+                }}
+                clear={clearWorkspace}
+                requestConfirm={setBackupConfirm}
+              />
+            )}
+            <ConfirmModal
+              confirm={backupConfirm}
+              theme={theme}
+              onClose={() => setBackupConfirm(null)}
+            />
+          </WorkspaceDialog>
         )}
         <footer className="ic-footer">
           <span>Invoice data stays in this browser. Keep a backup.</span>

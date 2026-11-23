@@ -40,7 +40,7 @@ try {
   assert.equal(response.status, 200, output)
   const html = await response.text()
   assert.ok(html.includes('<html lang="en">'), 'Home page must declare English as its language')
-  assert.ok(html.includes('Invoice editor'), 'Home page should render the invoice editor shell')
+  assert.match(html, /<h1>Invoices<\/h1>/, 'Home page should render the invoice list shell')
   assert.ok(html.includes('Opening the local workspace'), 'Browser data must load after hydration')
   assert.ok(html.includes('/invoice.webmanifest'), 'Home page should link the PWA manifest')
   assert.ok(!html.includes('Sign in'), 'Home page must not expose a sign-in control')

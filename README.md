@@ -15,10 +15,10 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000). No `.env` file or database 
 
 ## Use the workspace
 
-- **Editor:** choose a sender, fill in billing details and items, then review the live document. On mobile, switch between Edit and Preview. Use **Save invoice** to add or update a history record.
-- **History and companies:** search, reopen, or duplicate invoices. Manage sender profiles, logos, and invoice numbering. Changes to a profile do not rewrite older invoices.
+- **Invoices:** search, create, reopen, or duplicate invoices. Use **Create invoice** or **Save changes** in the editor to commit your draft to the list. On mobile, switch between Edit and Preview.
+- **Products and Companies:** manage reusable line items and sender defaults in dialogs. Pick a company or product at the top of the editor, or fill the invoice manually. The client field searches saved invoices or accepts a new name.
 - **PDF:** download directly or use **Print / Save as PDF** for scripts not covered by the embedded Latin, Greek, and Cyrillic font.
-- **Backup:** invoices, settings, and the working draft belong to the current browser profile and origin. Download a private JSON backup before clearing site data or moving to another address.
+- **Backup:** use **Invoices → Backup** to download a private JSON copy of the workspace before clearing site data or moving to another address.
 - **Offline:** supported browsers can reopen and install the production workspace after **Available offline** appears. Use HTTPS or localhost.
 
 ## Verify

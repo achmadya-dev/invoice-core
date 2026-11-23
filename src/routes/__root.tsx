@@ -20,7 +20,7 @@ export const Route = createRootRoute({
   notFoundComponent: () => (
     <RouteMessage title="Page not found" detail="Open the Invoice Core editor to continue.">
       <Link to="/" className="ic-button ic-primary">
-        Back to editor
+        Back to invoices
       </Link>
     </RouteMessage>
   ),
