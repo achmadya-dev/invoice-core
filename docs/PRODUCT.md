@@ -4,7 +4,7 @@ Invoice Core is a browser-local invoice editor for freelancers, independent stud
 
 ## Main workflow
 
-Choose a sender profile, enter invoice and billing details, add line items, and check the live document before saving or downloading it as an A4 PDF. On mobile, switch between Edit and Preview without losing work. The app keeps one active draft automatically; Save invoice adds or updates a record in history. History supports search, company filtering, reopening, and duplication.
+Choose a sender profile, enter invoice and billing details, add line items, and check the live document before saving or downloading it as an A4 PDF. On mobile, switch between Edit and Preview without losing work. The app keeps one active draft automatically; Save invoice adds or updates a record in history. History supports search, company and status filtering, inline status updates, direct PDF download, reopening, duplication, and deletion. Backup shows local storage usage and supports JSON export, validated restore, and confirmed workspace clearing.
 
 ## Data and access
 

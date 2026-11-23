@@ -42,22 +42,94 @@ export function currencyName(code: string) {
   return currencyNames.of(code) ?? code
 }
 
-export const lineTemplates = [
+export type LineTemplate = {
+  group: string
+  name: string
+  lines: readonly string[]
+}
+
+export const lineTemplates: readonly LineTemplate[] = [
   {
-    name: 'Software development',
-    lines: ['Development services', 'Technical review', 'Hosting and tools'],
+    group: 'Software & IT',
+    name: 'Software development — retainer',
+    lines: [
+      'Monthly software engineering retainer',
+      'Additional development hours',
+      'Technical advisory and code review',
+    ],
   },
-  { name: 'Managed IT', lines: ['Monthly support', 'On-site visits', 'Licenses and hardware'] },
   {
-    name: 'Coaching and consulting',
-    lines: ['Consulting session', 'Preparation', 'Follow-up materials'],
+    group: 'Software & IT',
+    name: 'Dev + infrastructure (pass-through)',
+    lines: [
+      'Development services',
+      'Cloud hosting (pass-through)',
+      'Third-party SaaS subscriptions (pass-through)',
+      'Domain and SSL (pass-through)',
+    ],
   },
-  { name: 'Design project', lines: ['Design services', 'Brand assets', 'Revisions and handoff'] },
   {
-    name: 'Bookkeeping and tax',
-    lines: ['Monthly bookkeeping', 'Reconciliation', 'Tax preparation'],
+    group: 'Software & IT',
+    name: 'IT / software consulting — hourly',
+    lines: ['Engineering consulting', 'Project coordination'],
   },
-  { name: 'Finance and advisory', lines: ['Advisory services', 'Financial modeling', 'Analysis'] },
-  { name: 'Professional services', lines: ['Professional services', 'Reimbursable expenses'] },
-  { name: 'Products and goods', lines: ['Product', 'Packaging'] },
+  {
+    group: 'Software & IT',
+    name: 'Managed IT / support',
+    lines: [
+      'Monthly managed IT support',
+      'On-site and remote support visits',
+      'Licenses and hardware',
+    ],
+  },
+  {
+    group: 'Coaching & Consulting',
+    name: 'Coaching — hourly',
+    lines: ['Coaching session', 'Preparation and follow-up notes'],
+  },
+  {
+    group: 'Coaching & Consulting',
+    name: 'Advisory / strategy consulting',
+    lines: ['Strategy consulting', 'Facilitated workshop'],
+  },
+  {
+    group: 'Design',
+    name: 'Design project',
+    lines: ['Design services', 'Brand assets', 'Revisions and handoff'],
+  },
+  {
+    group: 'Accounting & Tax',
+    name: 'Monthly bookkeeping',
+    lines: ['Monthly bookkeeping', 'Account reconciliation', 'Financial statements preparation'],
+  },
+  {
+    group: 'Accounting & Tax',
+    name: 'Tax & compliance',
+    lines: ['Tax return preparation', 'Tax advisory', 'Filing fees (pass-through)'],
+  },
+  {
+    group: 'Accounting & Tax',
+    name: 'Payroll services',
+    lines: ['Payroll processing', 'Payroll setup and onboarding'],
+  },
+  {
+    group: 'Finance & Advisory',
+    name: 'Financial advisory',
+    lines: ['Advisory services', 'Financial modeling', 'Valuation and analysis'],
+  },
+  {
+    group: 'Finance & Advisory',
+    name: 'Due diligence / M&A',
+    lines: ['Financial due diligence', 'Transaction advisory'],
+  },
+  {
+    group: 'General',
+    name: 'General professional services',
+    lines: ['Professional services', 'Reimbursable expenses (pass-through)'],
+  },
+  {
+    group: 'General',
+    name: 'Products / goods',
+    lines: ['Product', 'Shipping and handling'],
+  },
 ]

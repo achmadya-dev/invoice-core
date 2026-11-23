@@ -1,36 +1,47 @@
 import { useRef, useState, type FormEvent } from 'react'
 import {
   companyError,
+  formatBytes,
   formatDate,
   formatMoney,
+  invoiceStatuses,
   invoiceTotals,
   maxBackupBytes,
   maxCompanies,
+  maxInvoices,
   newCompany,
   type Company,
   type Invoice,
+  type InvoiceStatus,
   type Theme,
   type Workspace,
 } from './domain/invoice'
-import { CurrencySelect, Icon, SelectField, SenderFields } from './invoice-ui'
+import { CurrencySelect, Icon, SelectField, SenderFields, type ConfirmState } from './invoice-ui'
 import { DecimalField } from './InvoiceEditor'
 import { decodeWorkspace, downloadFile } from './workspace.browser'
 
 export function InvoiceHistory({
   workspace,
+  pdfBusyId,
   open,
+  downloadPdf,
+  updateStatus,
   duplicate,
   remove,
   newDraft,
 }: {
   workspace: Workspace
+  pdfBusyId: string | null
   open: (invoice: Invoice) => void
+  downloadPdf: (invoice: Invoice) => void
+  updateStatus: (invoice: Invoice, status: InvoiceStatus) => void
   duplicate: (invoice: Invoice) => void
   remove: (invoice: Invoice) => void
   newDraft: () => void
 }) {
   const [query, setQuery] = useState('')
   const [profile, setProfile] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'' | InvoiceStatus>('')
   const choices = new Map(workspace.companies.map((company) => [company.id, company.sender.name]))
   for (const invoice of workspace.invoices)
     if (!choices.has(invoice.companyId)) choices.set(invoice.companyId, invoice.sender.name)
@@ -38,6 +49,7 @@ export function InvoiceHistory({
   const filtered = workspace.invoices.filter(
     (invoice) =>
       (!profile || invoice.companyId === profile) &&
+      (!statusFilter || invoice.status === statusFilter) &&
       [invoice.number, invoice.client.name, invoice.sender.name, invoice.status].some((value) =>
         value.toLowerCase().includes(search),
       ),
@@ -57,11 +69,33 @@ export function InvoiceHistory({
         <SelectField
           label="Filter by company"
           value={profile}
-          placeholder="All companies"
-          options={Array.from(choices, ([id, name]) => ({ value: id, label: name }))}
+          options={[
+            { value: '', label: 'All companies' },
+            ...Array.from(choices, ([id, name]) => ({ value: id, label: name })),
+          ]}
           onChange={setProfile}
         />
+        <SelectField
+          label="Filter by status"
+          value={statusFilter}
+          options={[
+            { value: '', label: 'All statuses' },
+            ...invoiceStatuses.map((status) => ({
+              value: status,
+              label: `${status[0]?.toUpperCase()}${status.slice(1)}`,
+            })),
+          ]}
+          onChange={(value) => {
+            const match = invoiceStatuses.find((entry) => entry === value)
+            setStatusFilter(match ?? '')
+          }}
+        />
       </div>
+      {workspace.invoices.length > 0 && (
+        <p className="ic-history-meta">
+          Showing {filtered.length} of {workspace.invoices.length} saved invoice(s)
+        </p>
+      )}
       {workspace.invoices.length === 0 ? (
         <div className="ic-empty">
           <h2>No saved invoices yet</h2>
@@ -93,9 +127,31 @@ export function InvoiceHistory({
                 </div>
                 <div className="ic-record-total">
                   <strong>{totals && formatMoney(totals.total, invoice.currency)}</strong>
-                  <span className={`ic-tag ic-${invoice.status}`}>{invoice.status}</span>
+                  <SelectField
+                    label={`Status for ${invoice.number}`}
+                    compact
+                    triggerClassName={`ic-status-trigger ic-${invoice.status}`}
+                    value={invoice.status}
+                    options={invoiceStatuses.map((status) => ({
+                      value: status,
+                      label: `${status[0]?.toUpperCase()}${status.slice(1)}`,
+                    }))}
+                    onChange={(nextStatus) => {
+                      const match = invoiceStatuses.find((entry) => entry === nextStatus)
+                      if (match && match !== invoice.status) updateStatus(invoice, match)
+                    }}
+                  />
                 </div>
                 <div className="ic-actions">
+                  <button
+                    className="ic-button"
+                    type="button"
+                    aria-label={`Download PDF for ${invoice.number}`}
+                    disabled={pdfBusyId !== null}
+                    onClick={() => downloadPdf(invoice)}
+                  >
+                    <Icon name="download" /> {pdfBusyId === invoice.id ? 'Preparing…' : 'PDF'}
+                  </button>
                   <button
                     className="ic-button"
                     type="button"
@@ -125,12 +181,12 @@ export function InvoiceHistory({
 export function Companies({
   companies,
   save,
-  remove,
+  requestRemove,
   theme,
 }: {
   companies: Company[]
   save: (company: Company) => boolean
-  remove: (company: Company) => boolean
+  requestRemove: (company: Company, onDeleted: () => void) => void
   theme: Theme
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
@@ -288,9 +344,7 @@ export function Companies({
                 <button
                   className="ic-text-button"
                   type="button"
-                  onClick={() => {
-                    if (remove(selected)) edit(null)
-                  }}
+                  onClick={() => requestRemove(selected, () => edit(null))}
                 >
                   Delete company
                 </button>
@@ -313,18 +367,44 @@ export function Companies({
 
 export function Backup({
   workspace,
+  storageBytes,
   damaged,
   restore,
+  clear,
+  requestConfirm,
 }: {
   workspace: Workspace
+  storageBytes: number
   damaged: string | null
   restore: (data: Workspace) => boolean
+  clear: () => boolean
+  requestConfirm: (confirm: ConfirmState) => void
 }) {
-  const [candidate, setCandidate] = useState<Workspace | null>(null)
   const [error, setError] = useState('')
   const importAttempt = useRef(0)
   return (
     <div className="ic-company-layout">
+      <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Local storage">
+        <h2>Local storage</h2>
+        <dl className="ic-stats">
+          <div>
+            <dt>Saved invoices</dt>
+            <dd className="ic-mono">
+              {workspace.invoices.length} / {maxInvoices}
+            </dd>
+          </div>
+          <div>
+            <dt>Sender profiles</dt>
+            <dd className="ic-mono">
+              {workspace.companies.length} / {maxCompanies}
+            </dd>
+          </div>
+          <div>
+            <dt>Storage used</dt>
+            <dd className="ic-mono">{formatBytes(storageBytes)}</dd>
+          </div>
+        </dl>
+      </section>
       <section className="ic-editor ic-panel ic-panel-pad">
         <h2>Export a backup</h2>
         <p className="ic-muted ic-note">
@@ -374,17 +454,27 @@ export function Backup({
               const file = event.currentTarget.files?.[0]
               event.currentTarget.value = ''
               const attempt = ++importAttempt.current
-              setCandidate(null)
               setError('')
               if (!file) return
               try {
                 const data = file.size <= maxBackupBytes ? decodeWorkspace(await file.text()) : null
                 if (attempt !== importAttempt.current) return
-                if (data) setCandidate(data)
-                else
+                if (data) {
+                  requestConfirm({
+                    title: 'Restore backup?',
+                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), and one active draft. Replace the local workspace with this backup?`,
+                    confirmLabel: 'Replace local workspace',
+                    cancelLabel: 'Cancel restore',
+                    danger: true,
+                    onConfirm: () => {
+                      restore(data)
+                    },
+                  })
+                } else {
                   setError(
                     'This is not a valid Invoice Core backup (maximum 8 MB). Nothing was replaced.',
                   )
+                }
               } catch {
                 if (attempt === importAttempt.current)
                   setError('The file could not be read. Nothing was replaced.')
@@ -397,28 +487,33 @@ export function Backup({
             {error}
           </p>
         )}
-        {candidate && (
-          <div className="ic-confirm ic-note">
-            <p>
-              {candidate.invoices.length} saved invoice(s), {candidate.companies.length} sender
-              profile(s), and one active draft. Replace this workspace with the selected backup?
-            </p>
-            <div className="ic-actions ic-note">
-              <button
-                className="ic-button ic-primary"
-                type="button"
-                onClick={() => {
-                  if (restore(candidate)) setCandidate(null)
-                }}
-              >
-                Replace local workspace
-              </button>
-              <button className="ic-button" type="button" onClick={() => setCandidate(null)}>
-                Cancel restore
-              </button>
-            </div>
-          </div>
-        )}
+      </section>
+      <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Reset local data">
+        <h2>Reset local data</h2>
+        <p className="ic-muted ic-note">
+          Remove all saved invoices, sender profiles, and the active draft from this browser. Export
+          a JSON backup first.
+        </p>
+        <div className="ic-actions ic-note">
+          <button
+            className="ic-button ic-danger"
+            type="button"
+            onClick={() =>
+              requestConfirm({
+                title: 'Clear local workspace?',
+                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), and the active draft from this browser. Download a JSON backup first.`,
+                confirmLabel: 'Confirm clear workspace',
+                cancelLabel: 'Cancel clear',
+                danger: true,
+                onConfirm: () => {
+                  if (clear()) setError('')
+                },
+              })
+            }
+          >
+            Clear local workspace
+          </button>
+        </div>
       </section>
     </div>
   )

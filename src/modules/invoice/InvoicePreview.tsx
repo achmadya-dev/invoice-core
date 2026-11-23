@@ -2,7 +2,15 @@ import { invoiceDocument } from './document'
 import type { Invoice } from './domain/invoice'
 import { Icon } from './invoice-ui'
 
-export function InvoicePreview({ invoice }: { invoice: Invoice }) {
+export function InvoicePreview({
+  invoice,
+  focused,
+  onToggleFocus,
+}: {
+  invoice: Invoice
+  focused: boolean
+  onToggleFocus: () => void
+}) {
   const proof = invoiceDocument(invoice)
   return (
     <section className="ic-preview" id="invoice-preview" aria-labelledby="preview-title">
@@ -10,7 +18,17 @@ export function InvoicePreview({ invoice }: { invoice: Invoice }) {
         <h2 id="preview-title">
           <Icon name="document" /> Document preview
         </h2>
-        <span className="ic-mono">{invoice.currency}</span>
+        <div className="ic-panel-actions">
+          <span className="ic-mono">{invoice.currency}</span>
+          <button
+            type="button"
+            className="ic-preview-action ic-desktop-preview"
+            aria-pressed={focused}
+            onClick={onToggleFocus}
+          >
+            <Icon name={focused ? 'collapse' : 'expand'} /> {focused ? 'Split view' : 'Expand'}
+          </button>
+        </div>
       </div>
       <div className="ic-proof-stage">
         <article className="ic-proof" aria-label="Invoice document">

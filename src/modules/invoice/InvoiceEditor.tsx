@@ -9,7 +9,14 @@ import {
   type Invoice,
   type Workspace,
 } from './domain/invoice'
-import { ContactFields, CurrencySelect, Icon, SelectField, SenderFields } from './invoice-ui'
+import {
+  ContactFields,
+  CurrencySelect,
+  Icon,
+  SelectField,
+  SenderFields,
+  type ConfirmState,
+} from './invoice-ui'
 import { InvoicePreview } from './InvoicePreview'
 
 type EditInvoice = (edit: (invoice: Invoice) => Invoice) => void
@@ -19,11 +26,21 @@ export function InvoiceEditor({
   edit,
   view,
   setView,
+  onLoadExample,
+  onResetDraft,
+  onDuplicate,
+  onDelete,
+  requestConfirm,
 }: {
   workspace: Workspace
   edit: EditInvoice
   view: 'edit' | 'preview'
   setView: (view: 'edit' | 'preview') => void
+  onLoadExample?: () => void
+  onResetDraft?: () => void
+  onDuplicate?: () => void
+  onDelete?: () => void
+  requestConfirm: (confirm: ConfirmState) => void
 }) {
   const draft = workspace.draft
   const [template, setTemplate] = useState('')
@@ -55,7 +72,7 @@ export function InvoiceEditor({
           aria-controls="invoice-editor"
           onClick={() => setView('edit')}
         >
-          Edit
+          <Icon name="edit" /> Edit
         </button>
         <button
           type="button"
@@ -63,7 +80,7 @@ export function InvoiceEditor({
           aria-controls="invoice-preview"
           onClick={() => setView('preview')}
         >
-          Preview
+          <Icon name="document" /> Preview
         </button>
       </nav>
       <div className="ic-layout" data-view={view}>
@@ -72,7 +89,23 @@ export function InvoiceEditor({
             <h2 id="editor-title">
               <Icon name="edit" /> Edit invoice
             </h2>
-            <span className={`ic-tag ic-${draft.status}`}>{draft.status}</span>
+            <div className="ic-panel-actions">
+              {onLoadExample && (
+                <button type="button" className="ic-panel-button" onClick={onLoadExample}>
+                  Load example
+                </button>
+              )}
+              {onResetDraft && (
+                <button
+                  type="button"
+                  className="ic-panel-button ic-panel-button-danger"
+                  onClick={onResetDraft}
+                >
+                  Reset draft
+                </button>
+              )}
+              <span className={`ic-tag ic-${draft.status}`}>{draft.status}</span>
+            </div>
           </div>
           <div className="ic-editor-body">
             <section className="ic-section" aria-labelledby="details-title">
@@ -170,6 +203,22 @@ export function InvoiceEditor({
                     }}
                   />
                 </label>
+                {previousClients.size > 0 && (
+                  <SelectField
+                    label="Reuse a previous client"
+                    value=""
+                    placeholder="Select a client"
+                    span
+                    options={Array.from(previousClients.entries(), ([key, contact]) => ({
+                      value: key,
+                      label: contact.name,
+                    }))}
+                    onChange={(key) => {
+                      const contact = previousClients.get(key)
+                      if (contact) set('client', contact)
+                    }}
+                  />
+                )}
               </div>
               <details className="ic-detail">
                 <summary>Sender details</summary>
@@ -190,22 +239,6 @@ export function InvoiceEditor({
               <details className="ic-detail">
                 <summary>Billing details</summary>
                 <div className="ic-fields">
-                  {previousClients.size > 0 && (
-                    <SelectField
-                      label="Reuse a previous client"
-                      value=""
-                      placeholder="Select a client"
-                      span
-                      options={Array.from(previousClients.entries(), ([key, contact]) => ({
-                        value: key,
-                        label: contact.name,
-                      }))}
-                      onChange={(key) => {
-                        const contact = previousClients.get(key)
-                        if (contact) set('client', contact)
-                      }}
-                    />
-                  )}
                   <ContactFields
                     label="Billing contact"
                     contact={draft.client}
@@ -328,9 +361,11 @@ export function InvoiceEditor({
                   value={template}
                   placeholder="Choose a template"
                   compact
+                  popupClassName="ic-template-popup"
                   options={lineTemplates.map((entry) => ({
                     value: entry.name,
                     label: entry.name,
+                    group: entry.group,
                   }))}
                   onChange={setTemplate}
                 />
@@ -341,16 +376,24 @@ export function InvoiceEditor({
                   onClick={() => {
                     const chosen = lineTemplates.find((entry) => entry.name === template)
                     if (!chosen) return
+                    const applyTemplate = () => {
+                      set('items', chosen.lines.map(newItem))
+                      setTemplate('')
+                    }
                     const filled = draft.items.some(
                       (item) => item.description || item.rate || !['', '1'].includes(item.quantity),
                     )
-                    if (
-                      filled &&
-                      !window.confirm('Replace the current line items with this template?')
-                    )
+                    if (!filled) {
+                      applyTemplate()
                       return
-                    set('items', chosen.lines.map(newItem))
-                    setTemplate('')
+                    }
+                    requestConfirm({
+                      title: 'Replace current line items?',
+                      description: `Replace the existing line items on this draft with the ${chosen.name} template?`,
+                      confirmLabel: 'Replace line items',
+                      danger: true,
+                      onConfirm: applyTemplate,
+                    })
                   }}
                 >
                   Apply
@@ -422,11 +465,39 @@ export function InvoiceEditor({
             </section>
           </div>
           <div className="ic-editor-foot">
-            <span>Preview updates as you type</span>
-            <span>Stored on this device</span>
+            {saved && (onDuplicate || onDelete) ? (
+              <>
+                <span>Saved in local history</span>
+                <div className="ic-actions">
+                  {onDuplicate && (
+                    <button type="button" className="ic-panel-button" onClick={onDuplicate}>
+                      Duplicate
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      className="ic-panel-button ic-panel-button-danger"
+                      onClick={onDelete}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <span>Preview updates as you type</span>
+                <span>Stored on this device</span>
+              </>
+            )}
           </div>
         </section>
-        <InvoicePreview invoice={draft} />
+        <InvoicePreview
+          invoice={draft}
+          focused={view === 'preview'}
+          onToggleFocus={() => setView(view === 'edit' ? 'preview' : 'edit')}
+        />
       </div>
     </>
   )

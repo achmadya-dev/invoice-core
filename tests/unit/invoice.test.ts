@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
+import { lineTemplates } from '../../src/modules/invoice/domain/catalog'
 import {
   duplicateInvoice,
+  formatBytes,
   formatMoney,
   formatRate,
   invoiceTotals,
   newItem,
   newWorkspace,
   saveDraft,
+  updateInvoiceStatus,
   type Invoice,
 } from '../../src/modules/invoice/domain/invoice'
 import { decodeWorkspace } from '../../src/modules/invoice/workspace.browser'
@@ -133,5 +136,43 @@ describe('local invoice workspace', () => {
     expect(
       saveDraft({ ...workspace, draft: { ...draft, dueDate: '', items: [] } }, now),
     ).toMatchObject({ ok: false })
+  })
+
+  it('updates saved invoice status, syncs clean active drafts, and formats byte counts', () => {
+    const saved = saveDraft(filledDraft(), now)
+    if (!saved.ok) throw new Error(saved.message)
+    const invoiceId = saved.data.draft.id
+    const later = new Date('2026-10-13T08:00:00.000Z')
+
+    const paid = updateInvoiceStatus(saved.data, invoiceId, 'paid', later)
+    expect(paid.invoices[0]?.status).toBe('paid')
+    expect(paid.invoices[0]?.updatedAt).toBe(later.toISOString())
+    expect(paid.draft.status).toBe('paid')
+
+    const dirtyDraft = { ...paid, dirty: true, draft: { ...paid.draft, status: 'draft' as const } }
+    const sent = updateInvoiceStatus(dirtyDraft, invoiceId, 'sent', later)
+    expect(sent.invoices[0]?.status).toBe('sent')
+    expect(sent.draft.status).toBe('draft')
+
+    expect(updateInvoiceStatus(saved.data, 'missing-id', 'paid', later)).toBe(saved.data)
+
+    expect(formatBytes(-5)).toBe('0 B')
+    expect(formatBytes(512)).toBe('512 B')
+    expect(formatBytes(2560)).toBe('2.5 KB')
+    expect(formatBytes(1_572_864)).toBe('1.50 MB')
+  })
+
+  it('provides 14 grouped starter templates across 6 trade categories', () => {
+    expect(lineTemplates).toHaveLength(14)
+    expect(Array.from(new Set(lineTemplates.map((entry) => entry.group)))).toEqual([
+      'Software & IT',
+      'Coaching & Consulting',
+      'Design',
+      'Accounting & Tax',
+      'Finance & Advisory',
+      'General',
+    ])
+    expect(new Set(lineTemplates.map((entry) => entry.name)).size).toBe(14)
+    for (const entry of lineTemplates) expect(entry.lines.length).toBeGreaterThan(0)
   })
 })
