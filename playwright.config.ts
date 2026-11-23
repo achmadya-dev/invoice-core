@@ -15,7 +15,6 @@ export default defineConfig({
     command: 'bun run dev --port 3100',
     url: 'http://127.0.0.1:3100',
     reuseExistingServer: false,
-    env: { DATABASE_URL: '' },
     timeout: 120000,
   },
 })

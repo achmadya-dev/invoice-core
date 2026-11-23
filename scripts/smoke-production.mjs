@@ -4,10 +4,10 @@ import assert from 'node:assert/strict'
 
 assert.ok(process.versions.bun, 'Production smoke harness must run on Bun')
 const port = '3120'
+const origin = `http://127.0.0.1:${port}`
 const server = spawn(process.execPath, ['.output/server/index.mjs'], {
   env: {
     ...process.env,
-    DATABASE_URL: '',
     HOST: '127.0.0.1',
     PORT: port,
   },
@@ -30,7 +30,7 @@ try {
     if (startupError) throw startupError
     if (server.exitCode !== null) throw new Error(`Server exited: ${output}`)
     try {
-      response = await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(1000) })
+      response = await fetch(origin, { signal: AbortSignal.timeout(1000) })
       break
     } catch {
       await setTimeout(250)
@@ -40,16 +40,19 @@ try {
   assert.equal(response.status, 200, output)
   const html = await response.text()
   assert.ok(html.includes('<html lang="en">'), 'Home page must declare English as its language')
-  assert.ok(html.includes('YOUR NEXT PROJECT STARTS HERE'), 'Home page should render the template')
-  assert.ok(html.includes('From planning'), 'Home page should render English hero copy')
-  assert.ok(
-    html.includes('One repo. Clear plans. Verified changes.'),
-    'Footer copy should be English',
-  )
-  assert.ok(!html.includes('Catalog items'), 'Home page must not expose the catalog demo')
-  assert.ok(!html.includes('name="sku"'), 'Home page must not expose the catalog form')
+  assert.ok(html.includes('Invoice editor'), 'Home page should render the invoice editor shell')
+  assert.ok(html.includes('Opening the local workspace'), 'Browser data must load after hydration')
+  assert.ok(html.includes('/invoice.webmanifest'), 'Home page should link the PWA manifest')
+  assert.ok(!html.includes('Sign in'), 'Home page must not expose a sign-in control')
+  for (const path of ['/login', '/account', '/api/auth/get-session']) {
+    const removed = await fetch(`${origin}${path}`, { redirect: 'manual' })
+    assert.equal(removed.status, 404, `Removed route ${path} must return 404`)
+    assert.ok((await removed.text()).includes('Page not found'))
+  }
+  const formerSignIn = await fetch(`${origin}/api/auth/sign-in/email`, { method: 'POST' })
+  assert.equal(formerSignIn.status, 404, 'Former sign-in endpoint must not accept requests')
   console.log(
-    `Production smoke passed on Bun ${process.versions.bun}: HTTP 200, template home rendered without DB credentials.`,
+    `Production smoke passed on Bun ${process.versions.bun}: invoice shell HTTP 200; former account and auth routes HTTP 404.`,
   )
 } finally {
   server.kill('SIGTERM')

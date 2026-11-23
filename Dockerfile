@@ -2,10 +2,6 @@ FROM oven/bun:1.4.2 AS build
 
 WORKDIR /app
 
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes g++ make python3 \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY package.json bun.lock ./
 RUN HUSKY=0 bun install --frozen-lockfile
 
@@ -23,7 +19,6 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --from=build --chown=bun:bun /app/.output ./.output
-RUN mkdir -p /app/.data && chown bun:bun /app/.data
 
 USER bun
 

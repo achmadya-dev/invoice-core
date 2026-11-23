@@ -1,23 +1,13 @@
 # GitHub setup
 
-This repository is a template. The instructions below apply to a new project created from it. GitHub branch protection is configured per repository and is not enabled by files in this template alone.
-
-## Create a private repository
-
-Use the GitHub UI to create a private repository from this template, or use the GitHub CLI:
-
-```sh
-gh repo create OWNER/PROJECT_NAME --private --template TEMPLATE_OWNER/TEMPLATE_REPO --clone
-```
-
-Replace the owner and repository names first. If the project directory already has Git history or a remote, do not initialize it or add another remote; inspect `git status` and `git remote -v` first.
+Manage branch protection in the Invoice Core repository settings. Repository files do not enable or prove those protections.
 
 Never commit `.env`, `node_modules`, build output, or credentials. Use `docs/tasks/TEMPLATE.md` for local planning when GitHub is unavailable. Do not invent historical issues or pull requests.
 
-## After creating the repository
+## Repository settings
 
-1. Enable Issues. GitHub Actions is not required; this template has no Actions workflow.
-2. Open a test pull request using the template and link a real issue from the same repository. Run `bun run verify` locally and record the tested commit, results, and limitations in the PR.
+1. Enable Issues. No GitHub Actions workflow is required.
+2. Use the pull request template and link a real issue. Run `bun run verify` locally and record the tested commit, results, and limitations in the PR.
 3. Run the metadata verifier from a trusted base revision against the PR body and changed-file list; see `docs/WORKFLOW.md`. It is not a hosted check.
 4. Add a ruleset for `main` when supported: require pull requests, block force pushes and branch deletion. Do **not** require `quality`, `database-and-browser`, `pr-contract`, or any other check that does not run. Remove those required checks from existing rulesets or branch protection before relying on this workflow; otherwise merges may remain blocked.
 5. Do not grant agents or agent GitHub Apps ruleset bypass access.
@@ -42,7 +32,7 @@ Do not create a local task just to copy the issue. Replace example paths with re
 `bun install` runs `prepare` and installs Husky hooks in the local repository.
 
 - `.husky/pre-commit` runs `bun run lint:staged`. Staged JS/TS files are fixed with ESLint and formatted with Prettier; CSS/JSON files are formatted with Prettier.
-- `.husky/pre-push` runs `bun run check`, including `format:check`. This is a local convenience, not a remote gate; run `bun run verify` and any applicable optional provider suites before requesting review.
+- `.husky/pre-push` runs `bun run check`, including `format:check`. This is a local convenience, not a remote gate; run `bun run verify` before requesting review.
 - `prettier-plugin-tailwindcss` uses `src/styles.css` as the Tailwind v4 stylesheet for sorting utility classes.
 - `bun.lock` and generated `src/routeTree.gen.ts` are excluded from formatting.
 

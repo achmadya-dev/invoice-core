@@ -52,22 +52,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/server/**/*.ts'],
-    ignores: ['src/server/portable-database.server.ts'],
-    rules: {
-      'no-restricted-imports': ['error', { patterns: ['pg'] }],
-    },
-  },
-  {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/server/env.server.ts'],
     rules: {
       'no-restricted-properties': [
         'error',
         {
           object: 'process',
           property: 'env',
-          message: 'Use getEnv() from src/server/env.server.ts in application code.',
+          message: 'Invoice Core has no runtime environment configuration in application code.',
         },
       ],
     },

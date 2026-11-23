@@ -1,6 +1,6 @@
 # ADR [NNNN]: [Decision title]
 
-Use this template for a durable project decision. See [ADR guidance](README.md) and the starter's existing decisions before adding a new record.
+Use this template for a durable project decision. Read [ADR guidance](README.md) and the existing decisions before adding a new record.
 
 Status: proposed
 Date: YYYY-MM-DD

@@ -1,23 +1,17 @@
 # Product context
 
-Status: not configured for a business product.
+Invoice Core is a browser-local invoice editor for freelancers, independent studios, and small teams whose invoicing work stays on one device.
 
-## Template goal
+## Main workflow
 
-Start a full-stack project and keep work traceable from prompt → plan → implementation → verification → pull request.
+Choose a sender profile, enter invoice and billing details, add line items, and check the live document before saving or downloading it as an A4 PDF. On mobile, switch between Edit and Preview without losing work. The app keeps one active draft automatically; Save invoice adds or updates a record in history. History supports search, company filtering, reopening, and duplication.
 
-## Kickoff information
+## Data and access
 
-- Primary users and the work they need to do:
-- Problem to solve and success measures:
-- One main MVP workflow:
-- Scope intentionally deferred:
-- Data types and sensitivity:
-- Single-tenant or multi-tenant:
-- Actors, roles, and authority boundaries:
-- External integrations and effects that cannot be rolled back:
-- Hosting, availability, and recovery targets:
+No login is required. Invoice data, company profiles, logos, and theme are stored in the browser profile for the current origin. They are not encrypted by the app or synchronized. Use a dedicated browser profile on a shared device and edit the workspace in one tab at a time. Export a private JSON backup before clearing site data, moving origins, or replacing the workspace. Restore accepts Invoice Core backups only.
 
-## Included product behavior
+The built workspace can be installed and reopened offline in supported browsers after preparation on HTTPS or localhost.
 
-There is no built-in business feature or product domain. The home page explains the project workflow. Authentication is available after explicit configuration and migrations: an administrator creates accounts, users sign in with username or email and password, and users can change their own password. Public registration and OAuth are not enabled.
+## Out of scope
+
+Status labels are manual. The app does not send invoices, move money, convert currencies, file taxes, synchronize a team, or provide a public automation API or account system.
