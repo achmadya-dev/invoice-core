@@ -30,6 +30,12 @@ client/loader
 
 Server functions are endpoints and must validate input and enforce authorization. Never trust input, tenant IDs, or roles sent by the client. The pinned TanStack Start version provides default CSRF middleware for server functions; do not disable it. Better Auth is configured lazily and has a restricted HTTP route with explicit origin checks. Public signup and OAuth are disabled.
 
+### Invoice workspace boundary
+
+The invoice workspace at `/` is an exception to the server-function persistence flow: SSR returns only a public shell. The browser loads and validates its versioned local workspace after hydration. `src/modules/invoice/domain/` owns invoice and backup invariants; `workspace.browser.ts` owns browser storage and file I/O. No invoice data reaches a server function, database, session, or service worker. The client-only PDF renderer consumes the same formatted document model as preview.
+
+The production service worker caches the anonymous invoice shell and same-origin fingerprinted assets. It does not cache server requests for sign-in, accounts, or APIs. See [recovery](runbooks/RECOVERY.md) before an origin change or rollback.
+
 ### Authentication boundary
 
 ```mermaid

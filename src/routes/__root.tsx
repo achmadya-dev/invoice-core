@@ -1,4 +1,11 @@
-import { createRootRoute, HeadContent, Outlet, Scripts, Link } from '@tanstack/react-router'
+import {
+  createRootRoute,
+  HeadContent,
+  Outlet,
+  Scripts,
+  Link,
+  useRouterState,
+} from '@tanstack/react-router'
 import { cn } from '../lib/cn'
 import styleUrl from '../styles.css?url'
 
@@ -10,7 +17,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Project Base · TanStack' },
+      { title: 'Invoice Core' },
     ],
     links: [{ rel: 'stylesheet', href: styleUrl }],
   }),
@@ -41,35 +48,32 @@ export const Route = createRootRoute({
 })
 
 function Root() {
+  const invoiceHome = useRouterState({ select: (state) => state.location.pathname === '/' })
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body className="min-h-screen bg-[#f6f7f3] font-sans text-[#18332d] [font-synthesis:none]">
-        <header className="mx-auto flex max-w-280 flex-wrap items-center justify-between gap-5 border-b border-[#d9e2db] px-7 py-7 min-[651px]:flex-nowrap">
-          <Link
-            to="/"
-            className={cn(
-              'text-sm font-bold tracking-[0.15em] text-inherit no-underline',
-              focusRing,
-            )}
-          >
-            PROJECT / BASE
-          </Link>
-          <nav aria-label="Account" className="flex items-center gap-4">
-            <Link to="/login" className={cn('text-sm underline underline-offset-4', focusRing)}>
-              Sign in
+        {!invoiceHome && (
+          <header className="mx-auto flex max-w-280 flex-wrap items-center justify-between gap-5 border-b border-[#d9e2db] px-7 py-7 min-[651px]:flex-nowrap">
+            <Link
+              to="/"
+              className={cn(
+                'text-sm font-bold tracking-[0.15em] text-inherit no-underline',
+                focusRing,
+              )}
+            >
+              Invoice Core
             </Link>
-            <span className="rounded-[30px] border border-[#cad8d0] px-3 py-2 text-xs">
-              v0.1 · Development starter
-            </span>
-          </nav>
-        </header>
+            <nav aria-label="Account" className="flex items-center gap-4">
+              <Link to="/login" className={cn('text-sm underline underline-offset-4', focusRing)}>
+                Sign in
+              </Link>
+            </nav>
+          </header>
+        )}
         <Outlet />
-        <footer className="mx-auto max-w-280 border-t border-[#d9e2db] px-7 pt-7 pb-10 text-xs text-[#5c6e66]">
-          One repo. Clear plans. Verified changes.
-        </footer>
         <Scripts />
       </body>
     </html>

@@ -31,6 +31,7 @@
     "test:production": "bun scripts/smoke-production.mjs"
   },
   "dependencies": {
+    "@react-pdf/renderer": "4.9.0",
     "@tanstack/react-router": "1.170.41",
     "@tanstack/react-start": "1.168.60",
     "better-auth": "1.7.25",

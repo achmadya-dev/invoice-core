@@ -1,0 +1,414 @@
+import { z } from 'zod'
+import { countryCodes, currencies } from './catalog'
+
+export const invoiceStatuses = ['draft', 'sent', 'paid'] as const
+export const themes = ['system', 'light', 'dark'] as const
+export const maxItems = 100
+export const maxInvoices = 500
+export const maxCompanies = 50
+export const maxBackupBytes = 8 * 1024 * 1024
+export const maxLogoBytes = 256 * 1024
+export const currencySchema = z.enum(currencies)
+export type Currency = z.infer<typeof currencySchema>
+
+const id = z.uuid()
+const label = z.string().max(120)
+const memo = z.string().max(1500)
+const decimalInput = z.string().max(16)
+const dateInput = z.union([z.iso.date(), z.literal('')])
+const country = z.string().refine((code) => code === '' || countryCodes.includes(code))
+const logo = z
+  .string()
+  .max(Math.ceil(maxLogoBytes / 3) * 4 + 32)
+  .regex(/^data:image\/(?:png|jpeg);base64,[a-z0-9+/]+={0,2}$/i)
+  .or(z.literal(''))
+
+const contactSchema = z.strictObject({
+  name: label,
+  email: label,
+  phone: label,
+  address: memo,
+  country,
+})
+const senderSchema = contactSchema.extend({
+  website: label,
+  taxId: label,
+  paymentDetails: memo,
+  logo,
+})
+const companySchema = z.strictObject({
+  id,
+  sender: senderSchema,
+  prefix: z.string().max(24),
+  nextNumber: z.number().int().min(1).max(1_000_001),
+  padding: z.number().int().min(1).max(8),
+  currency: currencySchema,
+  taxLabel: label,
+  taxRate: decimalInput,
+  notes: memo,
+  terms: memo,
+})
+const itemSchema = z.strictObject({
+  id,
+  description: z.string().max(240),
+  quantity: decimalInput,
+  rate: decimalInput,
+})
+const invoiceSchema = z
+  .strictObject({
+    id,
+    companyId: id,
+    sender: senderSchema,
+    client: contactSchema,
+    number: label,
+    issueDate: dateInput,
+    dueDate: dateInput,
+    currency: currencySchema,
+    status: z.enum(invoiceStatuses),
+    items: z.array(itemSchema).max(maxItems),
+    discountKind: z.enum(['percent', 'fixed']),
+    discount: decimalInput,
+    taxLabel: label,
+    taxRate: decimalInput,
+    shipping: decimalInput,
+    notes: memo,
+    terms: memo,
+    updatedAt: z.iso.datetime(),
+  })
+  .refine((invoice) => unique(invoice.items.map((item) => item.id)))
+
+export type Contact = z.infer<typeof contactSchema>
+export type Sender = z.infer<typeof senderSchema>
+export type Company = z.infer<typeof companySchema>
+export type LineItem = z.infer<typeof itemSchema>
+export type Invoice = z.infer<typeof invoiceSchema>
+export type Theme = (typeof themes)[number]
+
+function unique(values: string[]) {
+  return new Set(values).size === values.length
+}
+
+function numberKey(invoice: Invoice) {
+  return `${invoice.companyId}:${invoice.number.trim().toLowerCase()}`
+}
+
+// Working drafts may hold incomplete fields; saved records obey the same rules as export.
+export const workspaceSchema = z
+  .strictObject({
+    version: z.literal(1),
+    companies: z.array(companySchema).max(maxCompanies),
+    invoices: z.array(invoiceSchema).max(maxInvoices),
+    draft: invoiceSchema,
+    dirty: z.boolean(),
+    theme: z.enum(themes),
+  })
+  .refine(
+    (workspace) =>
+      unique(workspace.companies.map((company) => company.id)) &&
+      unique(workspace.invoices.map((invoice) => invoice.id)) &&
+      unique(workspace.invoices.map(numberKey)) &&
+      workspace.companies.every((company) => !companyError(company)) &&
+      workspace.invoices.every((invoice) => !invoiceError(invoice)),
+  )
+
+export type Workspace = z.infer<typeof workspaceSchema>
+
+const blankContact: Contact = { name: '', email: '', phone: '', address: '', country: '' }
+
+export function newCompany(name = ''): Company {
+  return {
+    id: crypto.randomUUID(),
+    sender: { ...blankContact, name, website: '', taxId: '', paymentDetails: '', logo: '' },
+    prefix: 'INV-',
+    nextNumber: 1,
+    padding: 4,
+    currency: 'USD',
+    taxLabel: 'Tax',
+    taxRate: '0',
+    notes: '',
+    terms: '',
+  }
+}
+
+export function newItem(description = ''): LineItem {
+  return { id: crypto.randomUUID(), description, quantity: '1', rate: '' }
+}
+
+export function nextInvoiceNumber(company: Company, invoices: Invoice[]) {
+  const used = new Set(
+    invoices
+      .filter((invoice) => invoice.companyId === company.id)
+      .map((invoice) => invoice.number.trim().toLowerCase()),
+  )
+  let sequence = company.nextNumber
+  while (sequence <= 1_000_000) {
+    const number = `${company.prefix}${String(sequence).padStart(company.padding, '0')}`.trimStart()
+    if (!used.has(number.toLowerCase())) return { number, sequence }
+    sequence += 1
+  }
+  return { number: '', sequence }
+}
+
+function localDate(date: Date, days = 0) {
+  const copy = new Date(date)
+  copy.setDate(copy.getDate() + days)
+  return `${copy.getFullYear()}-${String(copy.getMonth() + 1).padStart(2, '0')}-${String(copy.getDate()).padStart(2, '0')}`
+}
+
+export function newInvoice(company: Company, invoices: Invoice[], now = new Date()): Invoice {
+  return {
+    id: crypto.randomUUID(),
+    companyId: company.id,
+    sender: company.sender,
+    client: blankContact,
+    number: nextInvoiceNumber(company, invoices).number,
+    issueDate: localDate(now),
+    dueDate: localDate(now, 14),
+    currency: company.currency,
+    status: 'draft',
+    items: [newItem()],
+    discountKind: 'percent',
+    discount: '',
+    taxLabel: company.taxLabel,
+    taxRate: company.taxRate,
+    shipping: '',
+    notes: company.notes,
+    terms: company.terms,
+    updatedAt: now.toISOString(),
+  }
+}
+
+export function newWorkspace(): Workspace {
+  const company = newCompany('Personal')
+  return {
+    version: 1,
+    theme: 'system',
+    companies: [company],
+    invoices: [],
+    draft: newInvoice(company, []),
+    dirty: false,
+  }
+}
+
+export function duplicateInvoice(
+  source: Invoice,
+  company: Company | undefined,
+  invoices: Invoice[],
+  now = new Date(),
+): Invoice {
+  const copyNumber = `Copy of ${source.number}`.slice(0, 110)
+  let fallback = copyNumber
+  let suffix = 2
+  const used = new Set(
+    invoices
+      .filter((invoice) => invoice.companyId === source.companyId)
+      .map((invoice) => invoice.number.trim().toLowerCase()),
+  )
+  while (used.has(fallback.toLowerCase())) fallback = `${copyNumber} (${suffix++})`
+  return {
+    ...source,
+    id: crypto.randomUUID(),
+    status: 'draft',
+    number: company ? nextInvoiceNumber(company, invoices).number : fallback,
+    issueDate: localDate(now),
+    dueDate: localDate(now, 14),
+    items: source.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+    updatedAt: now.toISOString(),
+  }
+}
+
+const thousands = 1000n
+const percentBase = 100n * thousands
+const decimalPattern = /^(-?)(?:(\d{1,9})(?:\.(\d{0,3}))?|\.(\d{1,3}))$/
+
+function scaled(value: string): bigint | null {
+  if (value === '') return 0n
+  const match = decimalPattern.exec(value)
+  if (!match) return null
+  const [, sign, whole, fractionAfterWhole, fractionOnly] = match
+  const n =
+    BigInt(whole ?? '0') * thousands +
+    BigInt((fractionAfterWhole ?? fractionOnly ?? '').padEnd(3, '0'))
+  return sign === '-' ? -n : n
+}
+
+export function decimalValid(value: string, kind: 'quantity' | 'amount' | 'percent') {
+  const parsed = scaled(value)
+  return (
+    parsed !== null &&
+    (kind === 'quantity' || parsed >= 0n) &&
+    (kind !== 'percent' || parsed <= percentBase)
+  )
+}
+
+export function invoiceError(invoice: Invoice) {
+  if (
+    !invoice.sender.name.trim() ||
+    !invoice.client.name.trim() ||
+    !invoice.number.trim() ||
+    !invoice.issueDate
+  ) {
+    return 'Enter a sender, client, invoice number, and issue date.'
+  }
+  if (invoice.dueDate && invoice.dueDate < invoice.issueDate)
+    return 'The due date must not precede the issue date.'
+  if (!invoice.items.length || invoice.items.some((item) => !item.description.trim())) {
+    return 'Add at least one line item and give each item a description.'
+  }
+  if (!invoiceTotals(invoice)) return 'Correct the highlighted numbers before continuing.'
+  return null
+}
+
+export function companyError(company: Company) {
+  if (!company.sender.name.trim()) return 'Enter a company name.'
+  if (!decimalValid(company.taxRate, 'percent')) return 'Enter a tax rate between 0 and 100.'
+  if (
+    !Number.isInteger(company.nextNumber) ||
+    !Number.isInteger(company.padding) ||
+    company.nextNumber < 1 ||
+    company.nextNumber > 1_000_001 ||
+    company.padding < 1 ||
+    company.padding > 8
+  ) {
+    return 'Enter a positive sequence number and a padding width from 1 to 8.'
+  }
+  return null
+}
+
+export function saveDraft(
+  workspace: Workspace,
+  now = new Date(),
+): { ok: true; data: Workspace } | { ok: false; message: string } {
+  const draft = {
+    ...workspace.draft,
+    number: workspace.draft.number.trim(),
+    updatedAt: now.toISOString(),
+  }
+  const error = invoiceError(draft)
+  if (error) return { ok: false, message: error }
+  const existing = workspace.invoices.some((invoice) => invoice.id === draft.id)
+  if (!existing && workspace.invoices.length >= maxInvoices) {
+    return {
+      ok: false,
+      message: 'The local history is full. Export a backup and remove an invoice before saving.',
+    }
+  }
+  if (
+    workspace.invoices.some(
+      (invoice) => invoice.id !== draft.id && numberKey(invoice) === numberKey(draft),
+    )
+  ) {
+    return { ok: false, message: 'That invoice number is already used for this company.' }
+  }
+  const companies = existing
+    ? workspace.companies
+    : workspace.companies.map((company) => {
+        if (company.id !== draft.companyId) return company
+        const suggested = nextInvoiceNumber(company, workspace.invoices)
+        return suggested.number.toLowerCase() === draft.number.toLowerCase()
+          ? { ...company, nextNumber: suggested.sequence + 1 }
+          : company
+      })
+  return {
+    ok: true,
+    data: {
+      ...workspace,
+      draft,
+      dirty: false,
+      companies,
+      invoices: [draft, ...workspace.invoices.filter((invoice) => invoice.id !== draft.id)],
+    },
+  }
+}
+
+function rounded(numerator: bigint, denominator: bigint) {
+  const absolute = numerator < 0n ? -numerator : numerator
+  const result = (absolute + denominator / 2n) / denominator
+  return numerator < 0n ? -result : result
+}
+
+function formatFor(currency: Currency, display: 'symbol' | 'code' = 'symbol') {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, currencyDisplay: display })
+}
+
+function currencyScale(currency: Currency) {
+  const digits = formatFor(currency).resolvedOptions().maximumFractionDigits ?? 2
+  return { digits, factor: 10n ** BigInt(digits) }
+}
+
+export function formatMoney(
+  minor: bigint,
+  currency: Currency,
+  display: 'symbol' | 'code' = 'symbol',
+) {
+  const { digits, factor } = currencyScale(currency)
+  const whole = minor / factor
+  const remainder = minor < 0n ? -(minor % factor) : minor % factor
+  return formatFor(currency, display)
+    .formatToParts(whole === 0n && minor < 0n ? -0 : whole)
+    .map((part) =>
+      part.type === 'fraction' ? String(remainder).padStart(digits, '0') : part.value,
+    )
+    .join('')
+}
+
+export function formatRate(value: string, currency: Currency) {
+  const rate = scaled(value)
+  if (rate === null || rate < 0n) return '—'
+  // Show the input precision, even when a currency rounds line totals to fewer places.
+  const fraction = value.split('.')[1]?.length ?? 0
+  const digits = Math.max(fraction, currencyScale(currency).digits)
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })
+    .formatToParts(rate / thousands)
+    .map((part) =>
+      part.type === 'fraction'
+        ? String(rate % thousands)
+            .padStart(3, '0')
+            .slice(0, digits)
+        : part.value,
+    )
+    .join('')
+}
+
+export function invoiceTotals(invoice: Invoice) {
+  const { factor } = currencyScale(invoice.currency)
+  const lines: bigint[] = []
+  for (const item of invoice.items) {
+    const quantity = scaled(item.quantity)
+    const rate = scaled(item.rate)
+    if (quantity === null || rate === null || rate < 0n) return null
+    lines.push(rounded(quantity * rate * factor, thousands * thousands))
+  }
+  const discountValue = scaled(invoice.discount)
+  const taxRate = scaled(invoice.taxRate)
+  const shippingValue = scaled(invoice.shipping)
+  if (
+    discountValue === null ||
+    discountValue < 0n ||
+    taxRate === null ||
+    taxRate < 0n ||
+    taxRate > percentBase ||
+    shippingValue === null ||
+    shippingValue < 0n ||
+    (invoice.discountKind === 'percent' && discountValue > percentBase)
+  )
+    return null
+  const subtotal = lines.reduce((sum, line) => sum + line, 0n)
+  const proposedDiscount =
+    invoice.discountKind === 'percent'
+      ? rounded(subtotal * discountValue, percentBase)
+      : rounded(discountValue * factor, thousands)
+  const discount = subtotal <= 0n ? 0n : proposedDiscount > subtotal ? subtotal : proposedDiscount
+  const tax = rounded((subtotal - discount) * taxRate, percentBase)
+  const shipping = rounded(shippingValue * factor, thousands)
+  return { lines, subtotal, discount, tax, shipping, total: subtotal - discount + tax + shipping }
+}
+
+const dates = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' })
+
+export function formatDate(value: string) {
+  return value ? dates.format(new Date(`${value}T00:00:00Z`)) : '—'
+}

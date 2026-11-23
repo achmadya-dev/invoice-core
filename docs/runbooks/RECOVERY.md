@@ -8,6 +8,12 @@ The default SQLite file is `.data/app.sqlite`. Back it up before modifying or re
 
 Keep the previous immutable build artifact. Before a rollout, verify that the older application still works with the expanded schema. Reverting code does not roll back data or third-party effects.
 
+## Browser-local invoice recovery
+
+Before an origin change, rollback, or clearing browser data, use **Backup → Download backup** from the same browser profile that holds the invoices. Backups include contact and payment details; treat them as private files. Restore replaces the workspace only after validation and confirmation. If stored JSON cannot be read, use **Download unreadable data** to retain the original before restoring a known-good backup. If a stale tab reports that another tab changed the workspace, export that tab's draft before reloading.
+
+Rolling back the code does not remove browser data or cached offline code. If a rollback removes the invoice app, unregister the Invoice Core service worker and delete only its `invoice-core-shell-*` **Cache Storage** entry in the browser; do not clear Local Storage. Verify the online revision before using the app again.
+
 ## Database changes
 
 ```mermaid

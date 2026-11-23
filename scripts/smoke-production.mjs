@@ -40,16 +40,13 @@ try {
   assert.equal(response.status, 200, output)
   const html = await response.text()
   assert.ok(html.includes('<html lang="en">'), 'Home page must declare English as its language')
-  assert.ok(html.includes('YOUR NEXT PROJECT STARTS HERE'), 'Home page should render the template')
-  assert.ok(html.includes('From planning'), 'Home page should render English hero copy')
-  assert.ok(
-    html.includes('One repo. Clear plans. Verified changes.'),
-    'Footer copy should be English',
-  )
+  assert.ok(html.includes('Invoice editor'), 'Home page should render the invoice editor shell')
+  assert.ok(html.includes('Opening the local workspace'), 'Browser data must load after hydration')
+  assert.ok(html.includes('/invoice.webmanifest'), 'Home page should link the PWA manifest')
   assert.ok(!html.includes('Catalog items'), 'Home page must not expose the catalog demo')
   assert.ok(!html.includes('name="sku"'), 'Home page must not expose the catalog form')
   console.log(
-    `Production smoke passed on Bun ${process.versions.bun}: HTTP 200, template home rendered without DB credentials.`,
+    `Production smoke passed on Bun ${process.versions.bun}: HTTP 200, invoice shell rendered without DB credentials.`,
   )
 } finally {
   server.kill('SIGTERM')

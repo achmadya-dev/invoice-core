@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 
 test('home has no automatically detectable accessibility violations', async ({ page }) => {
   await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Edit invoice' })).toBeVisible()
 
   const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])
@@ -21,7 +22,7 @@ test('the checker detects a missing accessible name', async ({ page }) => {
 
 test('home navigation is keyboard accessible', async ({ page }) => {
   await page.goto('/')
-  const home = page.getByRole('link', { name: 'PROJECT / BASE' })
+  const home = page.getByRole('button', { name: 'Invoice Core' })
   await page.keyboard.press('Tab')
   await expect(home).toBeFocused()
   await page.keyboard.press('Enter')

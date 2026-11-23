@@ -1,6 +1,6 @@
-# AI Project Template
+# Invoice Core
 
-A single-repository TanStack Start application for planning work, implementing it with your coding agent, and verifying changes through tests and pull requests. It does not depend on a particular agent or worker.
+A local-first invoice editor with a live document preview, downloadable PDF, reusable company profiles, and searchable history. Built on TanStack Start and Bun.
 
 **Start with [START_HERE.md](START_HERE.md)** for the documentation map. See [architecture](docs/ARCHITECTURE.md) for system boundaries, [workflow](docs/WORKFLOW.md) for the task lifecycle, and [reusable prompts](docs/PROMPTS.md) for agent requests.
 
@@ -8,7 +8,7 @@ A single-repository TanStack Start application for planning work, implementing i
 
 - TanStack Start, React, TypeScript, Bun runtime through Nitro, and SQLite, PostgreSQL, and MySQL infrastructure.
 - Tailwind CSS, ESLint, Prettier with Tailwind class sorting, and Husky/lint-staged for staged files.
-- A starter home page with no built-in business feature.
+- A browser-local invoice workspace with draft recovery, company profiles, templates, validated backup/restore, and light/dark/system themes.
 - Versioned migrations with locking and checksums. SQLite and PostgreSQL run migrations transactionally; MySQL DDL requires manual recovery after interruption. Migrations never run automatically at application startup.
 - Unit tests, SQLite integration tests, optional PostgreSQL/MySQL integration tests, Chromium E2E tests, and a production smoke test.
 - `AGENTS.md` and adapters for Cursor, Claude, and Copilot, plus portable planning, implementation, and review procedures.
@@ -34,6 +34,8 @@ bun run dev
 ```
 
 Open http://127.0.0.1:3000. The home page does not require a database. `DB_PROVIDER=sqlite` and `SQLITE_PATH=.data/app.sqlite` are the defaults; the file is created only when database access or migrations are requested. For PostgreSQL or MySQL, set `DB_PROVIDER=postgres` or `mysql` and set a matching `DATABASE_URL`. For compatibility, an existing PostgreSQL or MySQL `DATABASE_URL` without `DB_PROVIDER` selects the corresponding provider. Never combine `DB_PROVIDER=sqlite` with `DATABASE_URL`.
+
+Invoice data stays in the current browser profile and origin; sign-in does not synchronize it. Use **Backup → Download backup** regularly. The production build supports installation and offline use in compatible browsers after **Available offline** appears. Direct PDF embeds Noto Sans (Latin, Greek, and Cyrillic); use the browser print option for scripts it does not cover. See the [product scope](docs/PRODUCT.md), [invoice rules](docs/DOMAIN.md), and [design](docs/DESIGN.md).
 
 `bun run db:migrate` is explicit and targets the selected provider: matching numbered SQL files in `db/migrations/sqlite`, `db/migrations/postgres`, or `db/migrations/mysql`. Migration filenames use `<number>_<action>_<object>.sql` to describe the change, and each file contains one statement; SQL syntax and types remain provider-specific. Confirm the target before running it. MySQL DDL cannot be rolled back reliably, and an unfinished attempt stops subsequent migration runs for manual recovery. The development server binds to loopback.
 
@@ -81,9 +83,10 @@ Visit `/login` and sign in with username or email. An administrator can create o
 ```sh
 bun run playwright install chromium
 bun run verify
+bunx playwright test --config playwright.invoice.config.ts
 ```
 
-The default integration and example E2E tests use disposable SQLite databases and do not require Docker. To exercise PostgreSQL and MySQL, run `bun run test:integration:postgres` and `bun run test:integration:mysql` with `TEST_DATABASE_URL` and `TEST_MYSQL_URL` pointing to separately verified disposable databases ending in `_test`. The suffix alone does not prove isolation. No hosted CI runs these suites; record local results on the pull request.
+The offline suite uses the production build from `bun run verify` or `bun run build`. The default integration and example E2E tests use disposable SQLite databases and do not require Docker. To exercise PostgreSQL and MySQL, run `bun run test:integration:postgres` and `bun run test:integration:mysql` with `TEST_DATABASE_URL` and `TEST_MYSQL_URL` pointing to separately verified disposable databases ending in `_test`. The suffix alone does not prove isolation. No hosted CI runs these suites; record local results on the pull request.
 
 ### PostgreSQL and MySQL integration and E2E
 
@@ -106,7 +109,7 @@ Run these commands sequentially; the E2E suites use fixed local application port
 
 When finished, `docker compose -p template-e2e stop db-test mysql-test` stops only those test services and destroys their temporary data. Do not run `docker compose down -v`: it can delete persistent development volumes belonging to that Compose project. See `docs/runbooks/RECOVERY.md` before any cleanup.
 
-Browser tests include automated accessibility and keyboard navigation checks for the starter home
+Browser tests include automated accessibility and keyboard navigation checks for the invoice workspace
 page. Automated checks detect only some accessibility issues; manually test real workflows with a
 keyboard and assistive technology.
 
@@ -218,7 +221,7 @@ Upload selected concept screenshots to the planning issue when they clarify a qu
 
 ## Current limits
 
-This template is **not a production-ready SaaS or payment system** and has no built-in business domain. Review authentication and design tenant isolation, business permissions, business audit, hosted backups, observability, and payment integrations for each project. Auth tables are created only by explicit migrations.
+Invoice Core is **not a SaaS or payment system**. Review authentication and design tenant isolation, business permissions, business audit, hosted backups, and observability before extending it to a shared server workspace. Auth tables are created only by explicit migrations.
 
 Local checks and repository guidance do not make agents infallible. Git hooks can be bypassed; configure available merge protection and manual review in GitHub; see [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md). Worker permissions belong to the tool you use. This repository does not include an MCP connection, token, global hook, or hidden deployment.
 
