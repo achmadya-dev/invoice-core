@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { countryCodes, currencies } from './catalog'
 
-export const invoiceStatuses = ['draft', 'sent', 'paid'] as const
+const invoiceStatuses = ['draft', 'sent', 'paid'] as const
 export const themes = ['system', 'light', 'dark'] as const
 export const maxItems = 100
 export const maxInvoices = 500
@@ -56,13 +56,13 @@ const itemSchema = z.strictObject({
   quantity: decimalInput,
   rate: decimalInput,
 })
-const templateSchema = z.strictObject({
+const productSchema = z.strictObject({
   id,
   name: label,
   currency: currencySchema,
   items: z.array(itemSchema).min(1).max(maxItems),
 })
-const productSchema = itemSchema.extend({ name: label, currency: currencySchema })
+const singleProductSchema = itemSchema.extend({ name: label, currency: currencySchema })
 const invoiceSchema = z
   .strictObject({
     id,
@@ -90,10 +90,8 @@ export type Contact = z.infer<typeof contactSchema>
 export type Sender = z.infer<typeof senderSchema>
 export type Company = z.infer<typeof companySchema>
 export type LineItem = z.infer<typeof itemSchema>
-type LegacyTemplate = z.infer<typeof templateSchema>
 export type Product = z.infer<typeof productSchema>
 export type Invoice = z.infer<typeof invoiceSchema>
-export type InvoiceStatus = (typeof invoiceStatuses)[number]
 export type Theme = (typeof themes)[number]
 
 function unique(values: string[]) {
@@ -110,10 +108,6 @@ export function invoiceSenderKey(invoice: Pick<Invoice, 'companyId' | 'sender'>)
     : invoice.companyId
 }
 
-function templateKey(template: LegacyTemplate) {
-  return `${template.currency}:${template.name.trim().toLowerCase()}`
-}
-
 const workspaceV1 = z.strictObject({
   version: z.literal(1),
   companies: z.array(companySchema).max(maxCompanies),
@@ -125,37 +119,38 @@ const workspaceV1 = z.strictObject({
 const workspaceV2 = workspaceV1
   .extend({
     version: z.literal(2),
-    templates: z.array(templateSchema).max(legacyTemplateLimit),
+    templates: z.array(productSchema).max(legacyTemplateLimit),
   })
-  .refine(
-    ({ templates }) =>
-      unique(templates.map((template) => template.id)) &&
-      unique(templates.map(templateKey)) &&
-      templates.every((template) => !legacyTemplateError(template)),
+  .refine(({ templates }) =>
+    unique(templates.map(({ currency, name }) => `${currency}:${name.trim().toLowerCase()}`)),
   )
 const workspaceV3 = workspaceV1.extend({
   version: z.literal(3),
+  products: z.array(singleProductSchema).max(maxProducts),
+})
+const workspaceV4 = workspaceV1.omit({ draft: true, dirty: true }).extend({
+  version: z.literal(4),
   products: z.array(productSchema).max(maxProducts),
 })
 
-// Working drafts may hold incomplete fields; saved records obey the same rules as export.
+// Old drafts are deliberately not restored; only explicitly saved records are kept.
 export const workspaceSchema = z
-  .discriminatedUnion('version', [workspaceV1, workspaceV2, workspaceV3])
-  .transform((workspace): z.infer<typeof workspaceV3> => {
-    if (workspace.version === 3) return workspace
-    if (workspace.version === 1) return { ...workspace, version: 3, products: [] }
-    const { templates, ...previous } = workspace
-    let index = 0
-    const products = templates.flatMap((template) =>
-      template.items.map((item) => ({
-        ...item,
-        // V2 line IDs were only unique within a bundle; use reproducible, separate product IDs.
-        id: `00000000-0000-4000-8001-${(index++).toString(16).padStart(12, '0')}`,
-        name: (template.items.length === 1 ? template.name : item.description).trim().slice(0, 120),
-        currency: template.currency,
-      })),
-    )
-    return { ...previous, version: 3, products }
+  .discriminatedUnion('version', [workspaceV1, workspaceV2, workspaceV3, workspaceV4])
+  .transform((workspace): z.infer<typeof workspaceV4> => {
+    if (workspace.version === 4) return workspace
+    const { companies, invoices, theme } = workspace
+    const products =
+      workspace.version === 2
+        ? workspace.templates
+        : workspace.version === 3
+          ? workspace.products.map(({ id, name, currency, ...line }) => ({
+              id,
+              name,
+              currency,
+              items: [{ id, ...line }],
+            }))
+          : []
+    return { version: 4, companies, invoices, theme, products }
   })
   .refine(
     (workspace) =>
@@ -194,7 +189,13 @@ export function newItem(description = ''): LineItem {
 }
 
 export function newProduct(currency: Currency): Product {
-  return { ...newItem(), name: '', currency }
+  return { id: crypto.randomUUID(), name: '', currency, items: [newItem()] }
+}
+
+export function matchesProduct(product: Product, search: string) {
+  return [product.name, product.currency, ...product.items.map((item) => item.description)].some(
+    (value) => value.toLowerCase().includes(search),
+  )
 }
 
 function nextNumber(used: Set<string>, prefix: string, padding: number, start = 1) {
@@ -275,13 +276,11 @@ export function newInvoice(
 
 export function newWorkspace(): Workspace {
   return {
-    version: 3,
+    version: 4,
     theme: 'system',
     companies: [],
     invoices: [],
     products: [],
-    draft: newInvoice(undefined, []),
-    dirty: false,
   }
 }
 
@@ -355,25 +354,17 @@ export function decimalValid(value: string, kind: 'quantity' | 'amount' | 'perce
   )
 }
 
-function legacyTemplateError(template: LegacyTemplate) {
-  if (!template.name.trim()) return 'Enter a template name.'
-  if (!template.items.length || template.items.some((item) => !item.description.trim()))
-    return 'Add at least one line item and give each item a description.'
+function productError(product: Product) {
+  if (!product.name.trim()) return 'Enter a product name.'
+  if (!product.items.length || product.items.some((item) => !item.description.trim()))
+    return 'Add at least one item and give each item a description.'
   if (
-    template.items.some(
+    product.items.some(
       (item) => !decimalValid(item.quantity, 'quantity') || !decimalValid(item.rate, 'amount'),
     )
   )
     return 'Correct the highlighted quantities or rates.'
-  if (!unique(template.items.map((item) => item.id))) return 'Each template line must be unique.'
-  return null
-}
-
-function productError(product: Product) {
-  if (!product.name.trim()) return 'Enter a product name.'
-  if (!product.description.trim()) return 'Enter an invoice line description.'
-  if (!decimalValid(product.quantity, 'quantity') || !decimalValid(product.rate, 'amount'))
-    return 'Correct the highlighted quantity or rate.'
+  if (!unique(product.items.map((item) => item.id))) return 'Each line item must have a unique ID.'
   return null
 }
 
@@ -396,7 +387,7 @@ export function saveProduct(
   return { ok: true, data: { ...workspace, products } }
 }
 
-export function addProductLine(
+export function addProductLines(
   invoice: Invoice,
   product: Product,
 ): { ok: true; invoice: Invoice } | { ok: false; message: string } {
@@ -413,12 +404,17 @@ export function addProductLine(
     first.rate === '' &&
     ['', '1'].includes(first.quantity)
   const items = onlyPlaceholder ? [] : invoice.items
-  if (items.length >= maxItems)
-    return { ok: false, message: 'This invoice has no room for more line items.' }
-  const { description, quantity, rate } = product
+  if (items.length + product.items.length > maxItems)
+    return {
+      ok: false,
+      message: `This product has ${product.items.length} line item(s), but only ${maxItems - items.length} can fit on the invoice.`,
+    }
   return {
     ok: true,
-    invoice: { ...invoice, items: [...items, { ...newItem(description), quantity, rate }] },
+    invoice: {
+      ...invoice,
+      items: [...items, ...product.items.map((item) => ({ ...item, id: crypto.randomUUID() }))],
+    },
   }
 }
 
@@ -456,17 +452,23 @@ export function companyError(company: Company) {
   return null
 }
 
-export function saveDraft(
+export function saveInvoice(
   workspace: Workspace,
+  invoice: Invoice,
   now = new Date(),
 ): { ok: true; data: Workspace } | { ok: false; message: string } {
   const draft = {
-    ...workspace.draft,
-    number: workspace.draft.number.trim(),
+    ...invoice,
+    number: invoice.number.trim(),
     updatedAt: now.toISOString(),
   }
   const error = invoiceError(draft)
   if (error) return { ok: false, message: error }
+  if (!invoiceSchema.safeParse(draft).success)
+    return {
+      ok: false,
+      message: 'Some invoice fields are invalid. Check the entries and try again.',
+    }
   const existing = workspace.invoices.some((invoice) => invoice.id === draft.id)
   if (!existing && workspace.invoices.length >= maxInvoices) {
     return {
@@ -494,8 +496,6 @@ export function saveDraft(
     ok: true,
     data: {
       ...workspace,
-      draft,
-      dirty: false,
       companies,
       invoices: [draft, ...workspace.invoices.filter((invoice) => invoice.id !== draft.id)],
     },
@@ -592,25 +592,6 @@ const dates = new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UT
 
 export function formatDate(value: string) {
   return value ? dates.format(new Date(`${value}T00:00:00Z`)) : '—'
-}
-
-export function updateInvoiceStatus(
-  workspace: Workspace,
-  invoiceId: string,
-  status: InvoiceStatus,
-  now = new Date(),
-): Workspace {
-  const target = workspace.invoices.find((invoice) => invoice.id === invoiceId)
-  if (!target) return workspace
-  const updatedAt = now.toISOString()
-  const invoices = workspace.invoices.map((invoice) =>
-    invoice.id === invoiceId ? { ...invoice, status, updatedAt } : invoice,
-  )
-  const draft =
-    workspace.draft.id === invoiceId && !workspace.dirty
-      ? { ...workspace.draft, status, updatedAt }
-      : workspace.draft
-  return { ...workspace, invoices, draft }
 }
 
 export function formatBytes(bytes: number): string {

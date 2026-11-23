@@ -4,7 +4,7 @@ import {
   newInvoice,
   newItem,
   newWorkspace,
-  saveDraft,
+  saveInvoice,
   saveProduct,
   themes,
   type Invoice,
@@ -40,7 +40,7 @@ function panelFromHash(hash: string): Panel {
 const panelCopy = {
   editor: {
     title: 'Invoice editor',
-    detail: 'Build your invoice and check the document as you type.',
+    detail: 'Build your invoice and check the preview. Only saved invoices are kept.',
   },
   invoices: {
     title: 'Invoices',
@@ -64,32 +64,41 @@ export function InvoiceWorkspace() {
   const [pdfBusyId, setPdfBusyId] = useState<string | null>(null)
   const [offlineReady, setOfflineReady] = useState(false)
   const [confirmModal, setConfirmModal] = useState<ConfirmState | null>(null)
-  const draft = local?.data.draft
+  const [editor, setEditor] = useState<{ invoice: Invoice; edited: boolean } | null>(null)
+  const draft = editor?.invoice
 
   useEffect(() => {
     const initial = loadWorkspace()
     current.current = initial
     setLocal(initial)
     setStorageWarning(initial.warning)
-    setPanel(panelFromHash(window.location.hash))
-    setBackupOpen(window.location.hash === '#backup')
     const crossTab = (event: StorageEvent) => {
       if (
         (event.key === storageKey || event.key === null) &&
         event.newValue !== current.current?.raw
       ) {
         setStorageWarning(
-          'The workspace changed in another tab. Export this tab’s draft before reloading.',
+          'The workspace changed in another tab. Reload to see its latest saved data.',
         )
       }
     }
     const syncFromLocation = () => {
-      setPanel(panelFromHash(window.location.hash))
+      const next = panelFromHash(window.location.hash)
+      setPanel(next)
+      setEditor(
+        next === 'editor'
+          ? {
+              invoice: newInvoice(undefined, current.current?.data.invoices ?? []),
+              edited: false,
+            }
+          : null,
+      )
       setBackupOpen(window.location.hash === '#backup')
       setBackupConfirm(null)
       setView('edit')
       setMessage(null)
     }
+    syncFromLocation()
     window.addEventListener('storage', crossTab)
     window.addEventListener('hashchange', syncFromLocation)
     window.addEventListener('popstate', syncFromLocation)
@@ -111,16 +120,11 @@ export function InvoiceWorkspace() {
     }
   }, [])
 
-  function commit(data: Workspace, options: { keepDraft?: boolean; restore?: boolean } = {}) {
+  function commit(data: Workspace, options: { restore?: boolean } = {}) {
     const before = current.current
     if (!before) return false
     const result = writeWorkspace(before, data, Boolean(options.restore))
     if (!result.ok) {
-      if (options.keepDraft) {
-        const pending = { ...before, data }
-        current.current = pending
-        setLocal(pending)
-      }
       setStorageWarning(result.message)
       return false
     }
@@ -131,14 +135,17 @@ export function InvoiceWorkspace() {
   }
 
   function editDraft(edit: (invoice: Invoice) => Invoice) {
-    const data = current.current?.data
-    if (!data || data.draft.id !== draft?.id) return
     setMessage(null)
-    commit({ ...data, dirty: true, draft: edit(data.draft) }, { keepDraft: true })
+    setEditor((active) =>
+      active && active.invoice.id === draft?.id
+        ? { invoice: edit(active.invoice), edited: true }
+        : active,
+    )
   }
 
   function show(next: Panel) {
     setPanel(next)
+    if (next !== 'editor') setEditor(null)
     setView('edit')
     setMessage(null)
     setBackupOpen(false)
@@ -153,52 +160,15 @@ export function InvoiceWorkspace() {
     }
   }
 
-  function replaceDraft(
-    data: Workspace,
-    next: Invoice,
-    dirty = false,
-    prompt?: {
-      title?: string
-      description?: string
-      confirmLabel?: string
-      cancelLabel?: string
-    },
-  ) {
-    const apply = () => {
-      if (commit({ ...data, draft: next, dirty })) show('editor')
-    }
-    if (!data.dirty) {
-      apply()
-      return
-    }
-    setConfirmModal({
-      title: prompt?.title ?? 'Discard unsaved changes?',
-      description:
-        prompt?.description ??
-        'Replace the active draft? Changes not saved to invoice history will be lost.',
-      confirmLabel: prompt?.confirmLabel ?? 'Replace draft',
-      cancelLabel: prompt?.cancelLabel ?? 'Keep editing',
-      danger: true,
-      onConfirm: apply,
-    })
-  }
-
-  function startDraft(
-    data: Workspace,
-    prompt?: {
-      title?: string
-      description?: string
-      confirmLabel?: string
-      cancelLabel?: string
-    },
-  ) {
-    replaceDraft(data, newInvoice(undefined, data.invoices), false, prompt)
+  function openEditor(invoice: Invoice, edited = false) {
+    setEditor({ invoice, edited })
+    show('editor')
   }
 
   function saveEditor() {
     const data = current.current?.data
-    if (!data) return
-    const result = saveDraft(data)
+    if (!data || !draft) return
+    const result = saveInvoice(data, draft)
     if (!result.ok) setMessage({ text: result.message, error: true })
     else if (commit(result.data)) {
       show('invoices')
@@ -239,8 +209,7 @@ export function InvoiceWorkspace() {
   function duplicateSavedInvoice(invoice: Invoice) {
     const data = current.current?.data
     if (!data) return
-    replaceDraft(
-      data,
+    openEditor(
       duplicateInvoice(
         invoice,
         data.companies.find((company) => company.id === invoice.companyId),
@@ -261,14 +230,7 @@ export function InvoiceWorkspace() {
         const data = current.current?.data
         if (!data) return
         const remaining = data.invoices.filter((entry) => entry.id !== invoice.id)
-        const deletingActive = data.draft.id === invoice.id
-        if (
-          commit({
-            ...data,
-            invoices: remaining,
-            ...(deletingActive && !data.dirty ? { draft: newInvoice(undefined, remaining) } : {}),
-          })
-        ) {
+        if (commit({ ...data, invoices: remaining })) {
           show('invoices')
           setMessage({ text: 'Invoice deleted.' })
         }
@@ -365,15 +327,10 @@ export function InvoiceWorkspace() {
               <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>
                 Backup
               </button>
-              {data.dirty && (
-                <button type="button" className="ic-button" onClick={() => show('editor')}>
-                  Resume draft
-                </button>
-              )}
               <button
                 type="button"
                 className="ic-button ic-primary"
-                onClick={() => startDraft(data)}
+                onClick={() => openEditor(newInvoice(undefined, data.invoices))}
               >
                 <Icon name="plus" /> Create invoice
               </button>
@@ -398,9 +355,10 @@ export function InvoiceWorkspace() {
             Opening the local workspace…
           </p>
         )}
-        {data && panel === 'editor' && (
+        {data && panel === 'editor' && draft && (
           <InvoiceEditor
-            key={data.draft.id}
+            key={draft.id}
+            draft={draft}
             workspace={data}
             edit={editDraft}
             view={view}
@@ -408,33 +366,23 @@ export function InvoiceWorkspace() {
             onSave={saveEditor}
             formNotice={message && !message.preview ? message : undefined}
             previewNotice={message?.preview ? message : undefined}
-            onDownload={() => void downloadPdf(data.draft, true)}
+            onDownload={() => void downloadPdf(draft, true)}
             pdfBusy={pdfBusyId !== null}
-            onLoadExample={!data.dirty && !isSavedDraft ? loadExample : undefined}
+            onLoadExample={!editor?.edited && !isSavedDraft ? loadExample : undefined}
             onResetDraft={
-              data.dirty && !isSavedDraft
-                ? () =>
-                    startDraft(data, {
-                      title: 'Discard unsaved changes?',
-                      description:
-                        'Reset this draft back to a blank invoice? Unsaved edits will be lost.',
-                      confirmLabel: 'Reset draft',
-                      cancelLabel: 'Keep editing',
-                    })
+              editor?.edited && !isSavedDraft
+                ? () => openEditor(newInvoice(undefined, data.invoices))
                 : undefined
             }
-            onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(data.draft) : undefined}
-            onDelete={isSavedDraft ? () => deleteInvoice(data.draft) : undefined}
+            onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(draft) : undefined}
+            onDelete={isSavedDraft ? () => deleteInvoice(draft) : undefined}
           />
         )}
         {data && panel === 'invoices' && (
           <InvoiceHistory
             workspace={data}
             pdfBusyId={pdfBusyId}
-            open={(invoice) => {
-              if (invoice.id === data.draft.id) show('editor')
-              else replaceDraft(data, invoice)
-            }}
+            open={openEditor}
             downloadPdf={(invoice) => void downloadPdf(invoice)}
             duplicate={duplicateSavedInvoice}
             remove={(invoice) => deleteInvoice(invoice)}
@@ -444,7 +392,6 @@ export function InvoiceWorkspace() {
           <div className="ic-catalog">
             <ProductsPanel
               products={data.products}
-              defaultCurrency={data.draft.currency}
               theme={theme}
               save={(product) => {
                 const latest = current.current?.data
@@ -533,7 +480,7 @@ export function InvoiceWorkspace() {
                     }))}
                     onChange={(value) => {
                       const nextTheme = themes.find((entry) => entry === value)
-                      if (nextTheme) commit({ ...data, theme: nextTheme }, { keepDraft: true })
+                      if (nextTheme) commit({ ...data, theme: nextTheme })
                     }}
                   />
                 </div>

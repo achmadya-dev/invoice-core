@@ -1,7 +1,13 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { expect, test } from '@playwright/test'
-import { newItem } from '../../src/modules/invoice/domain/invoice'
-import { decodeWorkspace, storageKey } from '../../src/modules/invoice/workspace.browser'
+import {
+  newCompany,
+  newInvoice,
+  newItem,
+  newWorkspace,
+  saveInvoice,
+} from '../../src/modules/invoice/domain/invoice'
+import { storageKey } from '../../src/modules/invoice/workspace.browser'
 
 const popplerAvailable = spawnSync('pdftotext', ['-v']).status === 0
 
@@ -26,18 +32,24 @@ test('downloaded PDF matches the preview amounts and keeps all lines before the 
     { length: 60 },
     (_, index) => `Service row ${String(index + 1).padStart(2, '0')}`,
   )
-  const raw = await page.evaluate((key) => localStorage.getItem(key), storageKey)
-  const workspace = raw && decodeWorkspace(raw)
-  if (!workspace) throw new Error('Expected the example draft to be stored')
-  workspace.draft.items = descriptions.map((description) => ({
-    ...newItem(description),
-    rate: '10',
-  }))
+  const company = newCompany('Example Studio')
+  const invoice = newInvoice(company, [])
+  const saved = saveInvoice(
+    { ...newWorkspace(), companies: [company] },
+    {
+      ...invoice,
+      number: 'EXAMPLE-001',
+      client: { ...invoice.client, name: 'Example Client' },
+      items: descriptions.map((description) => ({ ...newItem(description), rate: '10' })),
+    },
+  )
+  if (!saved.ok) throw new Error(saved.message)
   await page.evaluate(({ key, json }) => localStorage.setItem(key, json), {
     key: storageKey,
-    json: JSON.stringify(workspace),
+    json: JSON.stringify(saved.data),
   })
-  await page.reload()
+  await page.goto('/')
+  await page.getByRole('button', { name: 'EXAMPLE-001', exact: true }).click()
   await expect(page.locator('.ic-amount dd')).toHaveText('$600.00')
 
   const text = await downloadText()
