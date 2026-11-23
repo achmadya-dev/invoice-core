@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "name": "ai-project-template",
+  "templateVersion": "0.1.0",
+  "stack": "tanstack-start-bun-sqlite",
+  "workflow": "docs/WORKFLOW.md",
+  "agentInstructions": "AGENTS.md",
+  "commands": {
+    "verify": "bun run verify",
+    "fastCheck": "bun run check"
+  },
+  "modelOrchestration": {
+    "policy": "inherit-active-session",
+    "instructions": ".ai/ORCHESTRATION.md",
+    "agents": ["explorer", "reviewer"],
+    "hosts": ["opencode", "antigravity", "codex", "cursor", "claude-code"]
+  },
+  "automation": {
+    "autoMerge": false,
+    "autoDeploy": false
+  },
+  "note": "Project metadata only. This file does not enforce tool permissions."
+}

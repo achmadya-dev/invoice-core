@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.output/
+.tanstack/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+.data/
+
+# Local-only planning and development prototypes; never force-add.
+/prototypes/
