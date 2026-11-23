@@ -78,6 +78,7 @@ const style = StyleSheet.create({
   amountLabel: { fontFamily: 'Helvetica-Bold', fontSize: 14 },
   amountValue: { width: '66%', textAlign: 'right', fontSize: 28, lineHeight: 1.1 },
   extra: { marginBottom: 12 },
+  warning: { color: '#8b2336', marginBottom: 12 },
   footer: {
     marginTop: 12,
     fontSize: 8,
@@ -133,6 +134,11 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
           <Text style={style.rate}>Rate</Text>
           <Text style={style.numeric}>Amount</Text>
         </View>
+        {proof.lines.length === 0 && (
+          <View style={style.row}>
+            <Text>No line items</Text>
+          </View>
+        )}
         {/* Keep rows and summary as page siblings so a row break carries all remaining content. */}
         {proof.lines.map((line) => (
           <View key={line.id} style={style.row} wrap={false}>
@@ -157,6 +163,7 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
             <Text style={style.amountValue}>{proof.total}</Text>
           </View>
         </View>
+        {proof.warning && <Text style={style.warning}>{proof.warning}</Text>}
         {proof.extras.map((entry) => (
           <View key={entry.label} style={style.extra}>
             <Text style={style.caption} minPresenceAhead={14}>

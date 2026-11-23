@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   duplicateInvoice,
-  invoiceError,
   newInvoice,
   newItem,
   newWorkspace,
   saveDraft,
   saveProduct,
-  updateInvoiceStatus,
+  themes,
   type Invoice,
-  type InvoiceStatus,
   type Workspace,
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
 import { ProductsPanel } from './ProductsPanel'
-import { ConfirmModal, Icon, ThemeSelect, WorkspaceDialog, type ConfirmState } from './invoice-ui'
+import { ConfirmModal, Icon, SelectField, WorkspaceDialog, type ConfirmState } from './invoice-ui'
 import { Backup, Companies, InvoiceHistory } from './WorkspacePanels'
 import {
   downloadFile,
@@ -28,16 +26,14 @@ import { loadPdfRenderer } from './pdf.browser'
 
 const panels = {
   invoices: 'Invoices',
-  products: 'Products',
-  companies: 'Companies',
+  catalog: 'Catalog',
 } as const
 type Panel = keyof typeof panels | 'editor'
-type Message = { text: string; error?: boolean }
+type Message = { text: string; error?: boolean; preview?: boolean }
 
 function panelFromHash(hash: string): Panel {
   if (hash === '#editor') return 'editor'
-  if (hash === '#products' || hash === '#templates') return 'products'
-  if (hash === '#companies') return 'companies'
+  if (['#catalog', '#products', '#companies', '#templates'].includes(hash)) return 'catalog'
   return 'invoices'
 }
 
@@ -48,15 +44,11 @@ const panelCopy = {
   },
   invoices: {
     title: 'Invoices',
-    detail: 'Find, reopen, or duplicate an invoice saved on this device.',
+    detail: 'Browse and manage saved invoice history.',
   },
-  products: {
-    title: 'Products',
-    detail: 'Manage the products and services you add to invoices.',
-  },
-  companies: {
-    title: 'Companies',
-    detail: 'Manage sender profiles, numbering, and reusable invoice defaults.',
+  catalog: {
+    title: 'Catalog',
+    detail: 'Manage the products and company defaults you reuse on invoices.',
   },
 }
 
@@ -217,7 +209,7 @@ export function InvoiceWorkspace() {
   function loadExample() {
     editDraft((invoice) => ({
       ...invoice,
-      number: invoice.number || 'EXAMPLE-001',
+      number: 'EXAMPLE-001',
       issueDate: invoice.issueDate || '2026-11-23',
       dueDate: invoice.dueDate || '2026-12-07',
       sender: {
@@ -297,13 +289,8 @@ export function InvoiceWorkspace() {
     return ok
   }
 
-  async function downloadPdf(target: Invoice) {
+  async function downloadPdf(target: Invoice, preview = false) {
     if (pdfBusyId !== null) return
-    const error = invoiceError(target)
-    if (error) {
-      setMessage({ text: error, error: true })
-      return
-    }
     setPdfBusyId(target.id)
     setMessage(null)
     try {
@@ -314,11 +301,12 @@ export function InvoiceWorkspace() {
         .replace(/[^\p{L}\p{N}._-]+/gu, '-')
         .slice(0, 100)
       downloadFile(blob, `${name || 'invoice'}.pdf`)
-      setMessage({ text: 'PDF downloaded.' })
+      setMessage({ text: 'PDF downloaded.', preview })
     } catch {
       setMessage({
         text: 'The PDF could not be generated. Try again or use your browser print dialog.',
         error: true,
+        preview,
       })
     } finally {
       setPdfBusyId(null)
@@ -355,40 +343,23 @@ export function InvoiceWorkspace() {
               </button>
             ))}
           </nav>
-          <ThemeSelect
-            value={theme}
-            disabled={!data}
-            onChange={(nextTheme) => {
-              if (data) commit({ ...data, theme: nextTheme }, { keepDraft: true })
-            }}
-          />
         </div>
       </header>
       <main className="ic-shell">
         <div className="ic-heading">
           <div>
+            {data && panel === 'editor' && (
+              <button
+                type="button"
+                className="ic-text-button ic-back"
+                onClick={() => show('invoices')}
+              >
+                <Icon name="back" /> Back to invoices
+              </button>
+            )}
             <h1>{copy.title}</h1>
             <p>{copy.detail}</p>
           </div>
-          {data && panel === 'editor' && draft && (
-            <div className="ic-actions ic-heading-actions">
-              <button type="button" className="ic-text-button" onClick={() => show('invoices')}>
-                Back to invoices
-              </button>
-              <button type="button" className="ic-button ic-primary" onClick={saveEditor}>
-                {isSavedDraft ? 'Save changes' : 'Create invoice'}
-              </button>
-              <button
-                type="button"
-                className="ic-button"
-                disabled={pdfBusyId !== null}
-                onClick={() => void downloadPdf(draft)}
-              >
-                <Icon name="download" />{' '}
-                {pdfBusyId === draft.id ? 'Preparing PDF…' : 'Download PDF'}
-              </button>
-            </div>
-          )}
           {data && panel === 'invoices' && (
             <div className="ic-actions ic-heading-actions">
               <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>
@@ -414,7 +385,7 @@ export function InvoiceWorkspace() {
             {storageWarning}
           </p>
         )}
-        {message && (
+        {message && panel !== 'editor' && (
           <p
             className={message.error ? 'ic-banner ic-error' : 'ic-banner'}
             role={message.error ? 'alert' : 'status'}
@@ -434,6 +405,11 @@ export function InvoiceWorkspace() {
             edit={editDraft}
             view={view}
             setView={setView}
+            onSave={saveEditor}
+            formNotice={message && !message.preview ? message : undefined}
+            previewNotice={message?.preview ? message : undefined}
+            onDownload={() => void downloadPdf(data.draft, true)}
+            pdfBusy={pdfBusyId !== null}
             onLoadExample={!data.dirty && !isSavedDraft ? loadExample : undefined}
             onResetDraft={
               data.dirty && !isSavedDraft
@@ -460,84 +436,79 @@ export function InvoiceWorkspace() {
               else replaceDraft(data, invoice)
             }}
             downloadPdf={(invoice) => void downloadPdf(invoice)}
-            updateStatus={(invoice, status: InvoiceStatus) => {
-              if (commit(updateInvoiceStatus(data, invoice.id, status))) {
-                setMessage({ text: `Marked ${invoice.number} as ${status}.` })
-              }
-            }}
             duplicate={duplicateSavedInvoice}
             remove={(invoice) => deleteInvoice(invoice)}
           />
         )}
-        {data && panel === 'products' && (
-          <ProductsPanel
-            products={data.products}
-            defaultCurrency={data.draft.currency}
-            theme={theme}
-            save={(product) => {
-              const latest = current.current?.data
-              if (!latest) return { ok: false }
-              const result = saveProduct(latest, product)
-              if (!result.ok) return result
-              if (!commit(result.data)) return { ok: false }
-              setMessage({ text: 'Product saved.' })
-              return { ok: true }
-            }}
-            remove={(product) => {
-              setConfirmModal({
-                title: `Delete ${product.name}?`,
-                description: 'Existing invoice drafts and saved invoices keep their line items.',
-                confirmLabel: 'Delete product',
-                danger: true,
-                onConfirm: () => {
-                  const latest = current.current?.data
-                  if (!latest) return
-                  if (
-                    commit({
+        {data && panel === 'catalog' && (
+          <div className="ic-catalog">
+            <ProductsPanel
+              products={data.products}
+              defaultCurrency={data.draft.currency}
+              theme={theme}
+              save={(product) => {
+                const latest = current.current?.data
+                if (!latest) return { ok: false }
+                const result = saveProduct(latest, product)
+                if (!result.ok) return result
+                if (!commit(result.data)) return { ok: false }
+                setMessage({ text: 'Product saved.' })
+                return { ok: true }
+              }}
+              remove={(product) => {
+                setConfirmModal({
+                  title: `Delete ${product.name}?`,
+                  description: 'Existing invoice drafts and saved invoices keep their line items.',
+                  confirmLabel: 'Delete product',
+                  danger: true,
+                  onConfirm: () => {
+                    const latest = current.current?.data
+                    if (!latest) return
+                    if (
+                      commit({
+                        ...latest,
+                        products: latest.products.filter(({ id }) => id !== product.id),
+                      })
+                    ) {
+                      setMessage({ text: 'Product removed.' })
+                    }
+                  },
+                })
+              }}
+            />
+            <Companies
+              companies={data.companies}
+              theme={data.theme}
+              save={(company) => {
+                const exists = data.companies.some((entry) => entry.id === company.id)
+                const companies = exists
+                  ? data.companies.map((entry) => (entry.id === company.id ? company : entry))
+                  : [...data.companies, company]
+                const ok = commit({ ...data, companies })
+                if (ok) setMessage({ text: 'Sender profile saved.' })
+                return ok
+              }}
+              remove={(company) => {
+                setConfirmModal({
+                  title: `Delete ${company.sender.name}?`,
+                  description: 'Saved invoices keep their existing sender details.',
+                  confirmLabel: 'Delete company',
+                  danger: true,
+                  onConfirm: () => {
+                    const latest = current.current?.data
+                    if (!latest) return
+                    const ok = commit({
                       ...latest,
-                      products: latest.products.filter(({ id }) => id !== product.id),
+                      companies: latest.companies.filter((entry) => entry.id !== company.id),
                     })
-                  ) {
-                    setMessage({ text: 'Product removed.' })
-                  }
-                },
-              })
-            }}
-          />
-        )}
-        {data && panel === 'companies' && (
-          <Companies
-            companies={data.companies}
-            theme={data.theme}
-            save={(company) => {
-              const exists = data.companies.some((entry) => entry.id === company.id)
-              const companies = exists
-                ? data.companies.map((entry) => (entry.id === company.id ? company : entry))
-                : [...data.companies, company]
-              const ok = commit({ ...data, companies })
-              if (ok) setMessage({ text: 'Sender profile saved.' })
-              return ok
-            }}
-            remove={(company) => {
-              setConfirmModal({
-                title: `Delete ${company.sender.name}?`,
-                description: 'Saved invoices keep their existing sender details.',
-                confirmLabel: 'Delete company',
-                danger: true,
-                onConfirm: () => {
-                  const latest = current.current?.data
-                  if (!latest) return
-                  const ok = commit({
-                    ...latest,
-                    companies: latest.companies.filter((entry) => entry.id !== company.id),
-                  })
-                  if (ok) {
-                    setMessage({ text: 'Sender profile removed.' })
-                  }
-                },
-              })
-            }}
-          />
+                    if (ok) {
+                      setMessage({ text: 'Sender profile removed.' })
+                    }
+                  },
+                })
+              }}
+            />
+          </div>
         )}
         {data && panel === 'invoices' && (
           <WorkspaceDialog
@@ -551,21 +522,37 @@ export function InvoiceWorkspace() {
             }}
           >
             {backupOpen && (
-              <Backup
-                workspace={data}
-                storageBytes={new Blob([local?.raw ?? JSON.stringify(data)]).size}
-                damaged={local.damaged ? local.raw : null}
-                restore={(restored) => {
-                  const ok = commit(restored, { restore: true })
-                  if (ok) {
-                    show('invoices')
-                    setMessage({ text: 'Backup restored.' })
-                  }
-                  return ok
-                }}
-                clear={clearWorkspace}
-                requestConfirm={setBackupConfirm}
-              />
+              <>
+                <div className="ic-dialog-body ic-theme-setting">
+                  <SelectField
+                    label="Theme"
+                    value={theme}
+                    options={themes.map((value) => ({
+                      value,
+                      label: value.charAt(0).toUpperCase() + value.slice(1),
+                    }))}
+                    onChange={(value) => {
+                      const nextTheme = themes.find((entry) => entry === value)
+                      if (nextTheme) commit({ ...data, theme: nextTheme }, { keepDraft: true })
+                    }}
+                  />
+                </div>
+                <Backup
+                  workspace={data}
+                  storageBytes={new Blob([local?.raw ?? JSON.stringify(data)]).size}
+                  damaged={local.damaged ? local.raw : null}
+                  restore={(restored) => {
+                    const ok = commit(restored, { restore: true })
+                    if (ok) {
+                      show('invoices')
+                      setMessage({ text: 'Backup restored.' })
+                    }
+                    return ok
+                  }}
+                  clear={clearWorkspace}
+                  requestConfirm={setBackupConfirm}
+                />
+              </>
             )}
             <ConfirmModal
               confirm={backupConfirm}

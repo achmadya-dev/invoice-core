@@ -5,7 +5,6 @@ import {
   formatDate,
   formatMoney,
   invoiceSenderKey,
-  invoiceStatuses,
   invoiceTotals,
   maxBackupBytes,
   maxCompanies,
@@ -14,7 +13,6 @@ import {
   newCompany,
   type Company,
   type Invoice,
-  type InvoiceStatus,
   type Theme,
   type Workspace,
 } from './domain/invoice'
@@ -34,7 +32,6 @@ export function InvoiceHistory({
   pdfBusyId,
   open,
   downloadPdf,
-  updateStatus,
   duplicate,
   remove,
 }: {
@@ -42,36 +39,46 @@ export function InvoiceHistory({
   pdfBusyId: string | null
   open: (invoice: Invoice) => void
   downloadPdf: (invoice: Invoice) => void
-  updateStatus: (invoice: Invoice, status: InvoiceStatus) => void
   duplicate: (invoice: Invoice) => void
   remove: (invoice: Invoice) => void
 }) {
   const [query, setQuery] = useState('')
   const [profile, setProfile] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'' | InvoiceStatus>('')
+  const [page, setPage] = useState(1)
   const choices = new Map(workspace.companies.map((company) => [company.id, company.sender.name]))
   for (const invoice of workspace.invoices)
     if (!choices.has(invoiceSenderKey(invoice)))
       choices.set(invoiceSenderKey(invoice), invoice.sender.name)
   const search = query.trim().toLowerCase()
-  const filtered = workspace.invoices.filter(
-    (invoice) =>
-      (!profile || invoiceSenderKey(invoice) === profile) &&
-      (!statusFilter || invoice.status === statusFilter) &&
-      [invoice.number, invoice.client.name, invoice.sender.name, invoice.status].some((value) =>
-        value.toLowerCase().includes(search),
-      ),
-  )
+  const filtered = workspace.invoices
+    .filter(
+      (invoice) =>
+        (!profile || invoiceSenderKey(invoice) === profile) &&
+        [invoice.number, invoice.client.name, invoice.sender.name].some((value) =>
+          value.toLowerCase().includes(search),
+        ),
+    )
+    .sort(
+      (a, b) => b.issueDate.localeCompare(a.issueDate) || b.updatedAt.localeCompare(a.updatedAt),
+    )
+  const pageSize = 10
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const first = (currentPage - 1) * pageSize
+  const visible = filtered.slice(first, first + pageSize)
   return (
-    <section className="ic-editor ic-panel">
+    <section className="ic-editor ic-panel" aria-label="Invoice history">
       <div className="ic-filter">
         <label className="ic-field">
           Search invoices
           <input
             type="search"
             value={query}
-            placeholder="Number, client, or status"
-            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Number, client, or company"
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setPage(1)
+            }}
           />
         </label>
         <SelectField
@@ -81,27 +88,16 @@ export function InvoiceHistory({
             { value: '', label: 'All companies' },
             ...Array.from(choices, ([id, name]) => ({ value: id, label: name })),
           ]}
-          onChange={setProfile}
-        />
-        <SelectField
-          label="Filter by status"
-          value={statusFilter}
-          options={[
-            { value: '', label: 'All statuses' },
-            ...invoiceStatuses.map((status) => ({
-              value: status,
-              label: `${status[0]?.toUpperCase()}${status.slice(1)}`,
-            })),
-          ]}
           onChange={(value) => {
-            const match = invoiceStatuses.find((entry) => entry === value)
-            setStatusFilter(match ?? '')
+            setProfile(value)
+            setPage(1)
           }}
         />
       </div>
-      {workspace.invoices.length > 0 && (
+      {filtered.length > 0 && (
         <p className="ic-history-meta">
-          Showing {filtered.length} of {workspace.invoices.length} saved invoice(s)
+          Showing {first + 1}–{first + visible.length} of {filtered.length} invoices · Newest issue
+          date first
         </p>
       )}
       {workspace.invoices.length === 0 ? (
@@ -113,7 +109,7 @@ export function InvoiceHistory({
         <p className="ic-empty">No invoices match these filters.</p>
       ) : (
         <ul className="ic-records">
-          {filtered.map((invoice) => {
+          {visible.map((invoice) => {
             const totals = invoiceTotals(invoice)
             return (
               <li className="ic-record" key={invoice.id}>
@@ -132,20 +128,6 @@ export function InvoiceHistory({
                 </div>
                 <div className="ic-record-total">
                   <strong>{totals && formatMoney(totals.total, invoice.currency)}</strong>
-                  <SelectField
-                    label={`Status for ${invoice.number}`}
-                    compact
-                    triggerClassName={`ic-status-trigger ic-${invoice.status}`}
-                    value={invoice.status}
-                    options={invoiceStatuses.map((status) => ({
-                      value: status,
-                      label: `${status[0]?.toUpperCase()}${status.slice(1)}`,
-                    }))}
-                    onChange={(nextStatus) => {
-                      const match = invoiceStatuses.find((entry) => entry === nextStatus)
-                      if (match && match !== invoice.status) updateStatus(invoice, match)
-                    }}
-                  />
                 </div>
                 <div className="ic-actions">
                   <button
@@ -179,6 +161,29 @@ export function InvoiceHistory({
           })}
         </ul>
       )}
+      {pageCount > 1 && (
+        <nav className="ic-pagination" aria-label="Invoice history pages">
+          <button
+            className="ic-button"
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            Previous
+          </button>
+          <span role="status">
+            Page {currentPage} of {pageCount}
+          </span>
+          <button
+            className="ic-button"
+            type="button"
+            disabled={currentPage === pageCount}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Next
+          </button>
+        </nav>
+      )}
     </section>
   )
 }
@@ -196,6 +201,11 @@ export function Companies({
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
   const [error, setError] = useState('')
+  const [query, setQuery] = useState('')
+  const search = query.trim().toLowerCase()
+  const matches = companies.filter(({ sender, currency }) =>
+    [sender.name, currency].some((value) => value.toLowerCase().includes(search)),
+  )
   function edit(company: Company | null) {
     setSelected(company)
     setError('')
@@ -212,9 +222,20 @@ export function Companies({
     else setError('Company could not be saved. Check browser storage and try again.')
   }
   return (
-    <section className="ic-editor ic-panel" aria-label="Company profiles">
+    <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="companies-title">
       <div className="ic-panel-bar">
-        <h2>Sender profiles</h2>
+        <h2 id="companies-title">Companies</h2>
+      </div>
+      <div className="ic-master-toolbar ic-panel-pad">
+        <label className="ic-field">
+          Search companies
+          <input
+            type="search"
+            value={query}
+            placeholder="Name or currency"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
         <button
           type="button"
           className="ic-button ic-primary"
@@ -225,10 +246,12 @@ export function Companies({
         </button>
       </div>
       <ul className="ic-records">
-        {companies.map((company) => (
+        {matches.map((company) => (
           <li key={company.id} className="ic-record">
-            <h2>{company.sender.name}</h2>
-            <span className="ic-mono">{company.currency}</span>
+            <div>
+              <h3>{company.sender.name}</h3>
+              <p>{company.currency}</p>
+            </div>
             <div className="ic-actions">
               <button
                 className="ic-button"
@@ -250,8 +273,12 @@ export function Companies({
           </li>
         ))}
       </ul>
-      {companies.length === 0 && (
-        <p className="ic-empty">Add a company to reuse its sender details.</p>
+      {matches.length === 0 && (
+        <p className="ic-empty">
+          {companies.length
+            ? 'No companies match this search.'
+            : 'No companies yet. Add one to reuse its sender details.'}
+        </p>
       )}
       <WorkspaceDialog
         open={selected !== null}

@@ -5,7 +5,6 @@ import { Select } from '@base-ui/react/select'
 import { countryCodes, countryName, currencies, currencyName } from './domain/catalog'
 import {
   decimalValid,
-  themes,
   type Contact,
   type Currency,
   type Sender,
@@ -29,6 +28,7 @@ const icons = {
   expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
   collapse: 'M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7',
   arrow: 'M5 12h14m-5-5 5 5-5 5',
+  back: 'M19 12H5m5 5-5-5 5-5',
   system: 'M3 5h18v12H3zM12 17v3m-4 0h8',
   light:
     'M16 12a4 4 0 1 1-8 0 4 4 0 1 1 8 0ZM12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5',
@@ -241,40 +241,37 @@ export function SelectField({
   value,
   options,
   onChange,
-  compact = false,
-  triggerClassName,
 }: {
   label: string
   value: string
   options: SelectOption[]
   onChange: (value: string) => void
-  compact?: boolean
-  triggerClassName?: string
 }) {
   return (
     <Select.Root
       items={options}
       value={value}
+      modal={false}
       onValueChange={(nextValue) => {
         if (typeof nextValue === 'string') onChange(nextValue)
       }}
     >
-      <div className={compact ? 'ic-select-compact' : 'ic-field'}>
-        <Select.Label className={compact ? 'sr-only' : undefined}>{label}</Select.Label>
-        <Select.Trigger
-          className={[
-            compact ? 'ic-select-trigger ic-select-trigger-compact' : 'ic-select-trigger',
-            triggerClassName,
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
+      <div className="ic-field">
+        <Select.Label>{label}</Select.Label>
+        <Select.Trigger className="ic-select-trigger">
           <Select.Value />
           <Select.Icon className="ic-select-icon">
             <Icon name="chevron" />
           </Select.Icon>
         </Select.Trigger>
-        <Select.Positioner className="ic-select-positioner" align="start" sideOffset={4}>
+        <Select.Positioner
+          className="ic-select-positioner"
+          align="start"
+          sideOffset={4}
+          collisionPadding={12}
+          alignItemWithTrigger={false}
+          positionMethod="fixed"
+        >
           <Select.Popup className="ic-select-popup">
             <Select.List className="ic-select-list">
               {options.map((option) => (
@@ -284,77 +281,6 @@ export function SelectField({
                   label={option.label}
                   className="ic-select-option"
                 >
-                  <Select.ItemText>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator className="ic-select-indicator">
-                    <Icon name="check" />
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </div>
-    </Select.Root>
-  )
-}
-
-const themeLabels: Record<Theme, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-}
-const themeOptions = themes.map((value) => ({ value, label: themeLabels[value] }))
-
-export function ThemeSelect({
-  value,
-  disabled = false,
-  onChange,
-}: {
-  value: Theme
-  disabled?: boolean
-  onChange: (value: Theme) => void
-}) {
-  return (
-    <Select.Root
-      items={themeOptions}
-      value={value}
-      disabled={disabled}
-      onValueChange={(nextValue) => {
-        const match = themes.find((theme) => theme === nextValue)
-        if (match) onChange(match)
-      }}
-    >
-      <div className="ic-theme-picker">
-        <Select.Label className="sr-only">Theme</Select.Label>
-        <Select.Trigger className="ic-theme-trigger">
-          <span className="ic-theme-value">
-            <span className="ic-theme-icon">
-              <Icon name={value} />
-            </span>
-            <Select.Value />
-          </span>
-          <Select.Icon className="ic-theme-chevron">
-            <Icon name="chevron" />
-          </Select.Icon>
-        </Select.Trigger>
-        <Select.Positioner
-          className="ic-select-positioner"
-          align="end"
-          sideOffset={6}
-          alignItemWithTrigger={false}
-        >
-          <Select.Popup className="ic-select-popup ic-theme-popup">
-            <Select.List className="ic-select-list">
-              {themeOptions.map((option) => (
-                <Select.Item
-                  key={option.value}
-                  value={option.value}
-                  label={option.label}
-                  className="ic-select-option ic-theme-option"
-                >
-                  <span className="ic-theme-option-icon">
-                    <Icon name={option.value} />
-                  </span>
                   <Select.ItemText>{option.label}</Select.ItemText>
                   <Select.ItemIndicator className="ic-select-indicator">
                     <Icon name="check" />

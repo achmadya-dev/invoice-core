@@ -2,8 +2,8 @@ import { useState } from 'react'
 import {
   addProductLine,
   applyCompanyDefaults,
-  invoiceStatuses,
   manualCompanyId,
+  suggestInvoiceNumber,
   type Invoice,
   type Workspace,
 } from './domain/invoice'
@@ -21,12 +21,18 @@ import { InvoicePreview } from './InvoicePreview'
 import { LineItems } from './LineItems'
 
 type EditInvoice = (edit: (invoice: Invoice) => Invoice) => void
+type Notice = { text: string; error?: boolean }
 
 export function InvoiceEditor({
   workspace,
   edit,
   view,
   setView,
+  onSave,
+  onDownload,
+  pdfBusy,
+  formNotice,
+  previewNotice,
   onLoadExample,
   onResetDraft,
   onDuplicate,
@@ -36,6 +42,11 @@ export function InvoiceEditor({
   edit: EditInvoice
   view: 'edit' | 'preview'
   setView: (view: 'edit' | 'preview') => void
+  onSave: () => void
+  onDownload: () => void
+  pdfBusy: boolean
+  formNotice?: Notice
+  previewNotice?: Notice
   onLoadExample?: () => void
   onResetDraft?: () => void
   onDuplicate?: () => void
@@ -45,7 +56,7 @@ export function InvoiceEditor({
   const [productQuery, setProductQuery] = useState('')
   const [productError, setProductError] = useState('')
   const saved = workspace.invoices.some((invoice) => invoice.id === draft.id)
-  const companyExists = workspace.companies.some((company) => company.id === draft.companyId)
+  const company = workspace.companies.find((entry) => entry.id === draft.companyId)
   const productSearch = productQuery.trim().toLowerCase()
   const products = workspace.products.filter((product) =>
     [product.name, product.description, product.currency].some((value) =>
@@ -103,16 +114,6 @@ export function InvoiceEditor({
                   Load example
                 </button>
               )}
-              {onResetDraft && (
-                <button
-                  type="button"
-                  className="ic-panel-button ic-panel-button-danger"
-                  onClick={onResetDraft}
-                >
-                  Reset draft
-                </button>
-              )}
-              <span className={`ic-tag ic-${draft.status}`}>{draft.status}</span>
             </div>
           </div>
           <div className="ic-editor-body">
@@ -124,7 +125,7 @@ export function InvoiceEditor({
                   value={draft.companyId}
                   options={[
                     { value: manualCompanyId, label: 'Enter sender manually' },
-                    ...(!companyExists && draft.companyId !== manualCompanyId
+                    ...(!company && draft.companyId !== manualCompanyId
                       ? [
                           {
                             value: draft.companyId,
@@ -138,12 +139,21 @@ export function InvoiceEditor({
                     })),
                   ]}
                   onChange={(companyId) => {
-                    if (companyId === manualCompanyId) set('companyId', manualCompanyId)
-                    else {
-                      const company = workspace.companies.find((entry) => entry.id === companyId)
-                      if (company)
+                    if (companyId === manualCompanyId) {
+                      edit((invoice) => {
+                        const manual = { ...invoice, companyId: manualCompanyId }
+                        return saved ||
+                          (invoice.number &&
+                            invoice.number !==
+                              suggestInvoiceNumber(invoice, workspace.invoices, company))
+                          ? manual
+                          : { ...manual, number: suggestInvoiceNumber(manual, workspace.invoices) }
+                      })
+                    } else {
+                      const selected = workspace.companies.find((entry) => entry.id === companyId)
+                      if (selected)
                         edit((invoice) =>
-                          applyCompanyDefaults(invoice, company, workspace.invoices),
+                          applyCompanyDefaults(invoice, selected, workspace.invoices, company),
                         )
                     }
                     setProductError('')
@@ -161,7 +171,7 @@ export function InvoiceEditor({
                   empty={
                     workspace.products.length
                       ? 'No matching products.'
-                      : 'No products yet. Add one from the Products tab.'
+                      : 'No products yet. Add one in Catalog.'
                   }
                   theme={workspace.theme}
                   onQuery={(query) => {
@@ -181,17 +191,30 @@ export function InvoiceEditor({
                 Optional. Enter sender details and line items manually if you prefer.
               </p>
             </section>
-            <section className="ic-section" aria-labelledby="details-title">
-              <h3 id="details-title">Invoice details</h3>
+            <details className="ic-section ic-fold" open>
+              <summary>Invoice details</summary>
               <div className="ic-fields">
-                <label className="ic-field">
-                  Invoice number
-                  <input
-                    value={draft.number}
-                    maxLength={120}
-                    onChange={(event) => set('number', event.target.value)}
-                  />
-                </label>
+                <div className="ic-number-field ic-span">
+                  <label className="ic-field">
+                    Invoice number
+                    <input
+                      value={draft.number}
+                      maxLength={120}
+                      onChange={(event) => set('number', event.target.value)}
+                    />
+                  </label>
+                  {!saved && (
+                    <button
+                      type="button"
+                      className="ic-button"
+                      onClick={() =>
+                        set('number', suggestInvoiceNumber(draft, workspace.invoices, company))
+                      }
+                    >
+                      Generate
+                    </button>
+                  )}
+                </div>
                 <label className="ic-field">
                   Issue date
                   <input
@@ -215,18 +238,6 @@ export function InvoiceEditor({
                     setProductError('')
                   }}
                 />
-                <SelectField
-                  label="Status"
-                  value={draft.status}
-                  options={invoiceStatuses.map((status) => ({
-                    value: status,
-                    label: `${status[0]?.toUpperCase()}${status.slice(1)}`,
-                  }))}
-                  onChange={(status) => {
-                    const match = invoiceStatuses.find((value) => value === status)
-                    if (match) set('status', match)
-                  }}
-                />
                 <div className="ic-span">
                   <ClientField
                     client={draft.client}
@@ -246,10 +257,19 @@ export function InvoiceEditor({
                     sender={draft.sender}
                     theme={workspace.theme}
                     onChange={(patch) =>
-                      edit((current) => ({
-                        ...current,
-                        sender: { ...current.sender, ...patch },
-                      }))
+                      edit((current) => {
+                        const next = { ...current, sender: { ...current.sender, ...patch } }
+                        if (
+                          saved ||
+                          current.companyId !== manualCompanyId ||
+                          patch.name === undefined
+                        )
+                          return next
+                        const previous = suggestInvoiceNumber(current, workspace.invoices)
+                        return current.number && current.number !== previous
+                          ? next
+                          : { ...next, number: suggestInvoiceNumber(next, workspace.invoices) }
+                      })
                     }
                   />
                 </div>
@@ -269,9 +289,9 @@ export function InvoiceEditor({
                   />
                 </div>
               </details>
-            </section>
-            <section className="ic-section" aria-labelledby="lines-title">
-              <h3 id="lines-title">Line items</h3>
+            </details>
+            <details className="ic-section ic-fold" open>
+              <summary>Line items</summary>
               <LineItems
                 items={draft.items}
                 edit={(update) => edit((current) => ({ ...current, items: update(current.items) }))}
@@ -279,7 +299,7 @@ export function InvoiceEditor({
                 caption="Invoice line items"
                 empty="Add a line manually or choose a product above."
               />
-            </section>
+            </details>
             <section className="ic-section" aria-label="Adjustments and notes">
               <details className="ic-detail">
                 <summary>Discount, tax, and shipping</summary>
@@ -342,38 +362,45 @@ export function InvoiceEditor({
             </section>
           </div>
           <div className="ic-editor-foot">
-            {saved && (onDuplicate || onDelete) ? (
-              <>
-                <span>Saved in local history</span>
-                <div className="ic-actions">
-                  {onDuplicate && (
-                    <button type="button" className="ic-panel-button" onClick={onDuplicate}>
-                      Duplicate
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      type="button"
-                      className="ic-panel-button ic-panel-button-danger"
-                      onClick={onDelete}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <span>Preview updates as you type</span>
-                <span>Stored on this device</span>
-              </>
+            {formNotice && (
+              <p
+                className={formNotice.error ? 'ic-error' : 'ic-muted'}
+                role={formNotice.error ? 'alert' : 'status'}
+              >
+                {formNotice.text}
+              </p>
             )}
+            <div className="ic-actions ic-editor-actions">
+              <button type="button" className="ic-button ic-primary" onClick={onSave}>
+                {saved ? 'Save changes' : 'Create invoice'}
+              </button>
+              {onResetDraft && (
+                <button type="button" className="ic-button" onClick={onResetDraft}>
+                  Reset draft
+                </button>
+              )}
+              {onDuplicate && (
+                <button type="button" className="ic-panel-button" onClick={onDuplicate}>
+                  Duplicate
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  className="ic-panel-button ic-panel-button-danger"
+                  onClick={onDelete}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
         </section>
         <InvoicePreview
           invoice={draft}
-          focused={view === 'preview'}
-          onToggleFocus={() => setView(view === 'edit' ? 'preview' : 'edit')}
+          onDownload={onDownload}
+          pdfBusy={pdfBusy}
+          notice={previewNotice}
         />
       </div>
     </>
