@@ -69,6 +69,8 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(page.getByLabel('Invoice number')).toHaveValue('EXAMPLE-001')
   await expect(page.getByLabel('Quantity, item 2')).toHaveValue('2')
 
+  await chooseOption(page, 'Theme', 'Emerald')
+  await expect(page.locator('#invoice-editor')).toHaveAttribute('data-invoice-theme', 'emerald')
   await page.getByLabel('Discount (%)', { exact: true }).fill('10')
   await page.getByLabel('Tax label').fill('VAT')
   await page.getByLabel('Tax rate (%)').fill('12')
@@ -86,6 +88,7 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   expect((await readFile(pdfPath)).subarray(0, 5).toString()).toBe('%PDF-')
   await downloaded.saveAs(info.outputPath('invoice-proof.pdf'))
   await page.getByRole('button', { name: 'Preview', exact: true }).click()
+  await expect(page.locator('#invoice-preview')).toHaveAttribute('data-invoice-theme', 'emerald')
   await expect(preview.getByRole('article').locator('.ic-amount dd')).toHaveText('$1,637.80')
   await preview.screenshot({ path: info.outputPath('invoice-desktop-preview.png') })
   await page.getByRole('button', { name: 'Edit', exact: true }).click()

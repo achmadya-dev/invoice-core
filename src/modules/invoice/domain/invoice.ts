@@ -3,6 +3,55 @@ import { countryCodes, currencies } from './catalog'
 
 const invoiceStatuses = ['draft', 'sent', 'paid'] as const
 export const themes = ['system', 'light', 'dark'] as const
+export const invoiceThemes = ['indigo', 'slate', 'emerald', 'amber', 'rose'] as const
+export type InvoiceTheme = (typeof invoiceThemes)[number]
+export const invoiceThemeLabels: Record<InvoiceTheme, string> = {
+  indigo: 'Indigo',
+  slate: 'Slate',
+  emerald: 'Emerald',
+  amber: 'Amber',
+  rose: 'Rose',
+}
+export const invoiceThemePalettes: Record<
+  InvoiceTheme,
+  { accent: string; soft: string; amountBg: string; amountInk: string; line: string }
+> = {
+  indigo: {
+    accent: '#4837a6',
+    soft: '#f0edf9',
+    amountBg: '#f9e080',
+    amountInk: '#282049',
+    line: '#dedbe8',
+  },
+  slate: {
+    accent: '#334155',
+    soft: '#f1f5f9',
+    amountBg: '#e2e8f0',
+    amountInk: '#0f172a',
+    line: '#cbd5e1',
+  },
+  emerald: {
+    accent: '#047857',
+    soft: '#ecfdf5',
+    amountBg: '#a7f3d0',
+    amountInk: '#064e3b',
+    line: '#ccebd9',
+  },
+  amber: {
+    accent: '#b45309',
+    soft: '#fffbeb',
+    amountBg: '#fde68a',
+    amountInk: '#451a03',
+    line: '#f3dec0',
+  },
+  rose: {
+    accent: '#be123c',
+    soft: '#fff1f2',
+    amountBg: '#fecdd3',
+    amountInk: '#4c0519',
+    line: '#f3d1d6',
+  },
+}
 export const maxItems = 100
 export const maxInvoices = 500
 export const maxCompanies = 50
@@ -82,6 +131,7 @@ const invoiceSchema = z
     shipping: decimalInput,
     notes: memo,
     terms: memo,
+    theme: z.enum(invoiceThemes).optional(),
     updatedAt: z.iso.datetime(),
   })
   .refine((invoice) => unique(invoice.items.map((item) => item.id)))

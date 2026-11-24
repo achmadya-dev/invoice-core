@@ -138,10 +138,12 @@ describe('local invoice workspace', () => {
   })
 
   it('keeps legacy status in saved records and formats byte counts', () => {
-    const { workspace, draft } = filledDraft({ status: 'paid' })
+    const { workspace, draft } = filledDraft({ status: 'paid', theme: 'emerald' })
     const saved = saveInvoice(workspace, draft, now)
     if (!saved.ok) throw new Error(saved.message)
-    expect(decodeWorkspace(JSON.stringify(saved.data))?.invoices[0]?.status).toBe('paid')
+    const decoded = decodeWorkspace(JSON.stringify(saved.data))
+    expect(decoded?.invoices[0]?.status).toBe('paid')
+    expect(decoded?.invoices[0]?.theme).toBe('emerald')
 
     expect(formatBytes(-5)).toBe('0 B')
     expect(formatBytes(512)).toBe('512 B')
