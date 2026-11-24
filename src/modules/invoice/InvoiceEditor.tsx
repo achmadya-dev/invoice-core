@@ -392,19 +392,9 @@ export function InvoiceEditor({
                 <dd>{totals ? formatMoney(-totals.discount, draft.currency) : '—'}</dd>
               </div>
               <div className="ic-summary-input-row">
-                <dt className="ic-summary-tax">
-                  <label className="sr-only" htmlFor="sheet-tax-label">
-                    Tax label
-                  </label>
-                  <input
-                    id="sheet-tax-label"
-                    className="ic-summary-inline-label"
-                    maxLength={120}
-                    placeholder="Tax"
-                    value={draft.taxLabel}
-                    onChange={(event) => set('taxLabel', event.target.value)}
-                  />
+                <dt>
                   <label className="ic-summary-inline" htmlFor="sheet-tax-rate">
+                    <span>{draft.taxLabel.trim() || 'Tax'}</span>
                     <span className="ic-summary-control">
                       <input
                         id="sheet-tax-rate"

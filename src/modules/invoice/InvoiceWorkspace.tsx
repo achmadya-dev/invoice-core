@@ -316,7 +316,6 @@ export function InvoiceWorkspace() {
               <ColorPicker
                 label="Accent color"
                 value={resolveAccentColor(draft)}
-                theme={theme}
                 onChange={(accentColor) => editDraft((current) => ({ ...current, accentColor }))}
               />
               <SelectField
