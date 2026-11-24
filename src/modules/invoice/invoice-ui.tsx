@@ -367,60 +367,54 @@ export function CountrySelect({
   )
 }
 
+const contactFields = [
+  { key: 'name', type: 'text', sender: 'e.g. Northline Studio', client: 'e.g. Fieldwork Press' },
+  {
+    key: 'email',
+    type: 'email',
+    sender: 'e.g. hello@example.com',
+    client: 'e.g. billing@example.com',
+  },
+  { key: 'phone', type: 'tel', sender: 'e.g. +1 555 0100', client: 'e.g. +1 555 0101' },
+] as const
+
 export function ContactFields({
-  label,
   contact,
   onChange,
-  theme,
-  showName = true,
+  party,
+  sheet = false,
 }: {
-  label: string
   contact: Contact
   onChange: (patch: Partial<Contact>) => void
-  theme: Theme
-  showName?: boolean
+  party: 'sender' | 'client'
+  sheet?: boolean
 }) {
+  const partyLabel = party === 'sender' ? 'Sender' : 'Billing contact'
   return (
     <>
-      {showName && (
-        <label className="ic-field">
-          {label} name
+      {contactFields.map((field) => (
+        <label
+          className={`ic-field${sheet && field.key === 'name' ? 'ic-sheet-name' : ''}`}
+          key={field.key}
+        >
+          <span className={sheet ? 'sr-only' : undefined}>
+            {party === 'client' && field.key === 'name' ? 'Client' : `${partyLabel} ${field.key}`}
+          </span>
           <input
+            type={field.type}
             maxLength={120}
-            value={contact.name}
-            onChange={(event) => onChange({ name: event.target.value })}
+            placeholder={sheet ? field[party] : undefined}
+            value={contact[field.key]}
+            onChange={(event) => onChange({ [field.key]: event.target.value })}
           />
         </label>
-      )}
-      <label className="ic-field">
-        {label} email
-        <input
-          type="email"
-          maxLength={120}
-          value={contact.email}
-          onChange={(event) => onChange({ email: event.target.value })}
-        />
-      </label>
-      <label className="ic-field">
-        {label} phone
-        <input
-          type="tel"
-          maxLength={120}
-          value={contact.phone}
-          onChange={(event) => onChange({ phone: event.target.value })}
-        />
-      </label>
-      <CountrySelect
-        label={`${label} country`}
-        value={contact.country}
-        onChange={(country) => onChange({ country })}
-        theme={theme}
-      />
-      <label className="ic-field ic-span">
-        {label} address
+      ))}
+      <label className={`ic-field${sheet ? '' : 'ic-span'}`}>
+        <span className={sheet ? 'sr-only' : undefined}>{partyLabel} address</span>
         <textarea
           maxLength={1500}
-          rows={2}
+          rows={sheet ? 1 : 2}
+          placeholder={sheet ? 'e.g. 10 Market Street, Suite 2' : undefined}
           value={contact.address}
           onChange={(event) => onChange({ address: event.target.value })}
         />
@@ -433,31 +427,19 @@ export function SenderFields({
   sender,
   onChange,
   theme,
-  showName = true,
-  showPaymentDetails = true,
 }: {
   sender: Sender
   onChange: (patch: Partial<Sender>) => void
   theme: Theme
-  showName?: boolean
-  showPaymentDetails?: boolean
 }) {
-  const [logoError, setLogoError] = useState('')
-  const readAttempt = useRef(0)
-  useEffect(
-    () => () => {
-      readAttempt.current += 1
-    },
-    [],
-  )
   return (
     <>
-      <ContactFields
-        label="Sender"
-        contact={sender}
-        onChange={onChange}
+      <ContactFields party="sender" contact={sender} onChange={onChange} />
+      <CountrySelect
+        label="Sender country"
+        value={sender.country}
+        onChange={(country) => onChange({ country })}
         theme={theme}
-        showName={showName}
       />
       <label className="ic-field">
         Website
@@ -475,21 +457,55 @@ export function SenderFields({
           onChange={(event) => onChange({ taxId: event.target.value })}
         />
       </label>
-      {showPaymentDetails && (
-        <label className="ic-field ic-span">
-          Payment details
-          <textarea
-            maxLength={1500}
-            rows={2}
-            value={sender.paymentDetails}
-            onChange={(event) => onChange({ paymentDetails: event.target.value })}
-          />
-        </label>
-      )}
       <label className="ic-field ic-span">
-        Company logo (PNG or JPEG, up to 256 KB)
+        Payment details
+        <textarea
+          maxLength={1500}
+          rows={2}
+          value={sender.paymentDetails}
+          onChange={(event) => onChange({ paymentDetails: event.target.value })}
+        />
+      </label>
+      <LogoField logo={sender.logo} onChange={(logo) => onChange({ logo })} />
+    </>
+  )
+}
+
+export function LogoField({
+  logo,
+  onChange,
+  inline = false,
+}: {
+  logo: string
+  onChange: (logo: string) => void
+  inline?: boolean
+}) {
+  const [logoError, setLogoError] = useState('')
+  const readAttempt = useRef(0)
+  const fileInput = useRef<HTMLInputElement>(null)
+  useEffect(
+    () => () => {
+      readAttempt.current += 1
+    },
+    [],
+  )
+  return (
+    <div className={inline ? 'ic-sheet-logo' : 'ic-span ic-logo-field'}>
+      <label className={inline ? 'ic-logo-upload' : 'ic-field'}>
+        {inline ? (
+          <>
+            {logo && <img className="ic-logo" src={logo} alt="Invoice logo" />}
+            <span>
+              <Icon name={logo ? 'edit' : 'plus'} /> {logo ? 'Change logo' : 'Upload logo'}
+            </span>
+          </>
+        ) : (
+          'Company logo (PNG or JPEG, up to 256 KB)'
+        )}
         <input
+          ref={fileInput}
           type="file"
+          aria-label={inline ? (logo ? 'Change logo' : 'Upload logo') : undefined}
           accept="image/png,image/jpeg"
           onChange={async (event) => {
             const file = event.currentTarget.files?.[0]
@@ -497,14 +513,14 @@ export function SenderFields({
             if (!file) return
             const attempt = ++readAttempt.current
             try {
-              const logo = await readLogo(file)
+              const image = await readLogo(file)
               if (attempt !== readAttempt.current) return
-              if (!logo)
+              if (!image)
                 setLogoError(
                   'Choose a valid PNG or JPEG image up to 256 KB and 4,096 pixels per side.',
                 )
               else {
-                onChange({ logo })
+                onChange(image)
                 setLogoError('')
               }
             } catch {
@@ -518,22 +534,24 @@ export function SenderFields({
           {logoError}
         </p>
       )}
-      {sender.logo && (
+      {logo && (
         <div className="ic-span ic-actions">
-          <img className="ic-logo" src={sender.logo} alt="" />
+          {!inline && <img className="ic-logo" src={logo} alt="" />}
           <button
             type="button"
-            className="ic-button"
+            className={inline ? 'ic-text-button' : 'ic-button'}
             onClick={() => {
               readAttempt.current += 1
-              onChange({ logo: '' })
+              setLogoError('')
+              onChange('')
+              fileInput.current?.focus()
             }}
           >
             Remove logo
           </button>
         </div>
       )}
-    </>
+    </div>
   )
 }
 

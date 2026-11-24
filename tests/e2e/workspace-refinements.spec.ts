@@ -90,9 +90,8 @@ test('downloads an incomplete preview without saving it to history', async ({ pa
   const save = form.getByRole('button', { name: 'Create invoice' })
   const number = form.getByLabel('Invoice number')
   await expect(number).toHaveValue('INV-0001')
+  await expect(form.getByRole('button', { name: 'Generate' })).toHaveCount(0)
   await number.fill('CUSTOM-01')
-  await form.getByRole('button', { name: 'Generate' }).click()
-  await expect(number).toHaveValue('INV-0001')
   await form.getByRole('button', { name: 'Remove item 1' }).click()
   await page.getByRole('button', { name: 'Preview', exact: true }).click()
   const preview = page.getByRole('region', { name: 'Document preview' })
@@ -100,7 +99,7 @@ test('downloads an incomplete preview without saving it to history', async ({ pa
   const pending = page.waitForEvent('download')
   await preview.getByRole('button', { name: 'Download PDF' }).click()
   const pdf = await pending
-  expect(pdf.suggestedFilename()).toBe('INV-0001.pdf')
+  expect(pdf.suggestedFilename()).toBe('CUSTOM-01.pdf')
   expect((await readFile(await pdf.path())).subarray(0, 5).toString()).toBe('%PDF-')
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await save.click()
@@ -186,12 +185,76 @@ test('edits one invoice sheet and uses the footer space without overflowing on m
   await expect(payment).toHaveValue('Example Bank\nReference EXAMPLE-001')
 })
 
+test.describe('text sheet and local date', () => {
+  test.use({ timezoneId: 'America/Los_Angeles' })
+
+  test('starts with the local day, keeps lookups off the sheet, and updates the logo in place', async ({
+    page,
+  }, info) => {
+    await page.clock.setFixedTime(new Date('2026-11-25T02:00:00Z'))
+    await page.goto('/')
+    const create = page.getByRole('button', { name: 'Create invoice', exact: true })
+    await create.click()
+    const sheet = page.getByRole('article', { name: 'Editable invoice' })
+    const options = page.getByRole('region', { name: 'Invoice options' })
+    await expect(options.getByRole('combobox')).toHaveCount(4)
+    await expect(sheet.getByRole('combobox')).toHaveCount(0)
+    await expect(sheet.getByLabel('Invoice number')).toHaveValue('INV-0001')
+    await expect(sheet.getByLabel('Issue date')).toHaveValue('2026-11-24')
+    await expect(sheet.getByLabel('Due date')).toHaveValue('')
+    const name = sheet.getByRole('textbox', { name: 'Sender name' })
+    await expect(name).toHaveValue('')
+    await expect(name).toHaveAttribute('placeholder', 'e.g. Northline Studio')
+    await expect(name).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await page.screenshot({ path: info.outputPath('empty-text-sheet-desktop.png'), fullPage: true })
+
+    const upload = sheet.getByLabel('Upload logo', { exact: true })
+    await upload.focus()
+    await page.keyboard.press('Tab')
+    await expect(sheet.getByLabel('Invoice number')).toBeFocused()
+    await upload.setInputFiles('public/invoice-192.png')
+    const image = sheet.getByRole('img', { name: 'Invoice logo' })
+    await expect(image).toBeVisible()
+    const firstLogo = await image.getAttribute('src')
+    const change = sheet.getByLabel('Change logo', { exact: true })
+    await change.setInputFiles({
+      name: 'invalid.svg',
+      mimeType: 'image/svg+xml',
+      buffer: Buffer.from('<svg/>'),
+    })
+    await expect(sheet.getByRole('alert')).toContainText('Choose a valid PNG or JPEG')
+    await expect(image).toHaveAttribute('src', firstLogo ?? '')
+    await change.setInputFiles('public/invoice-512.png')
+    await expect(sheet.getByRole('alert')).toHaveCount(0)
+    await expect(image).not.toHaveAttribute('src', firstLogo ?? '')
+    const editedLogo = await image.getAttribute('src')
+
+    await name.fill('Synthetic Studio')
+    await sheet.getByRole('textbox', { name: 'Client', exact: true }).fill('Synthetic Client')
+    await sheet.getByLabel('Description, item 1').fill('Synthetic work')
+    await sheet.getByLabel('Issue date').fill('2026-11-22')
+    await page.getByRole('button', { name: 'Preview', exact: true }).click()
+    const preview = page.getByRole('article', { name: 'Invoice document' })
+    await expect(options).toHaveCount(0)
+    await expect(preview.locator('img')).toHaveAttribute('src', editedLogo ?? '')
+    await expect(preview.getByText('Nov 22, 2026')).toBeVisible()
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+    await create.click()
+    await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
+    await expect(sheet.getByLabel('Issue date')).toHaveValue('2026-11-22')
+    await expect(image).toHaveAttribute('src', editedLogo ?? '')
+    await sheet.getByRole('button', { name: 'Remove logo' }).click()
+    await expect(upload).toBeFocused()
+    await expect(image).toHaveCount(0)
+  })
+})
+
 test('never resumes or backs up an unsaved form and always creates a fresh invoice', async ({
   page,
 }) => {
   await page.goto('/')
   const create = page.getByRole('button', { name: 'Create invoice', exact: true })
-  const client = page.getByRole('combobox', { name: 'Client', exact: true })
+  const client = page.getByRole('textbox', { name: 'Client', exact: true })
   await create.click()
   await page.getByRole('button', { name: 'Load example' }).click()
   await expect(client).toHaveValue('Fieldwork Press')

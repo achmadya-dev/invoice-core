@@ -16,7 +16,7 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000). No `.env` file or database 
 ## Use the workspace
 
 - **Invoices:** search, create, reopen, or duplicate invoices. Edit directly on the sheet, switch to Preview for the read-only document, or use **Create invoice** or **Save changes** to keep your work.
-- **Catalog:** manage Companies and Products, including product groups with multiple line items. Choose a company near the invoice header or add a product from Line items. The sheet can also be filled manually.
+- **Catalog:** manage Companies and Products, including product groups with multiple line items. Reuse a company, saved client, or product from the options above the sheet. You can also type directly on the invoice and upload a logo in its header.
 - **PDF:** download directly or use **Print / Save as PDF** for scripts not covered by the embedded Latin, Greek, and Cyrillic font.
 - **Backup:** use **Invoices → Backup** to download a private JSON copy of the workspace before clearing site data or moving to another address.
 - **Offline:** supported browsers can reopen and install the production workspace after **Available offline** appears. Use HTTPS or localhost.

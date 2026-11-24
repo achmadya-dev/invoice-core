@@ -2,9 +2,7 @@ import { readFile } from 'node:fs/promises'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-test('groups multiple product defaults and adds all of them beside the invoice line items', async ({
-  page,
-}, info) => {
+test('uses the separate product picker to add every item in a group', async ({ page }, info) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Catalog', exact: true }).click()
   await page.getByRole('button', { name: 'Add product', exact: true }).click()
@@ -29,16 +27,16 @@ test('groups multiple product defaults and adds all of them beside the invoice l
   const nav = page.getByRole('navigation', { name: 'Workspace' })
   await nav.getByRole('button', { name: 'Invoices' }).click()
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
-  const details = page.getByRole('group', { name: 'Invoice details' })
+  const details = page.getByRole('region', { name: 'Invoice options' })
   const lines = page.getByRole('region', { name: 'Line items' })
   await expect(details.getByRole('combobox', { name: 'Company', exact: true })).toBeVisible()
-  const picker = lines.getByRole('combobox', { name: 'Add product', exact: true })
+  const picker = details.getByRole('combobox', { name: 'Add product', exact: true })
   const currency = page.getByRole('combobox', { name: 'Currency', exact: true })
   await currency.click()
   await page.getByRole('option', { name: /^EUR —/ }).click()
   await picker.fill('main')
   await page.getByRole('option', { name: /^Maintenance plan/ }).click()
-  await expect(lines.getByRole('alert')).toContainText('This product uses USD')
+  await expect(details.getByRole('alert')).toContainText('This product uses USD')
   await expect(page.getByLabel('Description, item 1')).toHaveValue('')
   await currency.click()
   await page.getByRole('option', { name: /^USD —/ }).click()
@@ -57,9 +55,8 @@ test('groups multiple product defaults and adds all of them beside the invoice l
   await expect(page.getByLabel('Description, item 4')).toHaveValue('Priority response')
   await page.getByLabel('Rate, item 3').fill('200')
   await page.getByLabel('Sender name').fill('Synthetic sender')
-  const client = page.getByRole('combobox', { name: 'Client', exact: true })
+  const client = page.getByRole('textbox', { name: 'Client', exact: true })
   await client.fill('Synthetic client')
-  await page.getByRole('option', { name: 'Add “Synthetic client”' }).click()
   await page.getByLabel('Issue date').fill('2026-11-24')
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('button', { name: 'INV-0001', exact: true })).toBeVisible()
@@ -85,36 +82,35 @@ test('groups multiple product defaults and adds all of them beside the invoice l
   await expect(page.getByLabel('Rate, item 3')).toHaveValue('200')
 })
 
-test('searches recent clients and adds new clients in the same field', async ({ page }) => {
+test('copies saved clients separately and edits client text directly on the sheet', async ({
+  page,
+}) => {
   await page.goto('/')
   const create = page.getByRole('button', { name: 'Create invoice', exact: true })
-  const client = page.getByRole('combobox', { name: 'Client', exact: true })
+  const client = page.getByRole('textbox', { name: 'Client', exact: true })
+  const picker = page.getByRole('combobox', { name: 'Use saved client', exact: true })
   await create.click()
   await page.getByRole('button', { name: 'Load example' }).click()
-  await page.getByText('Billing details', { exact: true }).click()
   await page.getByLabel('Billing contact email').fill('billing@example.com')
   await create.click()
   await create.click()
-  await client.fill('field')
+  await picker.fill('field')
   await page.getByRole('option', { name: 'Fieldwork Press billing@example.com' }).click()
   await expect(client).toHaveValue('Fieldwork Press')
-  await page.getByText('Billing details', { exact: true }).click()
   await expect(page.getByLabel('Billing contact email')).toHaveValue('billing@example.com')
-  await client.fill('Unrelated Client')
-  await page.getByRole('option', { name: 'Add “Unrelated Client”' }).click()
-  await expect(client).toHaveValue('Unrelated Client')
-  await expect(page.getByLabel('Billing contact email')).toHaveValue('')
-  await client.fill('Manual Entry')
+  await client.fill('Fieldwork Press LLC')
+  await expect(page.getByLabel('Billing contact email')).toHaveValue('billing@example.com')
+  await page.getByLabel('Billing contact email').fill('')
   await page.getByLabel('Invoice number').click()
-  await expect(client).toHaveValue('Manual Entry')
+  await expect(client).toHaveValue('Fieldwork Press LLC')
   await page.getByRole('button', { name: 'Preview', exact: true }).click()
   await expect(
-    page.getByRole('article', { name: 'Invoice document' }).getByText('Manual Entry'),
+    page.getByRole('article', { name: 'Invoice document' }).getByText('Fieldwork Press LLC'),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
-  await client.fill('Discarded query')
-  await client.press('Escape')
-  await expect(client).toHaveValue('Manual Entry')
+  await picker.fill('Discarded query')
+  await picker.press('Escape')
+  await expect(client).toHaveValue('Fieldwork Press LLC')
 })
 
 test('fits mobile and includes products in the backup dialog workflows', async ({ page }, info) => {

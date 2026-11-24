@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { ClientField } from './ClientField'
+import { ClientPicker } from './ClientPicker'
 import { invoiceDocument } from './document'
+import { countryName } from './domain/catalog'
 import {
   addProductLines,
   applyCompanyDefaults,
@@ -14,12 +15,13 @@ import {
 import { DocumentTotals, InvoicePreview } from './InvoicePreview'
 import {
   ContactFields,
+  CountrySelect,
   CurrencySelect,
   DecimalField,
   Icon,
+  LogoField,
   SearchField,
   SelectField,
-  SenderFields,
 } from './invoice-ui'
 import { LineItems } from './LineItems'
 
@@ -139,6 +141,97 @@ export function InvoiceEditor({
           </button>
         </nav>
       </div>
+      <div className="ic-sheet-tools" hidden={!editing} role="region" aria-label="Invoice options">
+        <div className="ic-sheet-pickers">
+          <SelectField
+            label="Company"
+            value={draft.companyId}
+            options={[
+              { value: manualCompanyId, label: 'Enter sender manually' },
+              ...(!company && draft.companyId !== manualCompanyId
+                ? [
+                    {
+                      value: draft.companyId,
+                      label: `${draft.sender.name || 'Previous sender'} (saved details)`,
+                    },
+                  ]
+                : []),
+              ...workspace.companies.map((entry) => ({
+                value: entry.id,
+                label: entry.sender.name,
+              })),
+            ]}
+            onChange={selectCompany}
+          />
+          <CurrencySelect
+            value={draft.currency}
+            onChange={(value) => {
+              set('currency', value)
+              setProductError('')
+            }}
+          />
+          <ClientPicker
+            invoices={workspace.invoices}
+            theme={workspace.theme}
+            onChange={(client) => set('client', client)}
+          />
+          <SearchField
+            label="Add product"
+            query={productQuery}
+            options={products.map((product) => ({
+              value: product.id,
+              label: product.name,
+              detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
+            }))}
+            placeholder="Product or item"
+            empty={
+              workspace.products.length
+                ? 'No matching products.'
+                : 'No products yet. Add one in Catalog.'
+            }
+            theme={workspace.theme}
+            onQuery={(query) => {
+              setProductQuery(query)
+              setProductError('')
+            }}
+            onSelect={selectProduct}
+            onDismiss={() => setProductQuery('')}
+          />
+        </div>
+        {productError && (
+          <p className="ic-error ic-note" role="alert">
+            {productError}
+          </p>
+        )}
+        <details className="ic-detail">
+          <summary>More options</summary>
+          <div className="ic-fields">
+            <CountrySelect
+              label="Sender country"
+              value={draft.sender.country}
+              theme={workspace.theme}
+              onChange={(country) => setSender({ country })}
+            />
+            <CountrySelect
+              label="Billing contact country"
+              value={draft.client.country}
+              theme={workspace.theme}
+              onChange={(country) =>
+                edit((current) => ({ ...current, client: { ...current.client, country } }))
+              }
+            />
+            <SelectField
+              label="Discount type"
+              value={draft.discountKind}
+              options={[
+                { value: 'percent', label: 'Percentage' },
+                { value: 'fixed', label: 'Fixed amount' },
+              ]}
+              onChange={(value) => set('discountKind', value === 'fixed' ? 'fixed' : 'percent')}
+            />
+          </div>
+        </details>
+      </div>
       <div className="ic-proof-stage">
         <article
           id="invoice-editor"
@@ -146,183 +239,92 @@ export function InvoiceEditor({
           aria-label="Editable invoice"
           hidden={!editing}
         >
-          <fieldset className="ic-sheet-settings ic-fields">
-            <legend className="sr-only">Invoice details</legend>
-            <SelectField
-              label="Company"
-              value={draft.companyId}
-              options={[
-                { value: manualCompanyId, label: 'Enter sender manually' },
-                ...(!company && draft.companyId !== manualCompanyId
-                  ? [
-                      {
-                        value: draft.companyId,
-                        label: `${draft.sender.name || 'Previous sender'} (saved details)`,
-                      },
-                    ]
-                  : []),
-                ...workspace.companies.map((entry) => ({
-                  value: entry.id,
-                  label: entry.sender.name,
-                })),
-              ]}
-              onChange={selectCompany}
-            />
-            <CurrencySelect
-              value={draft.currency}
-              onChange={(value) => {
-                set('currency', value)
-                setProductError('')
-              }}
-            />
-          </fieldset>
           <header className="ic-doc-heading ic-sheet-columns">
-            <div className="ic-party ic-sheet-party">
-              {proof.logo && <img className="ic-logo" src={proof.logo} alt="" />}
-              <label className="ic-field ic-sheet-name">
-                <span className="ic-doc-label">Sender name</span>
-                <input
-                  maxLength={120}
-                  placeholder="Your company or name"
-                  value={draft.sender.name}
-                  onChange={(event) => setSender({ name: event.target.value })}
-                />
-              </label>
-              <details className="ic-detail">
-                <summary>Sender details</summary>
-                <div className="ic-fields">
-                  <SenderFields
-                    sender={draft.sender}
-                    theme={workspace.theme}
-                    onChange={setSender}
-                    showName={false}
-                    showPaymentDetails={false}
-                  />
-                </div>
-              </details>
-              {proof.senderDetails.length > 0 && (
-                <div className="ic-sheet-contact">
-                  {proof.senderDetails.map((line, index) => (
-                    <div key={index}>{line}</div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <LogoField
+              key={draft.companyId}
+              logo={draft.sender.logo}
+              inline
+              onChange={(logo) => setSender({ logo })}
+            />
             <div className="ic-doc-title">
               <h3>Invoice</h3>
-              <div className="ic-number-field">
+              <label className="ic-field">
+                <span className="ic-doc-label">Invoice number</span>
+                <input
+                  value={draft.number}
+                  maxLength={120}
+                  placeholder="e.g. INV-0001"
+                  onChange={(event) => set('number', event.target.value)}
+                />
+              </label>
+              <fieldset className="ic-fields ic-sheet-dates">
+                <legend className="sr-only">Invoice dates</legend>
                 <label className="ic-field">
-                  <span className="ic-doc-label">Invoice number</span>
+                  <span className="ic-doc-label">Issue date</span>
                   <input
-                    value={draft.number}
-                    maxLength={120}
-                    onChange={(event) => set('number', event.target.value)}
+                    type="date"
+                    value={draft.issueDate}
+                    onChange={(event) => setDate('issueDate', event.target.value)}
                   />
                 </label>
-                {!saved && (
-                  <button
-                    type="button"
-                    className="ic-button"
-                    onClick={() =>
-                      set('number', suggestInvoiceNumber(draft, workspace.invoices, company))
-                    }
-                  >
-                    Generate
-                  </button>
-                )}
-              </div>
+                <label className="ic-field">
+                  <span className="ic-doc-label">Due date</span>
+                  <input
+                    type="date"
+                    value={draft.dueDate}
+                    onChange={(event) => setDate('dueDate', event.target.value)}
+                  />
+                </label>
+              </fieldset>
             </div>
           </header>
           <div className="ic-doc-meta ic-sheet-columns">
             <div className="ic-party ic-sheet-party">
-              <span className="ic-doc-label">Bill to</span>
-              <ClientField
-                client={draft.client}
-                invoices={workspace.invoices}
-                theme={workspace.theme}
-                onChange={(client) => set('client', client)}
-              />
-              <details className="ic-detail">
-                <summary>Billing details</summary>
-                <div className="ic-fields">
-                  <ContactFields
-                    label="Billing contact"
-                    contact={draft.client}
-                    showName={false}
-                    theme={workspace.theme}
-                    onChange={(patch) =>
-                      edit((current) => ({ ...current, client: { ...current.client, ...patch } }))
-                    }
-                  />
-                </div>
-              </details>
-              {proof.clientDetails.length > 0 && (
-                <div className="ic-sheet-contact">
-                  {proof.clientDetails.map((line, index) => (
-                    <div key={index}>{line}</div>
-                  ))}
-                </div>
-              )}
+              <span className="ic-doc-label">From</span>
+              <ContactFields party="sender" contact={draft.sender} onChange={setSender} sheet />
+              {draft.sender.country && <span>{countryName(draft.sender.country)}</span>}
+              <label className="ic-field">
+                <span className="sr-only">Website</span>
+                <input
+                  maxLength={120}
+                  placeholder="e.g. example.com"
+                  value={draft.sender.website}
+                  onChange={(event) => setSender({ website: event.target.value })}
+                />
+              </label>
+              <label className="ic-field">
+                <span className="sr-only">Tax ID</span>
+                <input
+                  maxLength={120}
+                  placeholder="e.g. Tax ID 12345"
+                  value={draft.sender.taxId}
+                  onChange={(event) => setSender({ taxId: event.target.value })}
+                />
+              </label>
             </div>
-            <fieldset className="ic-fields ic-sheet-dates">
-              <legend className="sr-only">Invoice dates</legend>
-              <label className="ic-field">
-                <span className="ic-doc-label">Issue date</span>
-                <input
-                  type="date"
-                  value={draft.issueDate}
-                  onChange={(event) => setDate('issueDate', event.target.value)}
-                />
-              </label>
-              <label className="ic-field">
-                <span className="ic-doc-label">Due date</span>
-                <input
-                  type="date"
-                  value={draft.dueDate}
-                  onChange={(event) => setDate('dueDate', event.target.value)}
-                />
-              </label>
-            </fieldset>
+            <div className="ic-party ic-sheet-party">
+              <span className="ic-doc-label">Bill to</span>
+              <ContactFields
+                party="client"
+                contact={draft.client}
+                sheet
+                onChange={(patch) =>
+                  edit((current) => ({ ...current, client: { ...current.client, ...patch } }))
+                }
+              />
+              {draft.client.country && <span>{countryName(draft.client.country)}</span>}
+            </div>
           </div>
           <section aria-labelledby="sheet-lines">
-            <div className="ic-sheet-line-bar">
-              <h4 id="sheet-lines" className="ic-doc-label">
-                Line items
-              </h4>
-              <SearchField
-                label="Add product"
-                query={productQuery}
-                options={products.map((product) => ({
-                  value: product.id,
-                  label: product.name,
-                  detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
-                }))}
-                placeholder="Search product or item"
-                empty={
-                  workspace.products.length
-                    ? 'No matching products.'
-                    : 'No products yet. Add one in Catalog.'
-                }
-                theme={workspace.theme}
-                onQuery={(query) => {
-                  setProductQuery(query)
-                  setProductError('')
-                }}
-                onSelect={selectProduct}
-                onDismiss={() => setProductQuery('')}
-              />
-            </div>
-            {productError && (
-              <p className="ic-error ic-note" role="alert">
-                {productError}
-              </p>
-            )}
+            <h4 id="sheet-lines" className="ic-doc-label ic-sheet-line-heading">
+              Line items
+            </h4>
             <LineItems
               items={draft.items}
               edit={(update) => edit((current) => ({ ...current, items: update(current.items) }))}
               currency={draft.currency}
               caption="Invoice line items"
-              empty="No line items. Add a line manually or choose a product above."
+              empty="No line items. Add a line below or use a product from Invoice options."
               amounts={proof.lines.map((line) => line.amount)}
             />
           </section>
@@ -330,15 +332,6 @@ export function InvoiceEditor({
             <details className="ic-detail">
               <summary>Discount, tax, and shipping</summary>
               <div className="ic-fields">
-                <SelectField
-                  label="Discount type"
-                  value={draft.discountKind}
-                  options={[
-                    { value: 'percent', label: 'Percentage' },
-                    { value: 'fixed', label: 'Fixed amount' },
-                  ]}
-                  onChange={(value) => set('discountKind', value === 'fixed' ? 'fixed' : 'percent')}
-                />
                 <DecimalField
                   label={draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'}
                   value={draft.discount}
@@ -372,15 +365,15 @@ export function InvoiceEditor({
           <div className="ic-doc-extras ic-sheet-extras">
             {(
               [
-                { key: 'notes', label: 'Notes', placeholder: 'Notes to the client (optional)' },
-                { key: 'terms', label: 'Terms', placeholder: 'Payment terms (optional)' },
+                { key: 'notes', label: 'Notes', placeholder: 'e.g. Thank you for your business.' },
+                { key: 'terms', label: 'Terms', placeholder: 'e.g. Payment due within 14 days.' },
               ] as const
             ).map(({ key, label, placeholder }) => (
               <label className="ic-field" key={key}>
                 <span className="ic-doc-label">{label}</span>
                 <textarea
                   maxLength={1500}
-                  rows={2}
+                  rows={1}
                   placeholder={placeholder}
                   value={draft[key]}
                   onChange={(event) => set(key, event.target.value)}
@@ -391,8 +384,8 @@ export function InvoiceEditor({
               <span className="ic-doc-label">Payment details</span>
               <textarea
                 maxLength={1500}
-                rows={2}
-                placeholder="Bank, account, or payment instructions (optional)"
+                rows={1}
+                placeholder="e.g. Bank name, account number, and payment reference"
                 value={draft.sender.paymentDetails}
                 onChange={(event) => setSender({ paymentDetails: event.target.value })}
               />
