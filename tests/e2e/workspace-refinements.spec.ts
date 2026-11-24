@@ -47,9 +47,7 @@ test('sorts history by descending issue date and resets pagination after searchi
   await expect(page.getByRole('navigation', { name: 'Invoice history pages' })).toHaveCount(0)
 })
 
-test('uses matching searchable catalog panels and stacks them on small screens', async ({
-  page,
-}, info) => {
+test('uses full-width catalog tabs with searchable panels', async ({ page }, info) => {
   const product = {
     ...newProduct('USD'),
     name: 'Design retainer',
@@ -62,24 +60,32 @@ test('uses matching searchable catalog panels and stacks them on small screens',
   })
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/#companies')
-  const products = page.getByRole('region', { name: 'Products', exact: true })
+  const productsTab = page.getByRole('tab', { name: 'Products', exact: true })
+  const companiesTab = page.getByRole('tab', { name: 'Companies', exact: true })
   const companies = page.getByRole('region', { name: 'Companies', exact: true })
-  await expect(products.getByText('Design retainer', { exact: true })).toBeVisible()
+  const products = page.getByRole('region', { name: 'Products', exact: true })
+
+  await expect(companiesTab).toHaveAttribute('aria-selected', 'true')
   await expect(companies.getByText('North Studio', { exact: true })).toBeVisible()
-  expect((await products.boundingBox())?.x).toBeLessThan((await companies.boundingBox())?.x ?? 0)
-  await page.screenshot({ path: info.outputPath('catalog-desktop.png'), fullPage: true })
+  await expect(products).toHaveCount(0)
+  const shellWidth = (await page.locator('main.ic-shell').boundingBox())?.width ?? 0
+  expect((await companies.boundingBox())?.width ?? 0).toBeGreaterThan(shellWidth * 0.9)
   const companySearch = companies.getByRole('searchbox', { name: 'Search companies' })
-  const productSearch = products.getByRole('searchbox', { name: 'Search products' })
   await companySearch.fill('missing company')
   await expect(companies.getByText('No companies match this search.')).toBeVisible()
-  await expect(products.getByText('Design retainer', { exact: true })).toBeVisible()
   await companySearch.clear()
+
+  await productsTab.click()
+  await expect(productsTab).toHaveAttribute('aria-selected', 'true')
+  await expect(products.getByText('Design retainer', { exact: true })).toBeVisible()
+  await expect(companies).toHaveCount(0)
+  expect((await products.boundingBox())?.width ?? 0).toBeGreaterThan(shellWidth * 0.9)
+  await page.screenshot({ path: info.outputPath('catalog-desktop.png'), fullPage: true })
+  const productSearch = products.getByRole('searchbox', { name: 'Search products' })
   await productSearch.fill('missing product')
   await expect(products.getByText('No products match this search.')).toBeVisible()
-  await expect(companies.getByText('North Studio', { exact: true })).toBeVisible()
   await productSearch.clear()
   await page.setViewportSize({ width: 390, height: 844 })
-  expect((await products.boundingBox())?.y).toBeLessThan((await companies.boundingBox())?.y ?? 0)
   await page.screenshot({ path: info.outputPath('catalog-mobile.png'), fullPage: true })
 })
 
@@ -117,11 +123,14 @@ test('edits one invoice sheet and uses the footer space without overflowing on m
   await page.goto('/')
   const create = page.getByRole('button', { name: 'Create invoice', exact: true })
   await create.click()
-  await page.getByRole('button', { name: 'Load example' }).click()
   const edit = page.getByRole('article', { name: 'Editable invoice' })
   const preview = page.getByRole('article', { name: 'Invoice document' })
   const editToggle = page.getByRole('button', { name: 'Edit', exact: true })
   const previewToggle = page.getByRole('button', { name: 'Preview', exact: true })
+  await edit.getByLabel('Invoice number').fill('EXAMPLE-001')
+  await edit.getByLabel('Sender name').fill('Northline Studio')
+  await edit.getByRole('textbox', { name: 'Client', exact: true }).fill('Fieldwork Press')
+  await edit.getByLabel('Description, item 1').fill('Editorial design')
   await expect(edit.getByLabel('Sender name')).toHaveValue('Northline Studio')
   await expect(edit.getByLabel('Invoice number')).toHaveValue('EXAMPLE-001')
   await expect(edit.getByLabel('Description, item 1')).toHaveValue('Editorial design')
@@ -256,7 +265,7 @@ test('never resumes or backs up an unsaved form and always creates a fresh invoi
   const create = page.getByRole('button', { name: 'Create invoice', exact: true })
   const client = page.getByRole('textbox', { name: 'Client', exact: true })
   await create.click()
-  await page.getByRole('button', { name: 'Load example' }).click()
+  await client.fill('Fieldwork Press')
   await expect(client).toHaveValue('Fieldwork Press')
   expect(await page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull()
   await page.reload()

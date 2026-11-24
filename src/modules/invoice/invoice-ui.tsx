@@ -383,11 +383,13 @@ export function ContactFields({
   onChange,
   party,
   sheet = false,
+  invalidName = false,
 }: {
   contact: Contact
   onChange: (patch: Partial<Contact>) => void
   party: 'sender' | 'client'
   sheet?: boolean
+  invalidName?: boolean
 }) {
   const partyLabel = party === 'sender' ? 'Sender' : 'Billing contact'
   return (
@@ -403,6 +405,7 @@ export function ContactFields({
           <input
             type={field.type}
             maxLength={120}
+            aria-invalid={field.key === 'name' && invalidName ? true : undefined}
             placeholder={sheet ? field[party] : undefined}
             value={contact[field.key]}
             onChange={(event) => onChange({ [field.key]: event.target.value })}
