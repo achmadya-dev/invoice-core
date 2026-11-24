@@ -288,3 +288,107 @@ test('never resumes or backs up an unsaved form and always creates a fresh invoi
   const backup = JSON.parse(await readFile(await (await pending).path(), 'utf8'))
   expect(backup).toEqual({ version: 4, companies: [], invoices: [], products: [], theme: 'system' })
 })
+
+test('aligns invoice sheet action buttons cleanly across mobile states', async ({ page }, info) => {
+  const box = async (locator: ReturnType<typeof page.locator>) => {
+    const rect = await locator.boundingBox()
+    if (!rect) throw new Error('Expected visible element bounding box')
+    return rect
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+
+  const stage = page.getByRole('region', { name: 'Edit invoice' })
+  const sheet = page.locator('#invoice-editor')
+  const createBtn = stage.getByRole('button', { name: 'Create invoice', exact: true })
+  const downloadBtn = stage.getByRole('button', { name: 'Download PDF', exact: true })
+
+  // 1. Unedited new draft: Create invoice & Download PDF stack full width flush with sheet
+  const sheetBox = await box(sheet)
+  const createUnedited = await box(createBtn)
+  const downloadUnedited = await box(downloadBtn)
+  expect(Math.abs(createUnedited.x - sheetBox.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(createUnedited.width - sheetBox.width)).toBeLessThanOrEqual(2)
+  expect(Math.abs(downloadUnedited.x - sheetBox.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(downloadUnedited.width - sheetBox.width)).toBeLessThanOrEqual(2)
+  expect(downloadUnedited.y).toBeGreaterThan(createUnedited.y + createUnedited.height)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+  // 2. Edited new draft: Create invoice + Reset draft equal 50/50 row 1, Download PDF full row 2
+  await sheet.getByLabel('Sender name').fill('Nusantara Studio')
+  await sheet.getByRole('textbox', { name: 'Client', exact: true }).fill('Maju Bersama')
+  await sheet.getByLabel('Description, item 1').fill('Product design sprint')
+
+  const resetBtn = stage.getByRole('button', { name: 'Reset draft', exact: true })
+  const createEdited = await box(createBtn)
+  const resetEdited = await box(resetBtn)
+  const downloadEdited = await box(downloadBtn)
+  const sheetEdited = await box(sheet)
+  expect(Math.abs(createEdited.y - resetEdited.y)).toBeLessThanOrEqual(1)
+  expect(Math.abs(createEdited.width - resetEdited.width)).toBeLessThanOrEqual(2)
+  expect(Math.abs(createEdited.height - resetEdited.height)).toBeLessThanOrEqual(1)
+  expect(Math.abs(createEdited.x - sheetEdited.x)).toBeLessThanOrEqual(2)
+  expect(
+    Math.abs(resetEdited.x + resetEdited.width - (sheetEdited.x + sheetEdited.width)),
+  ).toBeLessThanOrEqual(2)
+  expect(Math.abs(downloadEdited.x - sheetEdited.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(downloadEdited.width - sheetEdited.width)).toBeLessThanOrEqual(2)
+  expect(downloadEdited.y).toBeGreaterThan(createEdited.y + createEdited.height)
+  await page.locator('.ic-invoice-stage').screenshot({
+    path: info.outputPath('mobile-actions-draft.png'),
+  })
+
+  // Check 320px narrow mobile width for zero horizontal overflow
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  const createNarrow = await box(createBtn)
+  const resetNarrow = await box(resetBtn)
+  expect(Math.abs(createNarrow.y - resetNarrow.y)).toBeLessThanOrEqual(1)
+
+  // 3. Saved invoice (390px): Save changes full row 1, Duplicate + Delete 50/50 row 2, Download PDF full row 3
+  await page.setViewportSize({ width: 390, height: 844 })
+  await createBtn.click()
+  await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
+
+  const saveBtn = stage.getByRole('button', { name: 'Save changes', exact: true })
+  const duplicateBtn = stage.getByRole('button', { name: 'Duplicate', exact: true })
+  const deleteBtn = stage.getByRole('button', { name: 'Delete', exact: true })
+  const sheetSaved = await box(sheet)
+  const saveBox = await box(saveBtn)
+  const dupBox = await box(duplicateBtn)
+  const delBox = await box(deleteBtn)
+  const downloadSaved = await box(downloadBtn)
+
+  expect(Math.abs(saveBox.x - sheetSaved.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(saveBox.width - sheetSaved.width)).toBeLessThanOrEqual(2)
+  expect(Math.abs(dupBox.y - delBox.y)).toBeLessThanOrEqual(1)
+  expect(Math.abs(dupBox.width - delBox.width)).toBeLessThanOrEqual(2)
+  expect(Math.abs(dupBox.height - delBox.height)).toBeLessThanOrEqual(1)
+  expect(dupBox.height).toBeGreaterThanOrEqual(42)
+  expect(Math.abs(dupBox.x - sheetSaved.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(delBox.x + delBox.width - (sheetSaved.x + sheetSaved.width))).toBeLessThanOrEqual(
+    2,
+  )
+  expect(dupBox.y).toBeGreaterThan(saveBox.y + saveBox.height)
+  expect(downloadSaved.y).toBeGreaterThan(dupBox.y + dupBox.height)
+  expect(Math.abs(downloadSaved.width - sheetSaved.width)).toBeLessThanOrEqual(2)
+  await page.locator('.ic-invoice-stage').screenshot({
+    path: info.outputPath('mobile-actions-saved.png'),
+  })
+
+  // 4. Preview mode (390px): Download PDF spans full preview card width
+  await page.getByRole('button', { name: 'Preview', exact: true }).click()
+  const previewStage = page.getByRole('region', { name: 'Document preview' })
+  const previewCard = page.locator('#invoice-preview')
+  const previewBox = await box(previewCard)
+  const downloadPreview = await box(
+    previewStage.getByRole('button', { name: 'Download PDF', exact: true }),
+  )
+  expect(Math.abs(downloadPreview.x - previewBox.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(downloadPreview.width - previewBox.width)).toBeLessThanOrEqual(2)
+  await page.locator('.ic-invoice-stage').screenshot({
+    path: info.outputPath('mobile-actions-preview.png'),
+  })
+})

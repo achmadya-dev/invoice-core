@@ -377,32 +377,6 @@
 .ic-invoice-stage .ic-panel-bar h2 .ic-icon {
   color: var(--ic-stamp);
 }
-.ic-panel-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 6px 12px;
-  border: 1px solid var(--ic-line);
-  border-radius: 999px;
-  color: var(--ic-accent);
-  background: var(--ic-surface);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.ic-panel-button:hover {
-  border-color: var(--ic-accent);
-  background: var(--ic-soft);
-}
-.ic-panel-button-danger {
-  color: var(--ic-error);
-  border-color: var(--ic-line);
-}
-.ic-panel-button-danger:hover {
-  border-color: var(--ic-error);
-  background: var(--ic-error-bg);
-}
 .ic-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1723,6 +1697,22 @@
   .ic-record > .ic-actions {
     grid-column: 1 / -1;
   }
+  .ic-sheet-actions .ic-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .ic-sheet-actions .ic-actions > button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+  .ic-sheet-actions .ic-sheet-download,
+  .ic-sheet-actions .ic-primary:nth-last-child(2),
+  .ic-sheet-actions .ic-primary:nth-last-child(4) {
+    grid-column: 1 / -1;
+    margin-inline-start: 0;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1775,8 +1765,12 @@
   .ic-proof {
     padding: 14px;
   }
-  .ic-proof-stage {
+  .ic-proof-stage,
+  .ic-sheet-actions {
     padding-inline: 6px;
+  }
+  .ic-sheet-actions .ic-actions > button {
+    padding-inline: 10px;
   }
   .ic-sheet-table,
   .ic-sheet-table tbody {
