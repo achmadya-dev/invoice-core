@@ -363,27 +363,30 @@ export function InvoiceEditor({
               <div className="ic-summary-input-row">
                 <dt>
                   <label className="ic-summary-inline" htmlFor="sheet-discount">
-                    <span>
-                      Discount ({draft.discountKind === 'percent' ? '%' : draft.currency})
+                    <span>Discount</span>
+                    <span className="ic-summary-control">
+                      <input
+                        id="sheet-discount"
+                        className="ic-summary-inline-input"
+                        aria-label={
+                          draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'
+                        }
+                        inputMode="decimal"
+                        maxLength={16}
+                        aria-invalid={
+                          !decimalValid(
+                            draft.discount,
+                            draft.discountKind === 'percent' ? 'percent' : 'amount',
+                          )
+                        }
+                        placeholder="0"
+                        value={draft.discount}
+                        onChange={(event) => set('discount', event.target.value)}
+                      />
+                      <span className="ic-summary-unit" aria-hidden="true">
+                        {draft.discountKind === 'percent' ? '%' : draft.currency}
+                      </span>
                     </span>
-                    <input
-                      id="sheet-discount"
-                      className="ic-summary-inline-input"
-                      aria-label={
-                        draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'
-                      }
-                      inputMode="decimal"
-                      maxLength={16}
-                      aria-invalid={
-                        !decimalValid(
-                          draft.discount,
-                          draft.discountKind === 'percent' ? 'percent' : 'amount',
-                        )
-                      }
-                      placeholder="0"
-                      value={draft.discount}
-                      onChange={(event) => set('discount', event.target.value)}
-                    />
                   </label>
                 </dt>
                 <dd>{totals ? formatMoney(-totals.discount, draft.currency) : '—'}</dd>
@@ -402,19 +405,22 @@ export function InvoiceEditor({
                     onChange={(event) => set('taxLabel', event.target.value)}
                   />
                   <label className="ic-summary-inline" htmlFor="sheet-tax-rate">
-                    <span>(</span>
-                    <input
-                      id="sheet-tax-rate"
-                      className="ic-summary-inline-input"
-                      aria-label="Tax rate (%)"
-                      inputMode="decimal"
-                      maxLength={16}
-                      aria-invalid={!decimalValid(draft.taxRate, 'percent')}
-                      placeholder="0"
-                      value={draft.taxRate}
-                      onChange={(event) => set('taxRate', event.target.value)}
-                    />
-                    <span>%)</span>
+                    <span className="ic-summary-control">
+                      <input
+                        id="sheet-tax-rate"
+                        className="ic-summary-inline-input"
+                        aria-label="Tax rate (%)"
+                        inputMode="decimal"
+                        maxLength={16}
+                        aria-invalid={!decimalValid(draft.taxRate, 'percent')}
+                        placeholder="0"
+                        value={draft.taxRate}
+                        onChange={(event) => set('taxRate', event.target.value)}
+                      />
+                      <span className="ic-summary-unit" aria-hidden="true">
+                        %
+                      </span>
+                    </span>
                   </label>
                 </dt>
                 <dd>{totals ? formatMoney(totals.tax, draft.currency) : '—'}</dd>
@@ -423,17 +429,20 @@ export function InvoiceEditor({
                 <dt>
                   <label className="ic-summary-inline" htmlFor="sheet-shipping">
                     <span>Shipping</span>
-                    <input
-                      id="sheet-shipping"
-                      className="ic-summary-inline-input"
-                      aria-label="Shipping"
-                      inputMode="decimal"
-                      maxLength={16}
-                      aria-invalid={!decimalValid(draft.shipping, 'amount')}
-                      placeholder="0"
-                      value={draft.shipping}
-                      onChange={(event) => set('shipping', event.target.value)}
-                    />
+                    <span className="ic-summary-control">
+                      <input
+                        id="sheet-shipping"
+                        className="ic-summary-inline-input"
+                        aria-label="Shipping"
+                        inputMode="decimal"
+                        maxLength={16}
+                        aria-invalid={!decimalValid(draft.shipping, 'amount')}
+                        placeholder="0"
+                        value={draft.shipping}
+                        onChange={(event) => set('shipping', event.target.value)}
+                      />
+                      <span className="ic-summary-unit" aria-hidden="true" />
+                    </span>
                   </label>
                 </dt>
                 <dd>{totals ? formatMoney(totals.shipping, draft.currency) : '—'}</dd>

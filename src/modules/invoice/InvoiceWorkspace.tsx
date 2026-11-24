@@ -14,7 +14,14 @@ import {
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
 import { ProductsPanel } from './ProductsPanel'
-import { ConfirmModal, Icon, SelectField, WorkspaceDialog, type ConfirmState } from './invoice-ui'
+import {
+  ColorPicker,
+  ConfirmModal,
+  Icon,
+  SelectField,
+  WorkspaceDialog,
+  type ConfirmState,
+} from './invoice-ui'
 import { Backup, Companies, InvoiceHistory } from './WorkspacePanels'
 import {
   downloadFile,
@@ -306,22 +313,12 @@ export function InvoiceWorkspace() {
           </div>
           {data && panel === 'editor' && draft && (
             <div className="ic-actions ic-heading-actions ic-editor-appearance">
-              <label className="ic-color-field" htmlFor="invoice-accent-color">
-                <span>Accent color</span>
-                <span className="ic-color-control">
-                  <input
-                    id="invoice-accent-color"
-                    type="color"
-                    aria-label="Accent color"
-                    value={resolveAccentColor(draft)}
-                    onChange={(event) => {
-                      const accentColor = event.target.value.toLowerCase()
-                      editDraft((current) => ({ ...current, accentColor }))
-                    }}
-                  />
-                  <span className="ic-mono">{resolveAccentColor(draft).toUpperCase()}</span>
-                </span>
-              </label>
+              <ColorPicker
+                label="Accent color"
+                value={resolveAccentColor(draft)}
+                theme={theme}
+                onChange={(accentColor) => editDraft((current) => ({ ...current, accentColor }))}
+              />
               <SelectField
                 label="Layout"
                 value={resolveInvoiceLayout(draft)}

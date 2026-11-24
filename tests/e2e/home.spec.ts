@@ -69,7 +69,9 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(page.getByLabel('Invoice number')).toHaveValue('EXAMPLE-001')
   await expect(page.getByLabel('Quantity, item 2')).toHaveValue('2')
 
-  await page.getByLabel('Accent color').fill('#047857')
+  await page.getByRole('button', { name: /Accent color/i }).click()
+  await page.getByRole('button', { name: 'Emerald', exact: true }).click()
+  await page.keyboard.press('Escape')
   await chooseOption(page, 'Layout', 'Modern')
   await expect(page.locator('#invoice-editor')).toHaveAttribute('data-invoice-accent', '#047857')
   await expect(page.locator('#invoice-editor')).toHaveAttribute('data-invoice-layout', 'modern')
