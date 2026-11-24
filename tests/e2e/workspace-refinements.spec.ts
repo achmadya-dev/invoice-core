@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import {
   newCompany,
@@ -6,6 +7,7 @@ import {
   newItem,
   newProduct,
   newWorkspace,
+  saveInvoice,
 } from '../../src/modules/invoice/domain/invoice'
 import { storageKey } from '../../src/modules/invoice/workspace.browser'
 
@@ -112,7 +114,8 @@ test('downloads an incomplete preview without saving it to history', async ({ pa
   await expect(form.getByRole('alert')).toContainText('Enter a sender, client')
   await expect(form.getByRole('button', { name: 'Reset draft' })).toBeVisible()
   await page.screenshot({ path: info.outputPath('editor-desktop.png'), fullPage: true })
-  await page.getByRole('button', { name: 'Back to invoices' }).click()
+  await page.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'No saved invoices yet' })).toBeVisible()
 })
 
@@ -273,15 +276,19 @@ test('never resumes or backs up an unsaved form and always creates a fresh invoi
   await expect(client).toHaveValue('Fieldwork Press')
   expect(await page.evaluate((key) => localStorage.getItem(key), storageKey)).toBeNull()
   await page.reload()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await create.click()
   await expect(client).toHaveValue('')
   await page.getByLabel('Description, item 1').fill('Unsaved service')
-  await page.getByRole('button', { name: 'Back to invoices' }).click()
+  await page.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Resume draft' })).toHaveCount(0)
   await create.click()
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   await expect(page.getByLabel('Description, item 1')).toHaveValue('')
   await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0001')
-  await page.getByRole('button', { name: 'Back to invoices' }).click()
+  await page.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByRole('button', { name: 'Backup', exact: true }).click()
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download backup' }).click()
@@ -343,6 +350,9 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
   // Check 320px narrow mobile width for zero horizontal overflow
   await page.setViewportSize({ width: 320, height: 800 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  const dialog320 = await box(page.locator('.ic-workspace-dialog-wide'))
+  expect(dialog320.x).toBeGreaterThanOrEqual(0)
+  expect(dialog320.x + dialog320.width).toBeLessThanOrEqual(320)
   const createNarrow = await box(createBtn)
   const resetNarrow = await box(resetBtn)
   expect(Math.abs(createNarrow.y - resetNarrow.y)).toBeLessThanOrEqual(1)
@@ -350,6 +360,7 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
   // 3. Saved invoice (390px): Save changes full row 1, Duplicate + Delete 50/50 row 2, Download PDF full row 3
   await page.setViewportSize({ width: 390, height: 844 })
   await createBtn.click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
 
   const saveBtn = stage.getByRole('button', { name: 'Save changes', exact: true })
@@ -391,4 +402,146 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
   await page.locator('.ic-invoice-stage').screenshot({
     path: info.outputPath('mobile-actions-preview.png'),
   })
+})
+
+test('opens invoices in a modal from Create, row click, Edit, and Duplicate without triggering row actions', async ({
+  page,
+}, info) => {
+  const company = { ...newCompany('Achmadya Dev'), padding: 8 }
+  const firstDraft = newInvoice(company, [])
+  const firstResult = saveInvoice(
+    { ...newWorkspace(), companies: [company] },
+    {
+      ...firstDraft,
+      number: 'INV-00000001',
+      issueDate: '2026-11-23',
+      client: { ...firstDraft.client, name: 'Client Alpha' },
+      items: [{ ...newItem('Design sprint'), rate: '1200' }],
+    },
+  )
+  if (!firstResult.ok) throw new Error(firstResult.message)
+
+  const secondDraft = newInvoice(company, firstResult.data.invoices)
+  const secondResult = saveInvoice(firstResult.data, {
+    ...secondDraft,
+    number: 'INV-00000002',
+    issueDate: '2026-11-24',
+    client: { ...secondDraft.client, name: 'Client Beta' },
+    items: [{ ...newItem('Engineering retainer'), rate: '2500' }],
+  })
+  if (!secondResult.ok) throw new Error(secondResult.message)
+
+  await page.addInitScript(({ key, json }) => localStorage.setItem(key, json), {
+    key: storageKey,
+    json: JSON.stringify(secondResult.data),
+  })
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/')
+
+  const history = page.getByRole('region', { name: 'Invoice history' })
+  const rows = history.getByRole('listitem')
+  await expect(rows).toHaveCount(2)
+  await expect(rows.first().locator('.ic-actions button')).toHaveText([
+    'PDF',
+    'Edit',
+    'Duplicate',
+    'Delete',
+  ])
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.screenshot({ path: info.outputPath('invoices-list-desktop.png') })
+
+  // 1. Create invoice opens New invoice modal over the Invoices page and closes on Escape
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+  const newDialog = page.getByRole('dialog', { name: 'New invoice' })
+  await expect(newDialog).toBeVisible()
+  await expect(page).toHaveURL('/')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // 2. Clicking client name on a row opens Invoice details modal
+  await rows
+    .filter({ hasText: 'INV-00000001' })
+    .getByRole('heading', { name: 'Client Alpha' })
+    .click()
+  const detailsDialog = page.getByRole('dialog', { name: 'Invoice details' })
+  await expect(detailsDialog).toBeVisible()
+  await expect(detailsDialog.getByLabel('Invoice number')).toHaveValue('INV-00000001')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.screenshot({ path: info.outputPath('invoice-modal-desktop.png') })
+  await detailsDialog.getByRole('button', { name: 'Preview', exact: true }).click()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await detailsDialog.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // 3. Clicking total amount on a row opens Invoice details modal
+  await rows.filter({ hasText: 'INV-00000002' }).locator('.ic-record-total').click()
+  await expect(detailsDialog).toBeVisible()
+  await expect(detailsDialog.getByLabel('Invoice number')).toHaveValue('INV-00000002')
+  await detailsDialog.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // 4. Clicking Edit button beside Duplicate opens Invoice details modal; Duplicate inside switches to New invoice
+  await page.getByRole('button', { name: 'Edit INV-00000001', exact: true }).click()
+  await expect(detailsDialog).toBeVisible()
+  await expect(detailsDialog.getByLabel('Invoice number')).toHaveValue('INV-00000001')
+  await detailsDialog.getByRole('button', { name: 'Duplicate', exact: true }).click()
+  await expect(newDialog).toBeVisible()
+  await expect(newDialog.getByLabel('Invoice number')).toHaveValue('INV-00000003')
+  await expect(newDialog.getByRole('textbox', { name: 'Client', exact: true })).toHaveValue(
+    'Client Alpha',
+  )
+  await newDialog.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(rows).toHaveCount(2)
+
+  // 5. Row Duplicate button opens New invoice modal directly
+  await page.getByRole('button', { name: 'Duplicate INV-00000001', exact: true }).click()
+  await expect(newDialog).toBeVisible()
+  await expect(newDialog.getByLabel('Invoice number')).toHaveValue('INV-00000003')
+  await newDialog.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // 6. Row PDF button downloads PDF without opening detail modal
+  const pdfDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download PDF for INV-00000001', exact: true }).click()
+  const pdfFile = await pdfDownload
+  expect(pdfFile.suggestedFilename()).toBe('INV-00000001.pdf')
+  expect((await readFile(await pdfFile.path())).subarray(0, 5).toString()).toBe('%PDF-')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // 7. Row Delete button opens confirmation without opening detail modal
+  await page.getByRole('button', { name: 'Delete INV-00000002', exact: true }).click()
+  const confirm = page.getByRole('alertdialog', { name: 'Delete invoice INV-00000002?' })
+  await expect(confirm).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await confirm.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(confirm).toHaveCount(0)
+  await expect(rows).toHaveCount(2)
+
+  // 8. Delete inside Invoice details modal uses nested confirmation; Cancel keeps modal, Confirm deletes & closes
+  await page.getByRole('button', { name: 'Edit INV-00000002', exact: true }).click()
+  await expect(detailsDialog).toBeVisible()
+  await detailsDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(confirm).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await confirm.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(confirm).toHaveCount(0)
+  await expect(detailsDialog).toBeVisible()
+  await detailsDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+  await confirm.getByRole('button', { name: 'Delete invoice', exact: true }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('status')).toHaveText('Invoice deleted.')
+  await expect(rows).toHaveCount(1)
+
+  // 9. Mobile viewport opens row detail modal with zero horizontal overflow
+  await page.setViewportSize({ width: 390, height: 844 })
+  await rows.first().getByRole('heading', { name: 'Client Alpha' }).click()
+  await expect(detailsDialog).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+  await page.screenshot({ path: info.outputPath('invoice-modal-mobile.png') })
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  await detailsDialog.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
