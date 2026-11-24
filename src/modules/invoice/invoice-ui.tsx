@@ -25,6 +25,7 @@ const icons = {
   plus: 'M12 5v14M5 12h14',
   close: 'm7 7 10 10M17 7 7 17',
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4',
+  upload: 'M12 15V3m-5 5 5-5 5 5M4 16v4h16v-4',
   expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
   collapse: 'M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7',
   arrow: 'M5 12h14m-5-5 5 5-5 5',

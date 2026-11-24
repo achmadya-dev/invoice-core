@@ -411,26 +411,29 @@ export function Backup({
     [],
   )
   return (
-    <div className="ic-company-layout ic-dialog-body">
-      <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Local storage">
-        <h2>Local storage</h2>
+    <div className="ic-backup-layout ic-dialog-body">
+      <section className="ic-backup-storage" aria-label="Local storage">
+        <h2 className="ic-backup-section-title">Local storage</h2>
         <dl className="ic-stats">
           <div>
             <dt>Saved invoices</dt>
             <dd className="ic-mono">
-              {workspace.invoices.length} / {maxInvoices}
+              {workspace.invoices.length}
+              <span className="ic-stat-cap"> / {maxInvoices}</span>
             </dd>
           </div>
           <div>
             <dt>Sender profiles</dt>
             <dd className="ic-mono">
-              {workspace.companies.length} / {maxCompanies}
+              {workspace.companies.length}
+              <span className="ic-stat-cap"> / {maxCompanies}</span>
             </dd>
           </div>
           <div>
             <dt>Products</dt>
             <dd className="ic-mono">
-              {workspace.products.length} / {maxProducts}
+              {workspace.products.length}
+              <span className="ic-stat-cap"> / {maxProducts}</span>
             </dd>
           </div>
           <div>
@@ -439,115 +442,136 @@ export function Backup({
           </div>
         </dl>
       </section>
-      <section className="ic-editor ic-panel ic-panel-pad">
-        <h2>Export a backup</h2>
-        <p className="ic-muted ic-note">
-          Download a JSON copy of saved invoices, company profiles, products, and settings. Store it
-          somewhere private.
-        </p>
-        <div className="ic-actions ic-note">
-          <button
-            className="ic-button ic-primary"
-            type="button"
-            onClick={() =>
-              downloadFile(
-                new Blob([JSON.stringify(workspace)], { type: 'application/json' }),
-                'invoice-core-backup.json',
-              )
-            }
-          >
-            <Icon name="download" /> Download backup
-          </button>
-          {damaged !== null && (
+      <div className="ic-backup-grid">
+        <section className="ic-backup-card">
+          <div className="ic-backup-card-head">
+            <span className="ic-backup-badge" aria-hidden="true">
+              <Icon name="download" />
+            </span>
+            <h2>Export a backup</h2>
+          </div>
+          <p className="ic-muted ic-backup-copy">
+            Download a JSON copy of saved invoices, company profiles, products, and settings. Store
+            it somewhere private.
+          </p>
+          <div className="ic-actions ic-backup-action">
             <button
-              className="ic-button"
+              className="ic-button ic-primary"
               type="button"
               onClick={() =>
                 downloadFile(
-                  new Blob([damaged], { type: 'text/plain' }),
-                  'invoice-core-unreadable.txt',
+                  new Blob([JSON.stringify(workspace)], { type: 'application/json' }),
+                  'invoice-core-backup.json',
                 )
               }
             >
-              Download unreadable data
+              <Icon name="download" /> Download backup
             </button>
-          )}
-        </div>
-      </section>
-      <section className="ic-editor ic-panel ic-panel-pad">
-        <h2>Restore a backup</h2>
-        <p className="ic-muted ic-note">
-          Restore replaces the local workspace. Download a backup of what you have first.
-        </p>
-        <label className="ic-field ic-note">
-          Invoice Core backup file
-          <input
-            type="file"
-            accept="application/json,.json"
-            onChange={async (event) => {
-              const file = event.currentTarget.files?.[0]
-              event.currentTarget.value = ''
-              const attempt = ++importAttempt.current
-              setError('')
-              if (!file) return
-              try {
-                const data = file.size <= maxBackupBytes ? decodeWorkspace(await file.text()) : null
-                if (attempt !== importAttempt.current) return
-                if (data) {
-                  requestConfirm({
-                    title: 'Restore backup?',
-                    description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), and ${data.products.length} product(s). Replace the local workspace with this backup?`,
-                    confirmLabel: 'Replace local workspace',
-                    cancelLabel: 'Cancel restore',
-                    danger: true,
-                    onConfirm: () => {
-                      restore(data)
-                    },
-                  })
-                } else {
-                  setError(
-                    'This is not a valid Invoice Core backup (maximum 8 MB). Nothing was replaced.',
+            {damaged !== null && (
+              <button
+                className="ic-button"
+                type="button"
+                onClick={() =>
+                  downloadFile(
+                    new Blob([damaged], { type: 'text/plain' }),
+                    'invoice-core-unreadable.txt',
                   )
                 }
-              } catch {
-                if (attempt === importAttempt.current)
-                  setError('The file could not be read. Nothing was replaced.')
-              }
-            }}
-          />
-        </label>
-        {error && (
-          <p className="ic-error ic-note" role="alert">
-            {error}
+              >
+                Download unreadable data
+              </button>
+            )}
+          </div>
+        </section>
+        <section className="ic-backup-card">
+          <div className="ic-backup-card-head">
+            <span className="ic-backup-badge" aria-hidden="true">
+              <Icon name="upload" />
+            </span>
+            <h2>Restore a backup</h2>
+          </div>
+          <p className="ic-muted ic-backup-copy">
+            Restore replaces the local workspace. Download a backup of what you have first.
           </p>
-        )}
-      </section>
-      <section className="ic-editor ic-panel ic-panel-pad ic-span" aria-label="Reset local data">
-        <h2>Reset local data</h2>
-        <p className="ic-muted ic-note">
-          Remove all saved invoices, sender profiles, and products from this browser. Export a JSON
-          backup first.
-        </p>
-        <div className="ic-actions ic-note">
-          <button
-            className="ic-button ic-danger"
-            type="button"
-            onClick={() =>
-              requestConfirm({
-                title: 'Clear local workspace?',
-                description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), and ${workspace.products.length} product(s) from this browser. Download a JSON backup first.`,
-                confirmLabel: 'Confirm clear workspace',
-                cancelLabel: 'Cancel clear',
-                danger: true,
-                onConfirm: () => {
-                  if (clear()) setError('')
-                },
-              })
-            }
-          >
-            Clear local workspace
-          </button>
+          <div className="ic-backup-action">
+            <label className="ic-backup-dropzone">
+              <Icon name="upload" />
+              <span className="ic-backup-dropzone-text" aria-hidden="true">
+                <strong>Choose backup file</strong>
+                <span>.json up to 8 MB</span>
+              </span>
+              <input
+                type="file"
+                className="ic-backup-file-input"
+                aria-label="Invoice Core backup file"
+                accept="application/json,.json"
+                onChange={async (event) => {
+                  const file = event.currentTarget.files?.[0]
+                  event.currentTarget.value = ''
+                  const attempt = ++importAttempt.current
+                  setError('')
+                  if (!file) return
+                  try {
+                    const data =
+                      file.size <= maxBackupBytes ? decodeWorkspace(await file.text()) : null
+                    if (attempt !== importAttempt.current) return
+                    if (data) {
+                      requestConfirm({
+                        title: 'Restore backup?',
+                        description: `${data.invoices.length} saved invoice(s), ${data.companies.length} sender profile(s), and ${data.products.length} product(s). Replace the local workspace with this backup?`,
+                        confirmLabel: 'Replace local workspace',
+                        cancelLabel: 'Cancel restore',
+                        danger: true,
+                        onConfirm: () => {
+                          restore(data)
+                        },
+                      })
+                    } else {
+                      setError(
+                        'This is not a valid Invoice Core backup (maximum 8 MB). Nothing was replaced.',
+                      )
+                    }
+                  } catch {
+                    if (attempt === importAttempt.current)
+                      setError('The file could not be read. Nothing was replaced.')
+                  }
+                }}
+              />
+            </label>
+          </div>
+          {error && (
+            <p className="ic-error ic-note" role="alert">
+              {error}
+            </p>
+          )}
+        </section>
+      </div>
+      <section className="ic-backup-danger" aria-label="Reset local data">
+        <div>
+          <h2>Reset local data</h2>
+          <p className="ic-muted ic-backup-copy">
+            Remove all saved invoices, sender profiles, and products from this browser. Export a
+            JSON backup first.
+          </p>
         </div>
+        <button
+          className="ic-button ic-danger"
+          type="button"
+          onClick={() =>
+            requestConfirm({
+              title: 'Clear local workspace?',
+              description: `This removes ${workspace.invoices.length} saved invoice(s), ${workspace.companies.length} sender profile(s), and ${workspace.products.length} product(s) from this browser. Download a JSON backup first.`,
+              confirmLabel: 'Confirm clear workspace',
+              cancelLabel: 'Cancel clear',
+              danger: true,
+              onConfirm: () => {
+                if (clear()) setError('')
+              },
+            })
+          }
+        >
+          Clear local workspace
+        </button>
       </section>
     </div>
   )
