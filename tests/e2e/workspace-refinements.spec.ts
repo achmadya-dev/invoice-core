@@ -225,7 +225,7 @@ test.describe('text sheet and local date', () => {
     await create.click()
     const sheet = page.getByRole('article', { name: 'Editable invoice' })
     const options = page.getByRole('region', { name: 'Invoice options' })
-    await expect(options.getByRole('combobox')).toHaveCount(4)
+    await expect(options.getByRole('combobox')).toHaveCount(2)
     await expect(options.getByLabel('Accent color')).toHaveCount(0)
     await expect(options.getByRole('combobox', { name: 'Layout' })).toHaveCount(0)
     await expect(page.getByLabel('Accent color')).toBeVisible()
@@ -723,6 +723,106 @@ test('removes the nested dark editor header bar and aligns More options in 3 col
   expect(mobileSwitcherBox.y + mobileSwitcherBox.height).toBeLessThan(mobileLayoutBox.y)
   expect(mobileSwitcherBox.width).toBeGreaterThan(mobileDialogBox.width * 0.8)
   await dialog.screenshot({ path: info.outputPath('invoice-modal-header-mobile.png') })
+
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})
+
+test('places compact saved client and product modal triggers beside Bill to and Line items with 2-column options', async ({
+  page,
+}, info) => {
+  const product = {
+    ...newProduct('USD'),
+    name: 'Design retainer',
+    items: [{ ...newItem('Monthly design'), rate: '750' }],
+  }
+  const company = newCompany('North Studio')
+  const seedInvoice = newInvoice(company, [])
+  const savedResult = saveInvoice(
+    { ...newWorkspace(), companies: [company], products: [product] },
+    {
+      ...seedInvoice,
+      number: 'NORTH-0001',
+      client: {
+        ...seedInvoice.client,
+        name: 'Fieldwork Press',
+        email: 'billing@example.com',
+      },
+      items: [{ ...newItem('Discovery'), rate: '500' }],
+    },
+  )
+  if (!savedResult.ok) throw new Error(savedResult.message)
+
+  await page.addInitScript(({ key, json }) => localStorage.setItem(key, json), {
+    key: storageKey,
+    json: JSON.stringify(savedResult.data),
+  })
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/')
+
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'New invoice' })
+  const options = dialog.getByRole('region', { name: 'Invoice options' })
+  const sheet = dialog.getByRole('article', { name: 'Editable invoice' })
+
+  await expect(options.getByRole('combobox')).toHaveCount(2)
+  const companyTrigger = options.getByRole('combobox', { name: 'Company', exact: true })
+  const currencyTrigger = options.getByRole('combobox', { name: 'Currency', exact: true })
+  const companyBox = await companyTrigger.boundingBox()
+  const currencyBox = await currencyTrigger.boundingBox()
+  if (!companyBox || !currencyBox) throw new Error('Expected 2-column options triggers')
+  expect(Math.abs(companyBox.y - currencyBox.y)).toBeLessThanOrEqual(2)
+  expect(Math.abs(companyBox.width - currencyBox.width)).toBeLessThanOrEqual(4)
+
+  const clientBtn = sheet.getByRole('button', { name: 'Use saved client', exact: true })
+  const productBtn = sheet.getByRole('button', { name: 'Add product', exact: true })
+  const clientBtnBox = await clientBtn.boundingBox()
+  const productBtnBox = await productBtn.boundingBox()
+  const senderNameBox = await sheet.getByLabel('Sender name').boundingBox()
+  const clientNameBox = await sheet
+    .getByRole('textbox', { name: 'Client', exact: true })
+    .boundingBox()
+  if (!clientBtnBox || !productBtnBox || !senderNameBox || !clientNameBox) {
+    throw new Error('Expected visible sheet triggers and party inputs')
+  }
+  expect(clientBtnBox.height).toBeLessThanOrEqual(28)
+  expect(productBtnBox.height).toBeLessThanOrEqual(28)
+  expect(Math.abs(senderNameBox.y - clientNameBox.y)).toBeLessThanOrEqual(2)
+
+  await dialog.screenshot({ path: info.outputPath('invoice-inline-picker-buttons-desktop.png') })
+
+  await clientBtn.click()
+  const clientModal = page.getByRole('dialog', { name: 'Use saved client' })
+  await expect(clientModal).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(clientModal).toHaveCSS('color-scheme', 'dark')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.emulateMedia({ colorScheme: 'light' })
+  await clientModal.screenshot({ path: info.outputPath('invoice-picker-modal-desktop.png') })
+  await page.keyboard.press('Escape')
+  await expect(clientModal).toHaveCount(0)
+  await expect(dialog).toBeVisible()
+
+  await productBtn.click()
+  const productModal = page.getByRole('dialog', { name: 'Add product' })
+  await expect(productModal).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await productModal.getByRole('button', { name: 'Close dialog' }).click()
+  await expect(productModal).toHaveCount(0)
+
+  await dialog.getByRole('button', { name: 'Preview', exact: true }).click()
+  const preview = dialog.getByRole('article', { name: 'Invoice document' })
+  await expect(preview.getByRole('button', { name: 'Use saved client', exact: true })).toHaveCount(
+    0,
+  )
+  await expect(preview.getByRole('button', { name: 'Add product', exact: true })).toHaveCount(0)
+  await dialog.getByRole('button', { name: 'Edit', exact: true }).click()
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+  await dialog.screenshot({ path: info.outputPath('invoice-inline-picker-buttons-mobile.png') })
 
   await page.setViewportSize({ width: 320, height: 800 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)

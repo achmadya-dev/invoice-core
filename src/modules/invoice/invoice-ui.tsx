@@ -108,93 +108,88 @@ export function DecimalField({
   )
 }
 
-type SearchOption = { value: string; label: string; detail?: string }
+type PickerOption = { value: string; label: string; detail?: string }
 
-export function SearchField({
-  label,
-  query,
-  options,
+export function PickerModal({
+  open,
+  title,
+  description,
+  searchLabel,
   placeholder,
   empty,
+  actionLabel,
+  query,
+  options,
+  error,
   theme,
-  disabled,
   onQuery,
   onSelect,
-  onDismiss,
+  onClose,
 }: {
-  label: string
-  query: string
-  options: SearchOption[]
+  open: boolean
+  title: string
+  description: string
+  searchLabel: string
   placeholder: string
   empty: string
+  actionLabel: string
+  query: string
+  options: PickerOption[]
+  error?: string
   theme: Theme
-  disabled?: boolean
   onQuery: (query: string) => void
   onSelect: (value: string) => void
-  onDismiss?: (cancelled: boolean) => void
+  onClose: () => void
 }) {
-  const id = useId()
   return (
-    <Combobox.Root<SearchOption>
-      items={options}
-      filter={null}
-      value={null}
-      disabled={disabled}
-      inputValue={query}
-      onInputValueChange={(value, details) => {
-        // The library clears its selection on popup cleanup; only actual edits change our draft.
-        if (details.reason === 'input-change') onQuery(value)
-      }}
-      onValueChange={(option) => {
-        if (option) onSelect(option.value)
-      }}
-      onOpenChange={(open, details) => {
-        if (!open && details.reason !== 'item-press') onDismiss?.(details.reason === 'escape-key')
-      }}
+    <WorkspaceDialog
+      open={open}
+      title={title}
+      description={description}
+      theme={theme}
+      size="compact"
+      nested
+      onClose={onClose}
     >
-      <div className="ic-field">
-        <label htmlFor={id}>{label}</label>
-        <Combobox.InputGroup className="ic-country-group ic-search-group">
-          <Combobox.Input
-            id={id}
-            className="ic-country-input"
-            placeholder={placeholder}
+      <div className="ic-dialog-body ic-picker-body">
+        <label className="ic-field">
+          {searchLabel}
+          <input
+            type="search"
             maxLength={120}
+            placeholder={placeholder}
+            value={query}
+            onChange={(event) => onQuery(event.target.value)}
           />
-          <Combobox.Trigger
-            className="ic-country-trigger"
-            aria-label={`Show ${label.toLowerCase()} options`}
-          >
-            <Icon name="chevron" />
-          </Combobox.Trigger>
-        </Combobox.InputGroup>
-        <Combobox.Portal>
-          <Combobox.Positioner
-            className="ic-country-positioner"
-            sideOffset={4}
-            collisionPadding={12}
-          >
-            <Combobox.Popup className="ic-country-popup" data-theme={theme}>
-              <Combobox.Empty>
-                <div className="ic-country-empty">{empty}</div>
-              </Combobox.Empty>
-              <Combobox.List className="ic-country-list">
-                {(option: SearchOption) => (
-                  <Combobox.Item
-                    key={option.value}
-                    value={option}
-                    className="ic-country-option ic-search-option"
-                  >
-                    <span>{option.label}</span>
+        </label>
+        {error && (
+          <p className="ic-banner ic-error" role="alert">
+            {error}
+          </p>
+        )}
+        {options.length === 0 ? (
+          <p className="ic-picker-empty">{empty}</p>
+        ) : (
+          <ul className="ic-picker-list">
+            {options.map((option) => (
+              <li key={option.value}>
+                <button
+                  type="button"
+                  className="ic-picker-option"
+                  onClick={() => onSelect(option.value)}
+                >
+                  <span className="ic-picker-text">
+                    <strong>{option.label}</strong>
                     {option.detail && <small>{option.detail}</small>}
-                  </Combobox.Item>
-                )}
-              </Combobox.List>
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
+                  </span>
+                  <span className="ic-picker-action">{actionLabel}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </Combobox.Root>
+    </WorkspaceDialog>
   )
 }
 
@@ -204,6 +199,7 @@ export function WorkspaceDialog({
   description,
   theme,
   size = 'default',
+  nested = false,
   headerExtra,
   onClose,
   children,
@@ -212,7 +208,8 @@ export function WorkspaceDialog({
   title: string
   description: string
   theme: Theme
-  size?: 'default' | 'wide'
+  size?: 'default' | 'compact' | 'wide'
+  nested?: boolean
   headerExtra?: ReactNode
   onClose: () => void
   children: ReactNode
@@ -225,17 +222,25 @@ export function WorkspaceDialog({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Backdrop className="ic-modal-backdrop" />
+        <Dialog.Backdrop
+          className={nested ? 'ic-modal-backdrop ic-nested-backdrop' : 'ic-modal-backdrop'}
+        />
         <Dialog.Viewport
           className={
-            size === 'wide' ? 'ic-modal-viewport ic-invoice-modal-viewport' : 'ic-modal-viewport'
+            size === 'wide'
+              ? 'ic-modal-viewport ic-invoice-modal-viewport'
+              : nested
+                ? 'ic-modal-viewport ic-nested-viewport'
+                : 'ic-modal-viewport'
           }
         >
           <Dialog.Popup
             className={
               size === 'wide'
                 ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-wide'
-                : 'ic-modal-popup ic-workspace-dialog'
+                : size === 'compact'
+                  ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-compact'
+                  : 'ic-modal-popup ic-workspace-dialog'
             }
             data-theme={theme}
           >

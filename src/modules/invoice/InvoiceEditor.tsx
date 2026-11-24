@@ -25,7 +25,7 @@ import {
   CurrencySelect,
   Icon,
   LogoField,
-  SearchField,
+  PickerModal,
   SelectField,
 } from './invoice-ui'
 import { LineItems } from './LineItems'
@@ -62,6 +62,7 @@ export function InvoiceEditor({
 }) {
   const [productQuery, setProductQuery] = useState('')
   const [productError, setProductError] = useState('')
+  const [pickerModal, setPickerModal] = useState<'client' | 'product' | null>(null)
   const saved = workspace.invoices.some((invoice) => invoice.id === draft.id)
   const company = workspace.companies.find((entry) => entry.id === draft.companyId)
   const productSearch = productQuery.trim().toLowerCase()
@@ -113,10 +114,11 @@ export function InvoiceEditor({
     const product = workspace.products.find((entry) => entry.id === id)
     if (!product) return
     const result = addProductLines(draft, product)
-    setProductQuery('')
     if (result.ok) {
       set('items', result.invoice.items)
+      setProductQuery('')
       setProductError('')
+      setPickerModal(null)
     } else {
       setProductError(result.message)
     }
@@ -156,39 +158,7 @@ export function InvoiceEditor({
               setProductError('')
             }}
           />
-          <ClientPicker
-            invoices={workspace.invoices}
-            theme={workspace.theme}
-            onChange={(client) => set('client', client)}
-          />
-          <SearchField
-            label="Add product"
-            query={productQuery}
-            options={products.map((product) => ({
-              value: product.id,
-              label: product.name,
-              detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
-            }))}
-            placeholder="Product or item"
-            empty={
-              workspace.products.length
-                ? 'No matching products.'
-                : 'No products yet. Add one in Products.'
-            }
-            theme={workspace.theme}
-            onQuery={(query) => {
-              setProductQuery(query)
-              setProductError('')
-            }}
-            onSelect={selectProduct}
-            onDismiss={() => setProductQuery('')}
-          />
         </div>
-        {productError && (
-          <p className="ic-error ic-note" role="alert">
-            {productError}
-          </p>
-        )}
         <details className="ic-detail">
           <summary>More options</summary>
           <div className="ic-fields ic-sheet-more-fields">
@@ -277,7 +247,9 @@ export function InvoiceEditor({
             </header>
             <div className="ic-doc-meta">
               <div className="ic-party ic-sheet-party">
-                <span className="ic-doc-label">From</span>
+                <div className="ic-sheet-label-row">
+                  <span className="ic-doc-label">From</span>
+                </div>
                 <ContactFields
                   party="sender"
                   contact={draft.sender}
@@ -306,7 +278,16 @@ export function InvoiceEditor({
                 </label>
               </div>
               <div className="ic-party ic-sheet-party">
-                <span className="ic-doc-label">Bill to</span>
+                <div className="ic-sheet-label-row">
+                  <span className="ic-doc-label">Bill to</span>
+                  <button
+                    type="button"
+                    className="ic-sheet-chip"
+                    onClick={() => setPickerModal('client')}
+                  >
+                    Use saved client
+                  </button>
+                </div>
                 <ContactFields
                   party="client"
                   contact={draft.client}
@@ -320,15 +301,28 @@ export function InvoiceEditor({
               </div>
             </div>
             <section aria-labelledby="sheet-lines">
-              <h4 id="sheet-lines" className="ic-doc-label ic-sheet-line-heading">
-                Line items
-              </h4>
+              <div className="ic-sheet-label-row ic-sheet-line-heading">
+                <h4 id="sheet-lines" className="ic-doc-label">
+                  Line items
+                </h4>
+                <button
+                  type="button"
+                  className="ic-sheet-chip"
+                  onClick={() => {
+                    setProductQuery('')
+                    setProductError('')
+                    setPickerModal('product')
+                  }}
+                >
+                  <Icon name="plus" /> Add product
+                </button>
+              </div>
               <LineItems
                 items={draft.items}
                 edit={(update) => edit((current) => ({ ...current, items: update(current.items) }))}
                 currency={draft.currency}
                 caption="Invoice line items"
-                empty="No line items. Add a line below or use a product from Invoice options."
+                empty="No line items. Add a line below or use Add product."
                 amounts={proof.lines.map((line) => line.amount)}
                 showErrors={showErrors}
               />
@@ -515,6 +509,44 @@ export function InvoiceEditor({
           </div>
         </div>
       </div>
+      <ClientPicker
+        open={pickerModal === 'client'}
+        invoices={workspace.invoices}
+        theme={workspace.theme}
+        onChange={(client) => set('client', client)}
+        onClose={() => setPickerModal(null)}
+      />
+      <PickerModal
+        open={pickerModal === 'product'}
+        title="Add product"
+        description="Add all line items from a saved product in this invoice currency."
+        searchLabel="Search products"
+        placeholder="Product or item"
+        empty={
+          workspace.products.length
+            ? 'No matching products.'
+            : 'No products yet. Add one in Products.'
+        }
+        actionLabel="Add"
+        query={productQuery}
+        options={products.map((product) => ({
+          value: product.id,
+          label: product.name,
+          detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
+        }))}
+        error={productError || undefined}
+        theme={workspace.theme}
+        onQuery={(query) => {
+          setProductQuery(query)
+          setProductError('')
+        }}
+        onSelect={selectProduct}
+        onClose={() => {
+          setProductQuery('')
+          setProductError('')
+          setPickerModal(null)
+        }}
+      />
     </section>
   )
 }
