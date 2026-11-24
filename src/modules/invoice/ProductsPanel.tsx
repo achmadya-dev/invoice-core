@@ -32,9 +32,9 @@ export function ProductsPanel({
   }
   return (
     <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="products-title">
-      <div className="ic-panel-bar">
-        <h2 id="products-title">Products</h2>
-      </div>
+      <h2 id="products-title" className="sr-only">
+        Products
+      </h2>
       <div className="ic-master-toolbar ic-panel-pad">
         <label className="ic-field">
           Search products

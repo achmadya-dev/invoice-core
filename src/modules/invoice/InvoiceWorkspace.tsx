@@ -33,26 +33,32 @@ import {
 import { prepareOffline } from './offline.browser'
 import { loadPdfRenderer } from './pdf.browser'
 
-const panels = {
+const tabs = {
   invoices: 'Invoices',
-  catalog: 'Catalog',
+  products: 'Products',
+  companies: 'Companies',
 } as const
-type Panel = keyof typeof panels
+type Tab = keyof typeof tabs
 type Message = { text: string; error?: boolean }
 
-function panelFromHash(hash: string): Panel {
-  if (['#catalog', '#products', '#companies', '#templates'].includes(hash)) return 'catalog'
+function tabFromHash(hash: string): Tab {
+  if (hash === '#companies') return 'companies'
+  if (['#products', '#catalog', '#templates'].includes(hash)) return 'products'
   return 'invoices'
 }
 
-const panelCopy = {
+const tabCopy = {
   invoices: {
     title: 'Invoices',
     detail: 'Browse and manage saved invoice history.',
   },
-  catalog: {
-    title: 'Catalog',
-    detail: 'Manage the products and company defaults you reuse on invoices.',
+  products: {
+    title: 'Products',
+    detail: 'Manage reusable products and services for your invoices.',
+  },
+  companies: {
+    title: 'Companies',
+    detail: 'Manage sender profiles, numbering, and defaults for new invoices.',
   },
 }
 
@@ -61,8 +67,7 @@ export function InvoiceWorkspace() {
   const current = useRef<LocalWorkspace | null>(null)
   const [storageWarning, setStorageWarning] = useState('')
   const [message, setMessage] = useState<Message | null>(null)
-  const [panel, setPanel] = useState<Panel>('invoices')
-  const [catalogTab, setCatalogTab] = useState<'products' | 'companies'>('products')
+  const [tab, setTab] = useState<Tab>('invoices')
   const [backupOpen, setBackupOpen] = useState(false)
   const [backupConfirm, setBackupConfirm] = useState<ConfirmState | null>(null)
   const [editorConfirm, setEditorConfirm] = useState<ConfirmState | null>(null)
@@ -90,11 +95,7 @@ export function InvoiceWorkspace() {
       }
     }
     const syncFromLocation = () => {
-      const next = panelFromHash(window.location.hash)
-      setPanel(next)
-      if (next === 'catalog') {
-        setCatalogTab(window.location.hash === '#companies' ? 'companies' : 'products')
-      }
+      setTab(tabFromHash(window.location.hash))
       setEditor(
         window.location.hash === '#editor'
           ? {
@@ -155,8 +156,8 @@ export function InvoiceWorkspace() {
     )
   }
 
-  function show(next: Panel) {
-    setPanel(next)
+  function show(next: Tab) {
+    setTab(next)
     setEditor(null)
     setEditorConfirm(null)
     setSaveAttempted(false)
@@ -279,7 +280,7 @@ export function InvoiceWorkspace() {
 
   const data = local?.data
   const theme = data?.theme ?? 'system'
-  const copy = panelCopy[panel]
+  const copy = tabCopy[tab]
   const isSavedDraft =
     data && draft ? data.invoices.some((invoice) => invoice.id === draft.id) : false
   return (
@@ -292,28 +293,15 @@ export function InvoiceWorkspace() {
             </span>{' '}
             Invoice Core
           </button>
-          <nav className="ic-nav" aria-label="Workspace">
-            {(Object.keys(panels) as (keyof typeof panels)[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                disabled={!data}
-                aria-current={key === panel ? 'page' : undefined}
-                onClick={() => show(key)}
-              >
-                {panels[key]}
-              </button>
-            ))}
-          </nav>
         </div>
       </header>
       <main className="ic-shell">
-        <div className="ic-heading" data-panel={panel}>
+        <div className="ic-heading" data-panel={tab}>
           <div>
             <h1>{copy.title}</h1>
             <p>{copy.detail}</p>
           </div>
-          {data && panel === 'invoices' && (
+          {data && (
             <div className="ic-actions ic-heading-actions">
               <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>
                 Backup
@@ -346,42 +334,34 @@ export function InvoiceWorkspace() {
             Opening the local workspace…
           </p>
         )}
-        {data && panel === 'invoices' && (
-          <InvoiceHistory
-            workspace={data}
-            pdfBusyId={pdfBusyId}
-            open={openEditor}
-            downloadPdf={(invoice) => void downloadPdf(invoice)}
-            duplicate={duplicateSavedInvoice}
-            remove={(invoice) => deleteInvoice(invoice)}
-          />
-        )}
-        {data && panel === 'catalog' && (
-          <div className="ic-catalog">
-            <div className="ic-catalog-tabs" role="tablist" aria-label="Catalog sections">
-              <button
-                type="button"
-                role="tab"
-                id="tab-products"
-                aria-selected={catalogTab === 'products'}
-                aria-controls="panel-products"
-                onClick={() => setCatalogTab('products')}
-              >
-                Products
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="tab-companies"
-                aria-selected={catalogTab === 'companies'}
-                aria-controls="panel-companies"
-                onClick={() => setCatalogTab('companies')}
-              >
-                Companies
-              </button>
+        {data && (
+          <div className="ic-workspace-sections">
+            <div className="ic-workspace-tabs" role="tablist" aria-label="Workspace sections">
+              {(Object.keys(tabs) as Tab[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  id={`tab-${key}`}
+                  aria-selected={tab === key}
+                  aria-controls={`panel-${key}`}
+                  onClick={() => show(key)}
+                >
+                  {tabs[key]}
+                </button>
+              ))}
             </div>
-            {catalogTab === 'products' ? (
-              <div id="panel-products" role="tabpanel" aria-labelledby="tab-products">
+            <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
+              {tab === 'invoices' ? (
+                <InvoiceHistory
+                  workspace={data}
+                  pdfBusyId={pdfBusyId}
+                  open={openEditor}
+                  downloadPdf={(invoice) => void downloadPdf(invoice)}
+                  duplicate={duplicateSavedInvoice}
+                  remove={(invoice) => deleteInvoice(invoice)}
+                />
+              ) : tab === 'products' ? (
                 <ProductsPanel
                   products={data.products}
                   theme={theme}
@@ -416,9 +396,7 @@ export function InvoiceWorkspace() {
                     })
                   }}
                 />
-              </div>
-            ) : (
-              <div id="panel-companies" role="tabpanel" aria-labelledby="tab-companies">
+              ) : (
                 <Companies
                   companies={data.companies}
                   theme={data.theme}
@@ -451,11 +429,11 @@ export function InvoiceWorkspace() {
                     })
                   }}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
-        {data && panel === 'invoices' && (
+        {data && (
           <WorkspaceDialog
             open={backupOpen}
             title="Backup"

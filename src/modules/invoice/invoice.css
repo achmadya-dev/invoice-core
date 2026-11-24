@@ -161,39 +161,6 @@
   width: 20px;
   height: 20px;
 }
-.ic-nav {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  width: min(100%, 260px);
-  border: 1px solid #ffffff2b;
-  border-radius: 12px;
-  background: #130d2455;
-}
-.ic-nav button {
-  color: #e6ddf4;
-  padding-inline: 14px;
-  min-height: 36px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 650;
-}
-.ic-nav button:hover,
-.ic-nav button[aria-current] {
-  background: #ffffff0c;
-  color: #fff;
-}
-.ic-nav button[aria-current] {
-  background: var(--ic-stamp);
-  color: #282049;
-}
-@media (forced-colors: active) {
-  .ic-nav button[aria-current] {
-    outline: 1px solid Highlight;
-    color: ButtonText;
-  }
-}
 
 .ic-heading {
   padding-block: 32px 20px;
@@ -740,20 +707,27 @@
 .ic-item-table input {
   padding-inline: 7px;
 }
-.ic-item-table .ic-icon-button {
-  width: 36px;
-}
 .ic-items {
   margin-bottom: 10px;
 }
 .ic-icon-button {
   display: grid;
   place-items: center;
-  min-height: 40px;
-  border-radius: 7px;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--ic-muted);
+  background: transparent;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 .ic-icon-button:hover {
+  border-color: var(--ic-line);
   background: var(--ic-soft);
   color: var(--ic-accent);
 }
@@ -1182,7 +1156,7 @@
   margin-top: 0;
 }
 .ic-sheet-summary .ic-summary > div:not(.ic-amount) {
-  width: min(100%, 340px);
+  width: min(100%, 360px);
   margin-left: auto;
   align-items: center;
   gap: 12px;
@@ -1194,7 +1168,7 @@
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
-  max-width: 196px;
+  max-width: 216px;
 }
 .ic-summary-inline {
   flex: 1;
@@ -1207,19 +1181,23 @@
 .ic-summary-control {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   flex-shrink: 0;
 }
 .ic-summary-unit {
-  width: 22px;
-  font-size: 12px;
+  width: 36px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--ic-muted);
   text-align: left;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 #invoice-editor input.ic-summary-inline-input {
-  width: 48px;
+  width: 68px;
   min-height: 26px;
-  padding: 2px 3px;
+  padding: 2px 4px;
   flex-shrink: 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -1253,13 +1231,13 @@
   border-top: 1px solid var(--ic-line);
   padding: 12px 18px;
 }
-.ic-catalog {
+.ic-workspace-sections {
   display: grid;
   gap: 16px;
 }
-.ic-catalog-tabs {
+.ic-workspace-tabs {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   justify-self: start;
   gap: 4px;
   padding: 4px;
@@ -1267,8 +1245,8 @@
   border-radius: 10px;
   background: var(--ic-soft);
 }
-.ic-catalog-tabs button {
-  min-width: 120px;
+.ic-workspace-tabs button {
+  min-width: 112px;
   min-height: 40px;
   padding: 6px 16px;
   border-radius: 7px;
@@ -1276,7 +1254,7 @@
   font-size: 13px;
   font-weight: 730;
 }
-.ic-catalog-tabs button[aria-selected='true'] {
+.ic-workspace-tabs button[aria-selected='true'] {
   color: var(--ic-ink);
   background: var(--ic-surface);
   box-shadow: 0 1px 3px rgb(25 20 38 / 12%);
@@ -1676,6 +1654,7 @@
   margin-top: 20px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .ic-icon-button,
   .ic-record-clickable,
   .ic-modal-backdrop,
   .ic-modal-popup {
@@ -1789,14 +1768,13 @@
     width: 31px;
     height: 31px;
   }
-  .ic-nav {
+  .ic-workspace-tabs {
     width: 100%;
+    justify-self: stretch;
   }
-  .ic-topbar-inner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding-block: 12px;
+  .ic-workspace-tabs button {
+    min-width: 0;
+    padding: 6px 8px;
   }
   .ic-panel-bar {
     flex-wrap: wrap;
@@ -1891,6 +1869,12 @@
     padding: 12px 8px;
     border-radius: 12px;
   }
+  #invoice-editor input.ic-summary-inline-input {
+    width: 56px;
+  }
+  .ic-summary-unit {
+    width: 32px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -1931,7 +1915,7 @@
   .ic-workspace .ic-heading,
   .ic-workspace .ic-banner,
   .ic-workspace .ic-editor,
-  .ic-workspace .ic-catalog,
+  .ic-workspace .ic-workspace-sections,
   .ic-workspace .ic-footer,
   .ic-workspace-dialog-wide .ic-dialog-heading,
   .ic-workspace-dialog-wide .ic-dialog-intro,

@@ -196,7 +196,7 @@ export function InvoiceEditor({
             empty={
               workspace.products.length
                 ? 'No matching products.'
-                : 'No products yet. Add one in Catalog.'
+                : 'No products yet. Add one in Products.'
             }
             theme={workspace.theme}
             onQuery={(query) => {

@@ -15,10 +15,10 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoices')
-  await expect(page.getByRole('navigation', { name: 'Workspace' }).getByRole('button')).toHaveText([
-    'Invoices',
-    'Catalog',
-  ])
+  await expect(page.getByRole('navigation', { name: 'Workspace' })).toHaveCount(0)
+  await expect(
+    page.getByRole('tablist', { name: 'Workspace sections' }).getByRole('tab'),
+  ).toHaveText(['Invoices', 'Products', 'Companies'])
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   const editorDialog = page.getByRole('dialog', { name: 'New invoice' })
   await expect(editorDialog).toBeVisible()
@@ -144,8 +144,8 @@ test('uses company defaults, preserves historical sender details, and verifies r
   page,
 }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
-  await page.getByRole('tab', { name: 'Companies', exact: true }).click()
+  const tabs = page.getByRole('tablist', { name: 'Workspace sections' })
+  await tabs.getByRole('tab', { name: 'Companies', exact: true }).click()
   await page.getByRole('button', { name: 'Add company' }).click()
   await expect(page.getByRole('dialog', { name: 'New company' })).toBeVisible()
   await page.getByLabel('Sender name').fill('Maple Studio')
@@ -165,7 +165,7 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await page.getByLabel('Invoice prefix').fill('MAP-')
   await page.getByLabel('Next number').fill('41')
   await page.getByRole('button', { name: 'Save company' }).click()
-  await page.getByRole('button', { name: 'Invoices', exact: true }).click()
+  await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await chooseOption(page, 'Company', 'Maple Studio')
   await expect(page.getByLabel('Invoice number')).toHaveValue('MAP-0041')
@@ -182,13 +182,12 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await expect(page.getByLabel('Description, item 1')).toHaveValue('Design services')
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('status')).toHaveText('Invoice saved.')
-  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
-  await page.getByRole('tab', { name: 'Companies', exact: true }).click()
+  await tabs.getByRole('tab', { name: 'Companies', exact: true }).click()
   await page.getByRole('button', { name: 'Edit Maple Studio' }).click()
   await expect(page.getByRole('dialog', { name: 'Edit company' })).toBeVisible()
   await page.getByLabel('Sender name').fill('Maple Studio Updated')
   await page.getByRole('button', { name: 'Save company' }).click()
-  await page.getByRole('button', { name: 'Invoices', exact: true }).click()
+  await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   await expect(page.getByText('Maple Studio ·', { exact: false })).toBeVisible()
 
   await page.getByRole('button', { name: 'Backup' }).click()
