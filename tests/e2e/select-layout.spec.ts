@@ -9,7 +9,7 @@ async function measure(trigger: Locator) {
       width,
       height,
       scrollY: window.scrollY,
-      documentHeight: document.documentElement.scrollHeight,
+      sheetHeight: document.getElementById('invoice-editor')?.getBoundingClientRect().height,
       viewportWidth: document.documentElement.clientWidth,
     }
   })

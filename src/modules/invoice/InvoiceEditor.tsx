@@ -38,7 +38,7 @@ export function InvoiceEditor({
   onDownload,
   pdfBusy,
   notice,
-  onLoadExample,
+  showErrors = false,
   onResetDraft,
   onDuplicate,
   onDelete,
@@ -52,7 +52,7 @@ export function InvoiceEditor({
   onDownload: () => void
   pdfBusy: boolean
   notice?: Notice
-  onLoadExample?: () => void
+  showErrors?: boolean
   onResetDraft?: () => void
   onDuplicate?: () => void
   onDelete?: () => void
@@ -253,6 +253,7 @@ export function InvoiceEditor({
                 <input
                   value={draft.number}
                   maxLength={120}
+                  aria-invalid={showErrors && !draft.number.trim() ? true : undefined}
                   placeholder="e.g. INV-0001"
                   onChange={(event) => set('number', event.target.value)}
                 />
@@ -263,6 +264,7 @@ export function InvoiceEditor({
                   <span className="ic-doc-label">Issue date</span>
                   <input
                     type="date"
+                    aria-invalid={showErrors && !draft.issueDate ? true : undefined}
                     value={draft.issueDate}
                     onChange={(event) => setDate('issueDate', event.target.value)}
                   />
@@ -271,6 +273,11 @@ export function InvoiceEditor({
                   <span className="ic-doc-label">Due date</span>
                   <input
                     type="date"
+                    aria-invalid={
+                      showErrors && Boolean(draft.dueDate && draft.dueDate < draft.issueDate)
+                        ? true
+                        : undefined
+                    }
                     value={draft.dueDate}
                     onChange={(event) => setDate('dueDate', event.target.value)}
                   />
@@ -281,7 +288,13 @@ export function InvoiceEditor({
           <div className="ic-doc-meta ic-sheet-columns">
             <div className="ic-party ic-sheet-party">
               <span className="ic-doc-label">From</span>
-              <ContactFields party="sender" contact={draft.sender} onChange={setSender} sheet />
+              <ContactFields
+                party="sender"
+                contact={draft.sender}
+                onChange={setSender}
+                sheet
+                invalidName={showErrors && !draft.sender.name.trim()}
+              />
               {draft.sender.country && <span>{countryName(draft.sender.country)}</span>}
               <label className="ic-field">
                 <span className="sr-only">Website</span>
@@ -308,6 +321,7 @@ export function InvoiceEditor({
                 party="client"
                 contact={draft.client}
                 sheet
+                invalidName={showErrors && !draft.client.name.trim()}
                 onChange={(patch) =>
                   edit((current) => ({ ...current, client: { ...current.client, ...patch } }))
                 }
@@ -329,37 +343,34 @@ export function InvoiceEditor({
             />
           </section>
           <div className="ic-sheet-summary">
-            <details className="ic-detail">
-              <summary>Discount, tax, and shipping</summary>
-              <div className="ic-fields">
-                <DecimalField
-                  label={draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'}
-                  value={draft.discount}
-                  kind={draft.discountKind === 'percent' ? 'percent' : 'amount'}
-                  onChange={(value) => set('discount', value)}
+            <div className="ic-fields">
+              <DecimalField
+                label={draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'}
+                value={draft.discount}
+                kind={draft.discountKind === 'percent' ? 'percent' : 'amount'}
+                onChange={(value) => set('discount', value)}
+              />
+              <label className="ic-field">
+                Tax label
+                <input
+                  maxLength={120}
+                  value={draft.taxLabel}
+                  onChange={(event) => set('taxLabel', event.target.value)}
                 />
-                <label className="ic-field">
-                  Tax label
-                  <input
-                    maxLength={120}
-                    value={draft.taxLabel}
-                    onChange={(event) => set('taxLabel', event.target.value)}
-                  />
-                </label>
-                <DecimalField
-                  label="Tax rate (%)"
-                  value={draft.taxRate}
-                  kind="percent"
-                  onChange={(value) => set('taxRate', value)}
-                />
-                <DecimalField
-                  label="Shipping"
-                  value={draft.shipping}
-                  kind="amount"
-                  onChange={(value) => set('shipping', value)}
-                />
-              </div>
-            </details>
+              </label>
+              <DecimalField
+                label="Tax rate (%)"
+                value={draft.taxRate}
+                kind="percent"
+                onChange={(value) => set('taxRate', value)}
+              />
+              <DecimalField
+                label="Shipping"
+                value={draft.shipping}
+                kind="amount"
+                onChange={(value) => set('shipping', value)}
+              />
+            </div>
             <DocumentTotals proof={proof} currency={draft.currency} />
           </div>
           <div className="ic-doc-extras ic-sheet-extras">
@@ -413,11 +424,6 @@ export function InvoiceEditor({
               <button type="button" className="ic-button ic-primary" onClick={onSave}>
                 {saved ? 'Save changes' : 'Create invoice'}
               </button>
-              {onLoadExample && (
-                <button type="button" className="ic-button" onClick={onLoadExample}>
-                  Load example
-                </button>
-              )}
               {onResetDraft && (
                 <button type="button" className="ic-button" onClick={onResetDraft}>
                   Reset draft
