@@ -455,8 +455,37 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   const newDialog = page.getByRole('dialog', { name: 'New invoice' })
   await expect(newDialog).toBeVisible()
   await expect(page).toHaveURL('/')
+  const newClose = newDialog.getByRole('button', { name: 'Close dialog' })
+  const newCloseBox = await newClose.boundingBox()
+  if (!newCloseBox) throw new Error('Expected visible modal close button')
+  expect(Math.abs(newCloseBox.width - newCloseBox.height)).toBeLessThanOrEqual(1)
+  expect(newCloseBox.width).toBeCloseTo(36, 0)
+  expect(newCloseBox.height).toBeCloseTo(36, 0)
+  await newClose.hover()
+  await newDialog
+    .locator('.ic-dialog-heading')
+    .screenshot({ path: info.outputPath('modal-close-hover.png') })
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // Backup dialog close button also renders as a 36x36 square
+  await page.getByRole('button', { name: 'Backup', exact: true }).click()
+  const backupDialog = page.getByRole('dialog', { name: 'Backup' })
+  await expect(backupDialog).toBeVisible()
+  const backupClose = backupDialog.getByRole('button', { name: 'Close dialog' })
+  await expect(backupDialog).not.toHaveAttribute('data-starting-style')
+  await expect
+    .poll(async () => {
+      const box = await backupClose.boundingBox()
+      return box ? Math.round(box.width) : 0
+    })
+    .toBe(36)
+  const backupCloseBox = await backupClose.boundingBox()
+  if (!backupCloseBox) throw new Error('Expected visible Backup close button')
+  expect(Math.abs(backupCloseBox.width - backupCloseBox.height)).toBeLessThanOrEqual(1)
+  expect(backupCloseBox.height).toBeCloseTo(36, 0)
+  await backupClose.click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
   // 2. Clicking client name on a row opens Invoice details modal

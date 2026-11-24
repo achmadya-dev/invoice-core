@@ -740,20 +740,27 @@
 .ic-item-table input {
   padding-inline: 7px;
 }
-.ic-item-table .ic-icon-button {
-  width: 36px;
-}
 .ic-items {
   margin-bottom: 10px;
 }
 .ic-icon-button {
   display: grid;
   place-items: center;
-  min-height: 40px;
-  border-radius: 7px;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--ic-muted);
+  background: transparent;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 .ic-icon-button:hover {
+  border-color: var(--ic-line);
   background: var(--ic-soft);
   color: var(--ic-accent);
 }
@@ -1676,6 +1683,7 @@
   margin-top: 20px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .ic-icon-button,
   .ic-record-clickable,
   .ic-modal-backdrop,
   .ic-modal-popup {
