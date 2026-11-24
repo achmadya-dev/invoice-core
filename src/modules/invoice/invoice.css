@@ -161,39 +161,6 @@
   width: 20px;
   height: 20px;
 }
-.ic-nav {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  width: min(100%, 260px);
-  border: 1px solid #ffffff2b;
-  border-radius: 12px;
-  background: #130d2455;
-}
-.ic-nav button {
-  color: #e6ddf4;
-  padding-inline: 14px;
-  min-height: 36px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 650;
-}
-.ic-nav button:hover,
-.ic-nav button[aria-current] {
-  background: #ffffff0c;
-  color: #fff;
-}
-.ic-nav button[aria-current] {
-  background: var(--ic-stamp);
-  color: #282049;
-}
-@media (forced-colors: active) {
-  .ic-nav button[aria-current] {
-    outline: 1px solid Highlight;
-    color: ButtonText;
-  }
-}
 
 .ic-heading {
   padding-block: 32px 20px;
@@ -1260,13 +1227,13 @@
   border-top: 1px solid var(--ic-line);
   padding: 12px 18px;
 }
-.ic-catalog {
+.ic-workspace-sections {
   display: grid;
   gap: 16px;
 }
-.ic-catalog-tabs {
+.ic-workspace-tabs {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   justify-self: start;
   gap: 4px;
   padding: 4px;
@@ -1274,8 +1241,8 @@
   border-radius: 10px;
   background: var(--ic-soft);
 }
-.ic-catalog-tabs button {
-  min-width: 120px;
+.ic-workspace-tabs button {
+  min-width: 112px;
   min-height: 40px;
   padding: 6px 16px;
   border-radius: 7px;
@@ -1283,7 +1250,7 @@
   font-size: 13px;
   font-weight: 730;
 }
-.ic-catalog-tabs button[aria-selected='true'] {
+.ic-workspace-tabs button[aria-selected='true'] {
   color: var(--ic-ink);
   background: var(--ic-surface);
   box-shadow: 0 1px 3px rgb(25 20 38 / 12%);
@@ -1797,14 +1764,13 @@
     width: 31px;
     height: 31px;
   }
-  .ic-nav {
+  .ic-workspace-tabs {
     width: 100%;
+    justify-self: stretch;
   }
-  .ic-topbar-inner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding-block: 12px;
+  .ic-workspace-tabs button {
+    min-width: 0;
+    padding: 6px 8px;
   }
   .ic-panel-bar {
     flex-wrap: wrap;
@@ -1939,7 +1905,7 @@
   .ic-workspace .ic-heading,
   .ic-workspace .ic-banner,
   .ic-workspace .ic-editor,
-  .ic-workspace .ic-catalog,
+  .ic-workspace .ic-workspace-sections,
   .ic-workspace .ic-footer,
   .ic-workspace-dialog-wide .ic-dialog-heading,
   .ic-workspace-dialog-wide .ic-dialog-intro,

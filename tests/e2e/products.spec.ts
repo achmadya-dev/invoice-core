@@ -4,7 +4,8 @@ import { expect, test } from '@playwright/test'
 
 test('uses the separate product picker to add every item in a group', async ({ page }, info) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
+  const tabs = page.getByRole('tablist', { name: 'Workspace sections' })
+  await tabs.getByRole('tab', { name: 'Products', exact: true }).click()
   await page.getByRole('button', { name: 'Add product', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'New product' })
   await expect(dialog).toBeVisible()
@@ -24,8 +25,7 @@ test('uses the separate product picker to add every item in a group', async ({ p
   await expect(dialog).toBeHidden()
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Maintenance plan' })).toBeVisible()
-  const nav = page.getByRole('navigation', { name: 'Workspace' })
-  await nav.getByRole('button', { name: 'Invoices' }).click()
+  await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   const details = page.getByRole('region', { name: 'Invoice options' })
   const lines = page.getByRole('region', { name: 'Line items' })
@@ -61,7 +61,7 @@ test('uses the separate product picker to add every item in a group', async ({ p
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('button', { name: 'INV-0001', exact: true })).toBeVisible()
 
-  await nav.getByRole('button', { name: 'Catalog' }).click()
+  await tabs.getByRole('tab', { name: 'Products', exact: true }).click()
   await page.getByRole('button', { name: 'Edit Maintenance plan' }).click()
   const editDialog = page.getByRole('dialog', { name: 'Edit product' })
   await expect(editDialog.getByLabel('Rate, item 1')).toHaveValue('100')
@@ -75,7 +75,7 @@ test('uses the separate product picker to add every item in a group', async ({ p
   await page.getByRole('button', { name: 'Delete Maintenance plan' }).click()
   await confirm.getByRole('button', { name: 'Delete product' }).click()
   await expect(page.getByRole('heading', { name: 'Maintenance plan' })).toHaveCount(0)
-  await nav.getByRole('button', { name: 'Invoices' }).click()
+  await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
   await expect(page.getByLabel('Rate, item 1')).toHaveValue('100')
   await expect(page.getByLabel('Rate, item 2')).toHaveValue('25')
@@ -127,8 +127,8 @@ test('fits mobile and includes products in the backup dialog workflows', async (
   await page.setViewportSize({ width: 320, height: 800 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
   await productDialog.getByRole('button', { name: 'Save product' }).click()
-  const nav = page.getByRole('navigation', { name: 'Workspace' })
-  await nav.getByRole('button', { name: 'Invoices' }).click()
+  const tabs = page.getByRole('tablist', { name: 'Workspace sections' })
+  await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   const backup = page.getByRole('button', { name: 'Backup', exact: true })
   await backup.click()
   const backupDialog = page.getByRole('dialog', { name: 'Backup' })
@@ -140,9 +140,9 @@ test('fits mobile and includes products in the backup dialog workflows', async (
   await backupDialog.getByRole('button', { name: 'Clear local workspace' }).click()
   await expect(confirm).toContainText('1 product(s)')
   await confirm.getByRole('button', { name: 'Confirm clear workspace' }).click()
-  await nav.getByRole('button', { name: 'Catalog' }).click()
+  await tabs.getByRole('tab', { name: 'Products', exact: true }).click()
   await expect(page.getByText('No products yet.', { exact: false })).toBeVisible()
-  await nav.getByRole('button', { name: 'Invoices' }).click()
+  await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   await backup.click()
   await backupDialog.getByLabel('Invoice Core backup file').setInputFiles({
     name: 'workspace.json',
@@ -151,7 +151,7 @@ test('fits mobile and includes products in the backup dialog workflows', async (
   })
   await expect(confirm).toContainText('1 product(s)')
   await confirm.getByRole('button', { name: 'Replace local workspace' }).click()
-  await nav.getByRole('button', { name: 'Catalog' }).click()
+  await tabs.getByRole('tab', { name: 'Products', exact: true }).click()
   await page.getByRole('button', { name: 'Edit Weekly support' }).click()
   const restored = page.getByRole('dialog', { name: 'Edit product' })
   await expect(restored.getByLabel('Description, item 1')).toHaveValue('Support session')
@@ -163,7 +163,8 @@ test('highlights unfilled required fields in red inside catalog modals', async (
   const errorBg = 'rgb(255, 242, 244)'
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
+  const tabs = page.getByRole('tablist', { name: 'Workspace sections' })
+  await tabs.getByRole('tab', { name: 'Products', exact: true }).click()
 
   // 1. New product modal
   await page.getByRole('button', { name: 'Add product', exact: true }).click()

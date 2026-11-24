@@ -254,9 +254,9 @@ export function Companies({
   }
   return (
     <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="companies-title">
-      <div className="ic-panel-bar">
-        <h2 id="companies-title">Companies</h2>
-      </div>
+      <h2 id="companies-title" className="sr-only">
+        Companies
+      </h2>
       <div className="ic-master-toolbar ic-panel-pad">
         <label className="ic-field">
           Search companies

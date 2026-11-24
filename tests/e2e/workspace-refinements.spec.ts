@@ -49,7 +49,7 @@ test('sorts history by descending issue date and resets pagination after searchi
   await expect(page.getByRole('navigation', { name: 'Invoice history pages' })).toHaveCount(0)
 })
 
-test('uses full-width catalog tabs with searchable panels', async ({ page }, info) => {
+test('uses full-width workspace tabs with searchable panels', async ({ page }, info) => {
   const product = {
     ...newProduct('USD'),
     name: 'Design retainer',
@@ -62,14 +62,21 @@ test('uses full-width catalog tabs with searchable panels', async ({ page }, inf
   })
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/#companies')
-  const productsTab = page.getByRole('tab', { name: 'Products', exact: true })
-  const companiesTab = page.getByRole('tab', { name: 'Companies', exact: true })
+  await expect(page.getByRole('navigation', { name: 'Workspace' })).toHaveCount(0)
+  const tablist = page.getByRole('tablist', { name: 'Workspace sections' })
+  await expect(tablist.getByRole('tab')).toHaveText(['Invoices', 'Products', 'Companies'])
+  const invoicesTab = tablist.getByRole('tab', { name: 'Invoices', exact: true })
+  const productsTab = tablist.getByRole('tab', { name: 'Products', exact: true })
+  const companiesTab = tablist.getByRole('tab', { name: 'Companies', exact: true })
   const companies = page.getByRole('region', { name: 'Companies', exact: true })
   const products = page.getByRole('region', { name: 'Products', exact: true })
 
   await expect(companiesTab).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('button', { name: 'Backup', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Create invoice', exact: true })).toBeVisible()
   await expect(companies.getByText('North Studio', { exact: true })).toBeVisible()
   await expect(products).toHaveCount(0)
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   const shellWidth = (await page.locator('main.ic-shell').boundingBox())?.width ?? 0
   expect((await companies.boundingBox())?.width ?? 0).toBeGreaterThan(shellWidth * 0.9)
   const companySearch = companies.getByRole('searchbox', { name: 'Search companies' })
@@ -82,13 +89,22 @@ test('uses full-width catalog tabs with searchable panels', async ({ page }, inf
   await expect(products.getByText('Design retainer', { exact: true })).toBeVisible()
   await expect(companies).toHaveCount(0)
   expect((await products.boundingBox())?.width ?? 0).toBeGreaterThan(shellWidth * 0.9)
-  await page.screenshot({ path: info.outputPath('catalog-desktop.png'), fullPage: true })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.screenshot({ path: info.outputPath('workspace-tabs-desktop.png'), fullPage: true })
   const productSearch = products.getByRole('searchbox', { name: 'Search products' })
   await productSearch.fill('missing product')
   await expect(products.getByText('No products match this search.')).toBeVisible()
   await productSearch.clear()
+
+  await invoicesTab.click()
+  await expect(invoicesTab).toHaveAttribute('aria-selected', 'true')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.screenshot({ path: info.outputPath('catalog-mobile.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+  await page.screenshot({ path: info.outputPath('workspace-tabs-mobile.png'), fullPage: true })
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })
 
 test('downloads an incomplete preview without saving it to history', async ({ page }, info) => {

@@ -11,8 +11,9 @@ test('omits theme selector while respecting system color scheme and accessibilit
   const dialog = page.getByRole('dialog', { name: 'Backup' })
   const workspace = page.locator('.ic-workspace')
 
+  await expect(page.locator('.ic-topbar').getByRole('combobox')).toHaveCount(0)
   await expect(
-    page.getByRole('navigation', { name: 'Workspace' }).getByRole('combobox'),
+    page.getByRole('tablist', { name: 'Workspace sections' }).getByRole('combobox'),
   ).toHaveCount(0)
   await expect(workspace).toHaveCSS('color-scheme', 'light')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
