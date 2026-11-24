@@ -839,11 +839,15 @@
 .ic-proof[data-invoice-layout='minimal'] .ic-doc-heading {
   border-bottom: 1px solid var(--ic-doc-line);
 }
+.ic-proof[data-invoice-layout='minimal'] .ic-sheet-table thead {
+  background: transparent;
+}
 .ic-proof[data-invoice-layout='minimal'] .ic-proof-table thead th,
 .ic-proof[data-invoice-layout='minimal'] .ic-item-table thead th {
   border-top: 1px solid var(--ic-doc-accent);
   border-bottom: 1px solid var(--ic-doc-accent);
   background: transparent;
+  color: #22213a;
 }
 .ic-proof[data-invoice-layout='minimal'] .ic-summary > .ic-amount {
   padding: 12px 0;
@@ -950,25 +954,36 @@
 }
 .ic-summary > div > dd {
   text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .ic-summary > .ic-amount {
+  width: 100%;
   margin-top: 10px;
   padding: 13px 15px;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   background: var(--ic-doc-amount-bg);
   color: var(--ic-doc-amount-ink);
   border-radius: 3px;
 }
 .ic-amount dt {
   font: 750 15px/1.1 var(--ic-display);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .ic-amount dt span {
   display: block;
   margin-top: 4px;
 }
 .ic-amount dd {
-  font: 800 clamp(21px, 3vw, 33px)/1 var(--ic-display);
-  letter-spacing: -0.03em;
+  margin-left: auto;
+  font: 800 clamp(18px, 2.8vw, 30px)/1.08 var(--ic-display);
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .ic-proof-warning {
   margin-top: 10px;
@@ -1143,10 +1158,11 @@
   padding-block: 8px;
 }
 .ic-sheet-table thead {
-  background: var(--ic-soft);
+  background: var(--ic-doc-soft);
 }
 .ic-sheet-table th {
   padding-block: 7px;
+  color: var(--ic-doc-amount-ink);
 }
 .ic-sheet-table th:nth-child(4) {
   width: 108px;
@@ -1167,18 +1183,19 @@
 }
 .ic-sheet-summary {
   display: grid;
-  justify-items: end;
+  justify-items: stretch;
   margin-top: 18px;
   padding-block-start: 12px;
   border-top: 1px solid var(--ic-doc-line);
 }
 .ic-sheet-summary > div,
 .ic-sheet-summary > .ic-summary {
-  width: min(100%, 320px);
+  width: 100%;
   margin-top: 0;
 }
 .ic-sheet-summary .ic-summary > div:not(.ic-amount) {
-  width: 100%;
+  width: min(100%, 340px);
+  margin-left: auto;
   align-items: center;
   gap: 12px;
 }

@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
+import { readFile } from 'node:fs/promises'
 import { expect, test } from '@playwright/test'
 import {
   newCompany,
@@ -10,6 +11,7 @@ import {
 import { storageKey } from '../../src/modules/invoice/workspace.browser'
 
 const popplerAvailable = spawnSync('pdftotext', ['-v']).status === 0
+const pdftoppmAvailable = spawnSync('pdftoppm', ['-v']).status === 0
 
 test('downloaded PDF matches the preview amounts and keeps all lines before the summary', async ({
   page,
@@ -78,4 +80,93 @@ test('downloaded PDF matches the preview amounts and keeps all lines before the 
   expect(text.indexOf('Subtotal')).toBeGreaterThan(text.indexOf('Service row 60'))
   expect(text.lastIndexOf('EXAMPLE-001')).toBeGreaterThan(text.indexOf('Amount due'))
   expect(text).toContain('$600.00')
+})
+
+test('all layouts keep IDR Amount due on one line and produce matching PDFs', async ({
+  page,
+}, info) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+  await page.getByLabel('Invoice number').fill('IDR-2026-01')
+  await page.getByLabel('Sender name').fill('Nusantara Studio')
+  await page.getByRole('textbox', { name: 'Client', exact: true }).fill('Maju Bersama')
+  await page.getByRole('combobox', { name: 'Currency', exact: true }).click()
+  await page.getByRole('option', { name: /^IDR —/ }).click()
+  await page.getByLabel('Description, item 1').fill('Product design sprint')
+  await page.getByLabel('Rate, item 1').fill('2500000')
+  await page.getByLabel('Notes', { exact: true }).fill('Thank you for your business.')
+  await page.getByLabel('Terms', { exact: true }).fill('Net 14 days')
+  await page.getByLabel('Payment details', { exact: true }).fill('Bank transfer IDR-2026-01')
+  await page.getByLabel('Accent color').fill('#047857')
+
+  const isSingleLine = (element: Element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+    const range = document.createRange()
+    const first = walker.nextNode()
+    let last = first
+    while (walker.nextNode()) last = walker.currentNode
+    if (!first || !last) return false
+    range.setStart(first, 0)
+    range.setEnd(last, last.textContent?.length ?? 0)
+    return range.getClientRects().length === 1
+  }
+
+  for (const [layoutKey, layoutLabel] of [
+    ['classic', 'Classic'],
+    ['modern', 'Modern'],
+    ['minimal', 'Minimal'],
+  ] as const) {
+    await page.getByRole('combobox', { name: 'Layout', exact: true }).click()
+    await page.getByRole('option', { name: layoutLabel, exact: true }).click()
+
+    const editorAmount = page.locator('#invoice-editor .ic-amount dd')
+    await expect(editorAmount).toHaveText('IDR 2,500,000')
+    expect(await editorAmount.evaluate(isSingleLine)).toBe(true)
+    expect(
+      await page.locator('#invoice-editor .ic-amount dt').evaluate((el) =>
+        el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE
+          ? (() => {
+              const r = document.createRange()
+              r.selectNodeContents(el.firstChild)
+              return r.getClientRects().length === 1
+            })()
+          : false,
+      ),
+    ).toBe(true)
+
+    const pendingPdf = page.waitForEvent('download')
+    await page.getByRole('button', { name: 'Download PDF' }).click()
+    const download = await pendingPdf
+    const pdfPath = await download.path()
+    expect(pdfPath).toBeTruthy()
+    expect((await readFile(pdfPath!)).subarray(0, 5).toString()).toBe('%PDF-')
+
+    if (popplerAvailable) {
+      const pdfText = execFileSync('pdftotext', ['-layout', pdfPath!, '-'], {
+        encoding: 'utf8',
+      })
+      expect(pdfText).toContain('IDR 2,500,000')
+      expect(pdfText).toContain('Amount due')
+      expect(pdfText).toContain('Thank you for your business.')
+      expect(pdfText).toContain('Net 14 days')
+    }
+    if (pdftoppmAvailable) {
+      execFileSync('pdftoppm', [
+        '-png',
+        '-r',
+        '144',
+        '-singlefile',
+        pdfPath!,
+        info.outputPath(`pdf-${layoutKey}`),
+      ])
+    }
+
+    await page.getByRole('button', { name: 'Preview', exact: true }).click()
+    const preview = page.locator('#invoice-preview')
+    await expect(preview).toHaveAttribute('data-invoice-layout', layoutKey)
+    await expect(preview.locator('.ic-amount dd')).toHaveText('IDR 2,500,000')
+    expect(await preview.locator('.ic-amount dd').evaluate(isSingleLine)).toBe(true)
+    await preview.screenshot({ path: info.outputPath(`preview-${layoutKey}.png`) })
+    await page.getByRole('button', { name: 'Edit', exact: true }).click()
+  }
 })
