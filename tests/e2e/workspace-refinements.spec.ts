@@ -642,3 +642,88 @@ test('keeps fixed-amount discount currency unit on one line in summary', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
   expect(await discountUnit.evaluate(singleLineText)).toBe(true)
 })
+
+test('removes the nested dark editor header bar and aligns More options in 3 columns', async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'New invoice' })
+  await expect(dialog).toBeVisible()
+  await expect(page.locator('.ic-panel-bar')).toHaveCount(0)
+
+  const headerControls = dialog.locator('.ic-dialog-intro .ic-editor-appearance')
+  const switcher = headerControls.getByRole('navigation', { name: 'Invoice view' })
+  const colorControl = headerControls.locator('.ic-color-control')
+  const layoutTrigger = headerControls.getByRole('combobox', { name: 'Layout', exact: true })
+  await expect(switcher).toBeVisible()
+
+  const switcherBox = await switcher.boundingBox()
+  const colorBox = await colorControl.boundingBox()
+  const layoutBox = await layoutTrigger.boundingBox()
+  if (!switcherBox || !colorBox || !layoutBox) {
+    throw new Error('Expected visible modal header controls')
+  }
+  expect(Math.abs(switcherBox.height - colorBox.height)).toBeLessThanOrEqual(2)
+  expect(Math.abs(layoutBox.height - colorBox.height)).toBeLessThanOrEqual(2)
+  expect(
+    Math.abs(switcherBox.y + switcherBox.height - (colorBox.y + colorBox.height)),
+  ).toBeLessThanOrEqual(2)
+  expect(
+    Math.abs(layoutBox.y + layoutBox.height - (colorBox.y + colorBox.height)),
+  ).toBeLessThanOrEqual(2)
+
+  await dialog.locator('details.ic-detail summary').click()
+  const senderCountry = dialog.getByRole('combobox', { name: 'Sender country', exact: true })
+  const clientCountry = dialog.getByRole('combobox', {
+    name: 'Billing contact country',
+    exact: true,
+  })
+  const discountType = dialog.getByRole('combobox', { name: 'Discount type', exact: true })
+  await expect(senderCountry).toBeVisible()
+  await expect(clientCountry).toBeVisible()
+  await expect(discountType).toBeVisible()
+
+  const senderBox = await senderCountry.boundingBox()
+  const clientBox = await clientCountry.boundingBox()
+  const discountBox = await discountType.boundingBox()
+  if (!senderBox || !clientBox || !discountBox) {
+    throw new Error('Expected visible More options controls')
+  }
+  expect(Math.abs(senderBox.y - clientBox.y)).toBeLessThanOrEqual(2)
+  expect(Math.abs(clientBox.y - discountBox.y)).toBeLessThanOrEqual(2)
+
+  await dialog.screenshot({ path: info.outputPath('invoice-modal-header-desktop.png') })
+
+  await switcher.getByRole('button', { name: 'Preview', exact: true }).click()
+  await expect(dialog.locator('.ic-sheet-tools')).not.toBeVisible()
+  await expect(dialog.locator('#invoice-preview')).toBeVisible()
+
+  await switcher.getByRole('button', { name: 'Edit', exact: true }).click()
+  await expect(dialog.locator('.ic-sheet-tools')).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(dialog).toHaveCSS('color-scheme', 'dark')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+  const mobileDialogBox = await dialog.boundingBox()
+  const mobileSwitcherBox = await switcher.boundingBox()
+  const mobileLayoutBox = await layoutTrigger.boundingBox()
+  if (!mobileDialogBox || !mobileSwitcherBox || !mobileLayoutBox) {
+    throw new Error('Expected visible mobile modal controls')
+  }
+  expect(mobileSwitcherBox.y + mobileSwitcherBox.height).toBeLessThan(mobileLayoutBox.y)
+  expect(mobileSwitcherBox.width).toBeGreaterThan(mobileDialogBox.width * 0.8)
+  await dialog.screenshot({ path: info.outputPath('invoice-modal-header-mobile.png') })
+
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})

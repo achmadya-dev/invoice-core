@@ -478,6 +478,24 @@ export function InvoiceWorkspace() {
             headerExtra={
               draft ? (
                 <div className="ic-actions ic-editor-appearance">
+                  <nav className="ic-switcher" aria-label="Invoice view">
+                    <button
+                      type="button"
+                      aria-pressed={view === 'edit'}
+                      aria-controls="invoice-editor"
+                      onClick={() => setView('edit')}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={view === 'preview'}
+                      aria-controls="invoice-preview"
+                      onClick={() => setView('preview')}
+                    >
+                      Preview
+                    </button>
+                  </nav>
                   <ColorPicker
                     label="Accent color"
                     value={resolveAccentColor(draft)}
@@ -510,7 +528,6 @@ export function InvoiceWorkspace() {
                   workspace={data}
                   edit={editDraft}
                   view={view}
-                  setView={setView}
                   onSave={saveEditor}
                   notice={message ?? undefined}
                   showErrors={saveAttempted}
