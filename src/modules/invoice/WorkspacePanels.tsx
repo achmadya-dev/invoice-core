@@ -201,6 +201,7 @@ export function Companies({
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
   const [error, setError] = useState('')
+  const [saveAttempted, setSaveAttempted] = useState(false)
   const [query, setQuery] = useState('')
   const search = query.trim().toLowerCase()
   const matches = companies.filter(({ sender, currency }) =>
@@ -209,17 +210,26 @@ export function Companies({
   function edit(company: Company | null) {
     setSelected(company)
     setError('')
+    setSaveAttempted(false)
+  }
+  function updateCompany(patch: Partial<Company>) {
+    setSelected((current) => (current ? { ...current, ...patch } : current))
+    setError('')
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected) return
     const problem = companyError(selected)
     if (problem) {
+      setSaveAttempted(true)
       setError(problem)
       return
     }
     if (save(selected)) edit(null)
-    else setError('Company could not be saved. Check browser storage and try again.')
+    else {
+      setSaveAttempted(true)
+      setError('Company could not be saved. Check browser storage and try again.')
+    }
   }
   return (
     <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="companies-title">
@@ -288,31 +298,33 @@ export function Companies({
         onClose={() => edit(null)}
       >
         {selected && (
-          <form className="ic-dialog-body" onSubmit={submit}>
+          <form className="ic-dialog-body" noValidate onSubmit={submit}>
             <div className="ic-fields">
               <SenderFields
                 key={selected.id}
                 sender={selected.sender}
                 theme={theme}
-                onChange={(patch) =>
+                invalidName={saveAttempted && !selected.sender.name.trim()}
+                onChange={(patch) => {
                   setSelected((current) =>
                     current?.id === selected.id
                       ? { ...current, sender: { ...current.sender, ...patch } }
                       : current,
                   )
-                }
+                  setError('')
+                }}
               />
               <CurrencySelect
                 label="Default currency"
                 value={selected.currency}
-                onChange={(currency) => setSelected({ ...selected, currency })}
+                onChange={(currency) => updateCompany({ currency })}
               />
               <label className="ic-field">
                 Invoice prefix
                 <input
                   maxLength={24}
                   value={selected.prefix}
-                  onChange={(event) => setSelected({ ...selected, prefix: event.target.value })}
+                  onChange={(event) => updateCompany({ prefix: event.target.value })}
                 />
               </label>
               <label className="ic-field">
@@ -322,10 +334,16 @@ export function Companies({
                   min={1}
                   max={1000001}
                   required
-                  value={selected.nextNumber || ''}
-                  onChange={(event) =>
-                    setSelected({ ...selected, nextNumber: Number(event.target.value) })
+                  aria-invalid={
+                    saveAttempted &&
+                    (!Number.isInteger(selected.nextNumber) ||
+                      selected.nextNumber < 1 ||
+                      selected.nextNumber > 1_000_001)
+                      ? true
+                      : undefined
                   }
+                  value={selected.nextNumber || ''}
+                  onChange={(event) => updateCompany({ nextNumber: Number(event.target.value) })}
                 />
               </label>
               <label className="ic-field">
@@ -335,10 +353,16 @@ export function Companies({
                   min={1}
                   max={8}
                   required
-                  value={selected.padding || ''}
-                  onChange={(event) =>
-                    setSelected({ ...selected, padding: Number(event.target.value) })
+                  aria-invalid={
+                    saveAttempted &&
+                    (!Number.isInteger(selected.padding) ||
+                      selected.padding < 1 ||
+                      selected.padding > 8)
+                      ? true
+                      : undefined
                   }
+                  value={selected.padding || ''}
+                  onChange={(event) => updateCompany({ padding: Number(event.target.value) })}
                 />
               </label>
               <label className="ic-field">
@@ -346,14 +370,14 @@ export function Companies({
                 <input
                   maxLength={120}
                   value={selected.taxLabel}
-                  onChange={(event) => setSelected({ ...selected, taxLabel: event.target.value })}
+                  onChange={(event) => updateCompany({ taxLabel: event.target.value })}
                 />
               </label>
               <DecimalField
                 label="Default tax rate (%)"
                 kind="percent"
                 value={selected.taxRate}
-                onChange={(taxRate) => setSelected({ ...selected, taxRate })}
+                onChange={(taxRate) => updateCompany({ taxRate })}
               />
               {(['notes', 'terms'] as const).map((key) => (
                 <label key={key} className="ic-field ic-span">
@@ -362,7 +386,7 @@ export function Companies({
                     maxLength={1500}
                     rows={2}
                     value={selected[key]}
-                    onChange={(event) => setSelected({ ...selected, [key]: event.target.value })}
+                    onChange={(event) => updateCompany({ [key]: event.target.value })}
                   />
                 </label>
               ))}

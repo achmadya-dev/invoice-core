@@ -352,6 +352,7 @@ export function InvoiceEditor({
               caption="Invoice line items"
               empty="No line items. Add a line below or use a product from Invoice options."
               amounts={proof.lines.map((line) => line.amount)}
+              showErrors={showErrors}
             />
           </section>
           <div className="ic-sheet-summary">

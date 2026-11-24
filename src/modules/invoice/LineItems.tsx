@@ -9,6 +9,7 @@ export function LineItems({
   caption,
   empty,
   amounts,
+  showErrors = false,
 }: {
   items: LineItem[]
   edit: (update: (items: LineItem[]) => LineItem[]) => void
@@ -16,6 +17,7 @@ export function LineItems({
   caption: string
   empty: string
   amounts?: readonly string[]
+  showErrors?: boolean
 }) {
   const id = useId()
   const addButtonId = `${id}-add-line`
@@ -34,7 +36,7 @@ export function LineItems({
     <>
       <div className="ic-items">
         {items.length === 0 ? (
-          <p className="ic-muted">{empty}</p>
+          <p className={showErrors ? 'ic-error' : 'ic-muted'}>{empty}</p>
         ) : (
           <table
             className={amounts ? 'ic-item-table ic-sheet-table' : 'ic-item-table'}
@@ -69,6 +71,7 @@ export function LineItems({
                     <input
                       id={descriptionId(item.id)}
                       aria-label={`Description, item ${index + 1}`}
+                      aria-invalid={showErrors && !item.description.trim() ? true : undefined}
                       maxLength={240}
                       placeholder={amounts ? 'e.g. Design services' : 'Service or product'}
                       value={item.description}

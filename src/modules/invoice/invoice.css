@@ -669,11 +669,11 @@
     transition: none;
   }
 }
-.ic-workspace input::placeholder {
+:is(.ic-workspace, .ic-workspace-dialog) :is(input, textarea)::placeholder {
   color: var(--ic-muted);
   opacity: 1;
 }
-.ic-workspace input[aria-invalid='true'] {
+:is(.ic-workspace, .ic-workspace-dialog) :is(input, textarea)[aria-invalid='true'] {
   border-color: var(--ic-error);
   background: var(--ic-error-bg);
 }
