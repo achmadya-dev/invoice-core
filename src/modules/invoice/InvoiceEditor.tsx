@@ -6,18 +6,19 @@ import {
   addProductLines,
   applyCompanyDefaults,
   decimalValid,
+  deriveInvoicePalette,
   formatMoney,
-  invoiceThemeLabels,
-  invoiceThemes,
   invoiceTotals,
   manualCompanyId,
   matchesProduct,
+  resolveAccentColor,
+  resolveInvoiceLayout,
   suggestInvoiceNumber,
   type Invoice,
   type Sender,
   type Workspace,
 } from './domain/invoice'
-import { InvoicePreview } from './InvoicePreview'
+import { InvoicePreview, invoicePaletteVars } from './InvoicePreview'
 import {
   ContactFields,
   CountrySelect,
@@ -70,7 +71,9 @@ export function InvoiceEditor({
   const editing = view === 'edit'
   const proof = invoiceDocument(draft)
   const totals = invoiceTotals(draft)
-  const invoiceTheme = draft.theme ?? 'indigo'
+  const accentColor = resolveAccentColor(draft)
+  const invoiceLayout = resolveInvoiceLayout(draft)
+  const palette = deriveInvoicePalette(accentColor)
 
   function set<K extends keyof Invoice>(key: K, value: Invoice[K]) {
     edit((current) => ({ ...current, [key]: value }))
@@ -203,18 +206,6 @@ export function InvoiceEditor({
             onSelect={selectProduct}
             onDismiss={() => setProductQuery('')}
           />
-          <SelectField
-            label="Theme"
-            value={invoiceTheme}
-            options={invoiceThemes.map((value) => ({
-              value,
-              label: invoiceThemeLabels[value],
-            }))}
-            onChange={(value) => {
-              const match = invoiceThemes.find((entry) => entry === value)
-              if (match) set('theme', match)
-            }}
-          />
         </div>
         {productError && (
           <p className="ic-error ic-note" role="alert">
@@ -255,7 +246,9 @@ export function InvoiceEditor({
           id="invoice-editor"
           className="ic-proof"
           aria-label="Editable invoice"
-          data-invoice-theme={invoiceTheme}
+          data-invoice-accent={accentColor}
+          data-invoice-layout={invoiceLayout}
+          style={invoicePaletteVars(palette)}
           hidden={!editing}
         >
           <header className="ic-doc-heading ic-sheet-columns">
@@ -491,7 +484,9 @@ export function InvoiceEditor({
         <InvoicePreview
           proof={proof}
           currency={draft.currency}
-          theme={invoiceTheme}
+          accentColor={accentColor}
+          layout={invoiceLayout}
+          palette={palette}
           hidden={editing}
         />
       </div>
