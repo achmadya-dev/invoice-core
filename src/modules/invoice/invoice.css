@@ -191,9 +191,6 @@
 .ic-back {
   margin-block-end: 10px;
 }
-.ic-theme-setting {
-  max-width: 240px;
-}
 @media (forced-colors: active) {
   .ic-nav button[aria-current] {
     outline: 1px solid Highlight;
@@ -230,7 +227,7 @@
 }
 .ic-color-field {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   color: var(--ic-ink);
@@ -239,15 +236,16 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 5px 10px 5px 6px;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 4px 10px 4px 6px;
   border: 1px solid var(--ic-line);
   border-radius: 7px;
   background: var(--ic-field);
 }
 .ic-color-control input[type='color'] {
-  inline-size: 28px;
-  block-size: 28px;
+  inline-size: 24px;
+  block-size: 24px;
   padding: 0;
   border: 1px solid var(--ic-line);
   border-radius: 5px;
@@ -374,12 +372,6 @@
 }
 .ic-invoice-stage .ic-panel-bar h2 .ic-icon {
   color: var(--ic-stamp);
-}
-.ic-panel-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 .ic-panel-button {
   display: inline-flex;
@@ -829,8 +821,7 @@
   box-shadow: 0 10px 26px #28204926;
   overflow-wrap: anywhere;
 }
-.ic-proof[data-invoice-layout='modern'] .ic-doc-heading,
-.ic-proof[data-invoice-layout='modern'] .ic-sheet-head {
+.ic-proof[data-invoice-layout='modern'] .ic-doc-heading {
   padding: 16px 18px;
   border-top: 4px solid var(--ic-doc-accent);
   border-bottom: none;
@@ -841,8 +832,7 @@
   border-left: 4px solid var(--ic-doc-accent);
   border-radius: 6px;
 }
-.ic-proof[data-invoice-layout='minimal'] .ic-doc-heading,
-.ic-proof[data-invoice-layout='minimal'] .ic-sheet-head {
+.ic-proof[data-invoice-layout='minimal'] .ic-doc-heading {
   border-bottom: 1px solid var(--ic-doc-line);
 }
 .ic-proof[data-invoice-layout='minimal'] .ic-proof-table thead th,
@@ -1122,8 +1112,7 @@
   outline: 2px solid var(--ic-accent);
   outline-offset: 2px;
 }
-.ic-sheet-columns,
-.ic-sheet-summary {
+.ic-sheet-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
   align-items: start;
@@ -1210,31 +1199,31 @@
   justify-content: space-between;
   gap: 8px;
 }
-#invoice-editor .ic-summary-inline-label,
-#invoice-editor .ic-summary-inline-input {
+#invoice-editor input.ic-summary-inline-label,
+#invoice-editor input.ic-summary-inline-input {
   min-height: 26px;
   padding: 2px 6px;
-  border: 1px solid var(--ic-doc-line);
+  border: 1px solid color-mix(in srgb, var(--ic-doc-accent) 26%, #d6d1e6);
   border-radius: 5px;
-  background: var(--ic-field);
+  background: #fff;
   transition: border-color 140ms ease;
 }
-#invoice-editor .ic-summary-inline-label:not([aria-invalid='true']):hover,
-#invoice-editor .ic-summary-inline-input:not([aria-invalid='true']):hover,
-#invoice-editor .ic-summary-inline-label:not([aria-invalid='true']):focus-visible,
-#invoice-editor .ic-summary-inline-input:not([aria-invalid='true']):focus-visible {
+#invoice-editor input.ic-summary-inline-label:not([aria-invalid='true']):hover,
+#invoice-editor input.ic-summary-inline-input:not([aria-invalid='true']):hover,
+#invoice-editor input.ic-summary-inline-label:not([aria-invalid='true']):focus-visible,
+#invoice-editor input.ic-summary-inline-input:not([aria-invalid='true']):focus-visible {
   border-color: var(--ic-accent);
 }
-#invoice-editor .ic-summary-inline-label {
+#invoice-editor input.ic-summary-inline-label {
   width: auto;
   min-width: 48px;
   max-width: 112px;
   field-sizing: content;
 }
-#invoice-editor .ic-summary-inline-input {
-  width: 58px;
+#invoice-editor input.ic-summary-inline-input {
+  width: 52px;
   flex-shrink: 0;
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .ic-sheet-extras {
