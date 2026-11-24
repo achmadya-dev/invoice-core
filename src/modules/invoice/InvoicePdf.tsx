@@ -1,5 +1,5 @@
 import { Document, Font, Image, Page, StyleSheet, Text, View, pdf } from '@react-pdf/renderer'
-import { invoiceThemePalettes, type Invoice } from './domain/invoice'
+import { resolveInvoiceLayout, resolveInvoicePalette, type Invoice } from './domain/invoice'
 import { invoiceDocument } from './document'
 import fontUrl from './assets/noto-sans-regular.ttf?url'
 
@@ -93,11 +93,30 @@ const style = StyleSheet.create({
 
 function InvoicePdf({ invoice }: { invoice: Invoice }) {
   const proof = invoiceDocument(invoice)
-  const palette = invoiceThemePalettes[invoice.theme ?? 'indigo']
+  const palette = resolveInvoicePalette(invoice)
+  const layout = resolveInvoiceLayout(invoice)
+  const isModern = layout === 'modern'
+  const isMinimal = layout === 'minimal'
   return (
     <Document title={`Invoice ${proof.number}`} author={proof.sender} language="en">
       <Page size="A4" style={style.page}>
-        <View style={[style.heading, { borderBottomColor: palette.accent }]}>
+        <View
+          style={[
+            style.heading,
+            isModern
+              ? {
+                  backgroundColor: palette.soft,
+                  borderTopWidth: 3,
+                  borderTopColor: palette.accent,
+                  borderBottomWidth: 0,
+                  padding: 12,
+                  borderRadius: 4,
+                }
+              : isMinimal
+                ? { borderBottomWidth: 1, borderBottomColor: palette.line }
+                : { borderBottomColor: palette.accent },
+          ]}
+        >
           <View style={style.party}>
             {proof.logo && <Image src={proof.logo} style={style.logo} />}
             <Text style={style.name}>{proof.sender}</Text>
@@ -130,7 +149,19 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
           </View>
         </View>
         <View
-          style={[style.row, style.tableHead, { backgroundColor: palette.soft }]}
+          style={[
+            style.row,
+            style.tableHead,
+            isMinimal
+              ? {
+                  backgroundColor: 'transparent',
+                  borderTopWidth: 1,
+                  borderTopColor: palette.accent,
+                  borderBottomWidth: 1,
+                  borderBottomColor: palette.accent,
+                }
+              : { backgroundColor: palette.soft },
+          ]}
           minPresenceAhead={30}
         >
           <Text style={style.description}>Description</Text>
@@ -160,7 +191,27 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
             </View>
           ))}
           <View
-            style={[style.amount, { backgroundColor: palette.amountBg, color: palette.amountInk }]}
+            style={[
+              style.amount,
+              isMinimal
+                ? {
+                    backgroundColor: 'transparent',
+                    color: '#22213a',
+                    borderTopWidth: 2,
+                    borderTopColor: palette.accent,
+                    paddingHorizontal: 0,
+                    borderRadius: 0,
+                  }
+                : isModern
+                  ? {
+                      backgroundColor: palette.amountBg,
+                      color: palette.amountInk,
+                      borderLeftWidth: 3,
+                      borderLeftColor: palette.accent,
+                      borderRadius: 4,
+                    }
+                  : { backgroundColor: palette.amountBg, color: palette.amountInk },
+            ]}
           >
             <View>
               <Text style={style.amountLabel}>Amount due</Text>

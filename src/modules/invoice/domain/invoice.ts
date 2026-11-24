@@ -3,19 +3,24 @@ import { countryCodes, currencies } from './catalog'
 
 const invoiceStatuses = ['draft', 'sent', 'paid'] as const
 export const themes = ['system', 'light', 'dark'] as const
+export const defaultAccentColor = '#4837a6'
+export const invoiceLayouts = ['classic', 'modern', 'minimal'] as const
+export type InvoiceLayout = (typeof invoiceLayouts)[number]
+export const invoiceLayoutLabels: Record<InvoiceLayout, string> = {
+  classic: 'Classic',
+  modern: 'Modern',
+  minimal: 'Minimal',
+}
+export type InvoicePalette = {
+  accent: string
+  soft: string
+  amountBg: string
+  amountInk: string
+  line: string
+}
 export const invoiceThemes = ['indigo', 'slate', 'emerald', 'amber', 'rose'] as const
 export type InvoiceTheme = (typeof invoiceThemes)[number]
-export const invoiceThemeLabels: Record<InvoiceTheme, string> = {
-  indigo: 'Indigo',
-  slate: 'Slate',
-  emerald: 'Emerald',
-  amber: 'Amber',
-  rose: 'Rose',
-}
-export const invoiceThemePalettes: Record<
-  InvoiceTheme,
-  { accent: string; soft: string; amountBg: string; amountInk: string; line: string }
-> = {
+export const invoiceThemePalettes: Record<InvoiceTheme, InvoicePalette> = {
   indigo: {
     accent: '#4837a6',
     soft: '#f0edf9',
@@ -51,6 +56,52 @@ export const invoiceThemePalettes: Record<
     amountInk: '#4c0519',
     line: '#f3d1d6',
   },
+}
+
+const hexColorPattern = /^#[0-9a-fA-F]{6}$/
+
+function mixHex(baseHex: string, targetHex: string, targetWeight: number) {
+  const parse = (hex: string): readonly [number, number, number] => [
+    Number.parseInt(hex.slice(1, 3), 16),
+    Number.parseInt(hex.slice(3, 5), 16),
+    Number.parseInt(hex.slice(5, 7), 16),
+  ]
+  const [r1, g1, b1] = parse(baseHex)
+  const [r2, g2, b2] = parse(targetHex)
+  const channel = (a: number, b: number) =>
+    Math.round(a * (1 - targetWeight) + b * targetWeight)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${channel(r1, r2)}${channel(g1, g2)}${channel(b1, b2)}`
+}
+
+export function resolveAccentColor(invoice: Pick<Invoice, 'accentColor' | 'theme'>): string {
+  if (invoice.accentColor && hexColorPattern.test(invoice.accentColor)) {
+    return invoice.accentColor.toLowerCase()
+  }
+  return invoiceThemePalettes[invoice.theme ?? 'indigo'].accent
+}
+
+export function resolveInvoiceLayout(invoice: Pick<Invoice, 'layout'>): InvoiceLayout {
+  return invoice.layout ?? 'classic'
+}
+
+export function deriveInvoicePalette(accentHex: string): InvoicePalette {
+  const normalized = hexColorPattern.test(accentHex) ? accentHex.toLowerCase() : defaultAccentColor
+  if (normalized === defaultAccentColor) return invoiceThemePalettes.indigo
+  return {
+    accent: normalized,
+    soft: mixHex(normalized, '#ffffff', 0.92),
+    amountBg: mixHex(normalized, '#ffffff', 0.78),
+    amountInk: mixHex(normalized, '#0f172a', 0.76),
+    line: mixHex(normalized, '#ffffff', 0.8),
+  }
+}
+
+export function resolveInvoicePalette(
+  invoice: Pick<Invoice, 'accentColor' | 'theme'>,
+): InvoicePalette {
+  return deriveInvoicePalette(resolveAccentColor(invoice))
 }
 export const maxItems = 100
 export const maxInvoices = 500
@@ -132,6 +183,8 @@ const invoiceSchema = z
     notes: memo,
     terms: memo,
     theme: z.enum(invoiceThemes).optional(),
+    accentColor: z.string().regex(hexColorPattern).optional(),
+    layout: z.enum(invoiceLayouts).optional(),
     updatedAt: z.iso.datetime(),
   })
   .refine((invoice) => unique(invoice.items.map((item) => item.id)))

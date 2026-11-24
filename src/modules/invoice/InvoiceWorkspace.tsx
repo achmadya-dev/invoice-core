@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   duplicateInvoice,
+  invoiceLayoutLabels,
+  invoiceLayouts,
   newInvoice,
   newWorkspace,
+  resolveAccentColor,
+  resolveInvoiceLayout,
   saveInvoice,
   saveProduct,
   type Invoice,
@@ -10,7 +14,7 @@ import {
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
 import { ProductsPanel } from './ProductsPanel'
-import { ConfirmModal, Icon, WorkspaceDialog, type ConfirmState } from './invoice-ui'
+import { ConfirmModal, Icon, SelectField, WorkspaceDialog, type ConfirmState } from './invoice-ui'
 import { Backup, Companies, InvoiceHistory } from './WorkspacePanels'
 import {
   downloadFile,
@@ -300,6 +304,38 @@ export function InvoiceWorkspace() {
             <h1>{copy.title}</h1>
             <p>{copy.detail}</p>
           </div>
+          {data && panel === 'editor' && draft && (
+            <div className="ic-actions ic-heading-actions ic-editor-appearance">
+              <label className="ic-color-field" htmlFor="invoice-accent-color">
+                <span>Accent color</span>
+                <span className="ic-color-control">
+                  <input
+                    id="invoice-accent-color"
+                    type="color"
+                    aria-label="Accent color"
+                    value={resolveAccentColor(draft)}
+                    onChange={(event) => {
+                      const accentColor = event.target.value.toLowerCase()
+                      editDraft((current) => ({ ...current, accentColor }))
+                    }}
+                  />
+                  <span className="ic-mono">{resolveAccentColor(draft).toUpperCase()}</span>
+                </span>
+              </label>
+              <SelectField
+                label="Layout"
+                value={resolveInvoiceLayout(draft)}
+                options={invoiceLayouts.map((value) => ({
+                  value,
+                  label: invoiceLayoutLabels[value],
+                }))}
+                onChange={(value) => {
+                  const match = invoiceLayouts.find((entry) => entry === value)
+                  if (match) editDraft((current) => ({ ...current, layout: match }))
+                }}
+              />
+            </div>
+          )}
           {data && panel === 'invoices' && (
             <div className="ic-actions ic-heading-actions">
               <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>

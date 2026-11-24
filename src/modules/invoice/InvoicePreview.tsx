@@ -1,7 +1,19 @@
+import type { CSSProperties } from 'react'
 import type { invoiceDocument } from './document'
-import type { Currency, InvoiceTheme } from './domain/invoice'
+import type { Currency, InvoiceLayout, InvoicePalette } from './domain/invoice'
+import { deriveInvoicePalette, defaultAccentColor } from './domain/invoice'
 
 type DocumentProof = ReturnType<typeof invoiceDocument>
+
+export function invoicePaletteVars(palette: InvoicePalette): CSSProperties {
+  return {
+    '--ic-doc-accent': palette.accent,
+    '--ic-doc-soft': palette.soft,
+    '--ic-doc-amount-bg': palette.amountBg,
+    '--ic-doc-amount-ink': palette.amountInk,
+    '--ic-doc-line': palette.line,
+  } as CSSProperties
+}
 
 export function DocumentTotals({ proof, currency }: { proof: DocumentProof; currency: Currency }) {
   return (
@@ -28,12 +40,16 @@ export function DocumentTotals({ proof, currency }: { proof: DocumentProof; curr
 export function InvoicePreview({
   proof,
   currency,
-  theme = 'indigo',
+  accentColor = defaultAccentColor,
+  layout = 'classic',
+  palette = deriveInvoicePalette(accentColor),
   hidden,
 }: {
   proof: DocumentProof
   currency: Currency
-  theme?: InvoiceTheme
+  accentColor?: string
+  layout?: InvoiceLayout
+  palette?: InvoicePalette
   hidden: boolean
 }) {
   return (
@@ -41,7 +57,9 @@ export function InvoicePreview({
       id="invoice-preview"
       className="ic-proof"
       aria-label="Invoice document"
-      data-invoice-theme={theme}
+      data-invoice-accent={accentColor}
+      data-invoice-layout={layout}
+      style={invoicePaletteVars(palette)}
       data-print-only={hidden || undefined}
     >
       <header className="ic-doc-heading">
