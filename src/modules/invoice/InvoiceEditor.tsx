@@ -510,16 +510,12 @@ export function InvoiceEditor({
                 </button>
               )}
               {onDuplicate && (
-                <button type="button" className="ic-panel-button" onClick={onDuplicate}>
+                <button type="button" className="ic-button" onClick={onDuplicate}>
                   Duplicate
                 </button>
               )}
               {onDelete && (
-                <button
-                  type="button"
-                  className="ic-panel-button ic-panel-button-danger"
-                  onClick={onDelete}
-                >
+                <button type="button" className="ic-button ic-danger" onClick={onDelete}>
                   Delete
                 </button>
               )}
