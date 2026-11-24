@@ -5,6 +5,11 @@ import { countryName } from './domain/catalog'
 import {
   addProductLines,
   applyCompanyDefaults,
+  decimalValid,
+  formatMoney,
+  invoiceThemeLabels,
+  invoiceThemes,
+  invoiceTotals,
   manualCompanyId,
   matchesProduct,
   suggestInvoiceNumber,
@@ -12,12 +17,11 @@ import {
   type Sender,
   type Workspace,
 } from './domain/invoice'
-import { DocumentTotals, InvoicePreview } from './InvoicePreview'
+import { InvoicePreview } from './InvoicePreview'
 import {
   ContactFields,
   CountrySelect,
   CurrencySelect,
-  DecimalField,
   Icon,
   LogoField,
   SearchField,
@@ -65,6 +69,8 @@ export function InvoiceEditor({
   const products = workspace.products.filter((product) => matchesProduct(product, productSearch))
   const editing = view === 'edit'
   const proof = invoiceDocument(draft)
+  const totals = invoiceTotals(draft)
+  const invoiceTheme = draft.theme ?? 'indigo'
 
   function set<K extends keyof Invoice>(key: K, value: Invoice[K]) {
     edit((current) => ({ ...current, [key]: value }))
@@ -197,6 +203,18 @@ export function InvoiceEditor({
             onSelect={selectProduct}
             onDismiss={() => setProductQuery('')}
           />
+          <SelectField
+            label="Theme"
+            value={invoiceTheme}
+            options={invoiceThemes.map((value) => ({
+              value,
+              label: invoiceThemeLabels[value],
+            }))}
+            onChange={(value) => {
+              const match = invoiceThemes.find((entry) => entry === value)
+              if (match) set('theme', match)
+            }}
+          />
         </div>
         {productError && (
           <p className="ic-error ic-note" role="alert">
@@ -237,6 +255,7 @@ export function InvoiceEditor({
           id="invoice-editor"
           className="ic-proof"
           aria-label="Editable invoice"
+          data-invoice-theme={invoiceTheme}
           hidden={!editing}
         >
           <header className="ic-doc-heading ic-sheet-columns">
@@ -343,35 +362,97 @@ export function InvoiceEditor({
             />
           </section>
           <div className="ic-sheet-summary">
-            <div className="ic-fields">
-              <DecimalField
-                label={draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'}
-                value={draft.discount}
-                kind={draft.discountKind === 'percent' ? 'percent' : 'amount'}
-                onChange={(value) => set('discount', value)}
-              />
-              <label className="ic-field">
-                Tax label
-                <input
-                  maxLength={120}
-                  value={draft.taxLabel}
-                  onChange={(event) => set('taxLabel', event.target.value)}
-                />
-              </label>
-              <DecimalField
-                label="Tax rate (%)"
-                value={draft.taxRate}
-                kind="percent"
-                onChange={(value) => set('taxRate', value)}
-              />
-              <DecimalField
-                label="Shipping"
-                value={draft.shipping}
-                kind="amount"
-                onChange={(value) => set('shipping', value)}
-              />
-            </div>
-            <DocumentTotals proof={proof} currency={draft.currency} />
+            <dl className="ic-summary">
+              <div>
+                <dt>Subtotal</dt>
+                <dd>{totals ? formatMoney(totals.subtotal, draft.currency) : '—'}</dd>
+              </div>
+              <div className="ic-summary-input-row">
+                <dt>
+                  <label className="ic-summary-inline" htmlFor="sheet-discount">
+                    <span>
+                      Discount ({draft.discountKind === 'percent' ? '%' : draft.currency})
+                    </span>
+                    <input
+                      id="sheet-discount"
+                      className="ic-summary-inline-input"
+                      aria-label={
+                        draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'
+                      }
+                      inputMode="decimal"
+                      maxLength={16}
+                      aria-invalid={
+                        !decimalValid(
+                          draft.discount,
+                          draft.discountKind === 'percent' ? 'percent' : 'amount',
+                        )
+                      }
+                      placeholder="0"
+                      value={draft.discount}
+                      onChange={(event) => set('discount', event.target.value)}
+                    />
+                  </label>
+                </dt>
+                <dd>{totals ? formatMoney(-totals.discount, draft.currency) : '—'}</dd>
+              </div>
+              <div className="ic-summary-input-row">
+                <dt className="ic-summary-tax">
+                  <label className="sr-only" htmlFor="sheet-tax-label">
+                    Tax label
+                  </label>
+                  <input
+                    id="sheet-tax-label"
+                    className="ic-summary-inline-label"
+                    maxLength={120}
+                    placeholder="Tax"
+                    value={draft.taxLabel}
+                    onChange={(event) => set('taxLabel', event.target.value)}
+                  />
+                  <label className="ic-summary-inline" htmlFor="sheet-tax-rate">
+                    <span>(</span>
+                    <input
+                      id="sheet-tax-rate"
+                      className="ic-summary-inline-input"
+                      aria-label="Tax rate (%)"
+                      inputMode="decimal"
+                      maxLength={16}
+                      aria-invalid={!decimalValid(draft.taxRate, 'percent')}
+                      placeholder="0"
+                      value={draft.taxRate}
+                      onChange={(event) => set('taxRate', event.target.value)}
+                    />
+                    <span>%)</span>
+                  </label>
+                </dt>
+                <dd>{totals ? formatMoney(totals.tax, draft.currency) : '—'}</dd>
+              </div>
+              <div className="ic-summary-input-row">
+                <dt>
+                  <label className="ic-summary-inline" htmlFor="sheet-shipping">
+                    <span>Shipping</span>
+                    <input
+                      id="sheet-shipping"
+                      className="ic-summary-inline-input"
+                      aria-label="Shipping"
+                      inputMode="decimal"
+                      maxLength={16}
+                      aria-invalid={!decimalValid(draft.shipping, 'amount')}
+                      placeholder="0"
+                      value={draft.shipping}
+                      onChange={(event) => set('shipping', event.target.value)}
+                    />
+                  </label>
+                </dt>
+                <dd>{totals ? formatMoney(totals.shipping, draft.currency) : '—'}</dd>
+              </div>
+              <div className="ic-amount">
+                <dt>
+                  Amount due <span className="ic-mono">{draft.currency}</span>
+                </dt>
+                <dd>{proof.total}</dd>
+              </div>
+            </dl>
+            {proof.warning && <p className="ic-proof-warning">{proof.warning}</p>}
           </div>
           <div className="ic-doc-extras ic-sheet-extras">
             {(
@@ -407,7 +488,12 @@ export function InvoiceEditor({
             <span>{draft.currency}</span>
           </footer>
         </article>
-        <InvoicePreview proof={proof} currency={draft.currency} hidden={editing} />
+        <InvoicePreview
+          proof={proof}
+          currency={draft.currency}
+          theme={invoiceTheme}
+          hidden={editing}
+        />
       </div>
       <div className="ic-sheet-actions">
         {notice && (

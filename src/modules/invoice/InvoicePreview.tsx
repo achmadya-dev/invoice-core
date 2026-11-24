@@ -1,5 +1,5 @@
 import type { invoiceDocument } from './document'
-import type { Currency } from './domain/invoice'
+import type { Currency, InvoiceTheme } from './domain/invoice'
 
 type DocumentProof = ReturnType<typeof invoiceDocument>
 
@@ -28,10 +28,12 @@ export function DocumentTotals({ proof, currency }: { proof: DocumentProof; curr
 export function InvoicePreview({
   proof,
   currency,
+  theme = 'indigo',
   hidden,
 }: {
   proof: DocumentProof
   currency: Currency
+  theme?: InvoiceTheme
   hidden: boolean
 }) {
   return (
@@ -39,6 +41,7 @@ export function InvoicePreview({
       id="invoice-preview"
       className="ic-proof"
       aria-label="Invoice document"
+      data-invoice-theme={theme}
       data-print-only={hidden || undefined}
     >
       <header className="ic-doc-heading">

@@ -1,5 +1,5 @@
 import { Document, Font, Image, Page, StyleSheet, Text, View, pdf } from '@react-pdf/renderer'
-import type { Invoice } from './domain/invoice'
+import { invoiceThemePalettes, type Invoice } from './domain/invoice'
 import { invoiceDocument } from './document'
 import fontUrl from './assets/noto-sans-regular.ttf?url'
 
@@ -93,10 +93,11 @@ const style = StyleSheet.create({
 
 function InvoicePdf({ invoice }: { invoice: Invoice }) {
   const proof = invoiceDocument(invoice)
+  const palette = invoiceThemePalettes[invoice.theme ?? 'indigo']
   return (
     <Document title={`Invoice ${proof.number}`} author={proof.sender} language="en">
       <Page size="A4" style={style.page}>
-        <View style={style.heading}>
+        <View style={[style.heading, { borderBottomColor: palette.accent }]}>
           <View style={style.party}>
             {proof.logo && <Image src={proof.logo} style={style.logo} />}
             <Text style={style.name}>{proof.sender}</Text>
@@ -105,7 +106,7 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
             ))}
           </View>
           <View style={style.right}>
-            <Text style={style.title}>Invoice</Text>
+            <Text style={[style.title, { color: palette.accent }]}>Invoice</Text>
             <Text>{proof.number}</Text>
           </View>
         </View>
@@ -128,20 +129,23 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
             )}
           </View>
         </View>
-        <View style={[style.row, style.tableHead]} minPresenceAhead={30}>
+        <View
+          style={[style.row, style.tableHead, { backgroundColor: palette.soft }]}
+          minPresenceAhead={30}
+        >
           <Text style={style.description}>Description</Text>
           <Text style={style.qty}>Qty</Text>
           <Text style={style.rate}>Rate</Text>
           <Text style={style.numeric}>Amount</Text>
         </View>
         {proof.lines.length === 0 && (
-          <View style={style.row}>
+          <View style={[style.row, { borderBottomColor: palette.line }]}>
             <Text>No line items</Text>
           </View>
         )}
         {/* Keep rows and summary as page siblings so a row break carries all remaining content. */}
         {proof.lines.map((line) => (
-          <View key={line.id} style={style.row} wrap={false}>
+          <View key={line.id} style={[style.row, { borderBottomColor: palette.line }]} wrap={false}>
             <Text style={style.description}>{line.description}</Text>
             <Text style={style.qty}>{line.quantity}</Text>
             <Text style={style.rate}>{line.rate}</Text>
@@ -155,7 +159,9 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
               <Text style={style.summaryValue}>{row.amount}</Text>
             </View>
           ))}
-          <View style={style.amount}>
+          <View
+            style={[style.amount, { backgroundColor: palette.amountBg, color: palette.amountInk }]}
+          >
             <View>
               <Text style={style.amountLabel}>Amount due</Text>
               <Text>{invoice.currency}</Text>
@@ -172,7 +178,7 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
             <Text>{entry.body}</Text>
           </View>
         ))}
-        <View style={style.footer} wrap={false}>
+        <View style={[style.footer, { borderTopColor: palette.line }]} wrap={false}>
           <Text>{proof.number}</Text>
           <Text style={style.footerCurrency}>{invoice.currency}</Text>
         </View>
