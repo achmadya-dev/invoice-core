@@ -433,14 +433,21 @@ export function SenderFields({
   sender,
   onChange,
   theme,
+  invalidName = false,
 }: {
   sender: Sender
   onChange: (patch: Partial<Sender>) => void
   theme: Theme
+  invalidName?: boolean
 }) {
   return (
     <>
-      <ContactFields party="sender" contact={sender} onChange={onChange} />
+      <ContactFields
+        party="sender"
+        contact={sender}
+        onChange={onChange}
+        invalidName={invalidName}
+      />
       <CountrySelect
         label="Sender country"
         value={sender.country}

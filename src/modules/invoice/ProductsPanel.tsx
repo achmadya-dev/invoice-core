@@ -17,10 +17,16 @@ export function ProductsPanel({
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Product | null>(null)
   const [error, setError] = useState('')
+  const [saveAttempted, setSaveAttempted] = useState(false)
   const existing = products.some(({ id }) => id === selected?.id)
   const search = query.trim().toLowerCase()
   const matches = products.filter((product) => matchesProduct(product, search))
-  function edit(product: Product | null) {
+  function openDialog(product: Product | null) {
+    setSelected(product)
+    setError('')
+    setSaveAttempted(false)
+  }
+  function updateProduct(product: Product) {
     setSelected(product)
     setError('')
   }
@@ -43,7 +49,7 @@ export function ProductsPanel({
           className="ic-button ic-primary"
           type="button"
           disabled={products.length >= maxProducts}
-          onClick={() => edit(newProduct('USD'))}
+          onClick={() => openDialog(newProduct('USD'))}
         >
           <Icon name="plus" /> Add product
         </button>
@@ -70,7 +76,7 @@ export function ProductsPanel({
                   className="ic-button"
                   type="button"
                   aria-label={`Edit ${product.name}`}
-                  onClick={() => edit(product)}
+                  onClick={() => openDialog(product)}
                 >
                   Edit
                 </button>
@@ -92,20 +98,23 @@ export function ProductsPanel({
         title={existing ? 'Edit product' : 'New product'}
         description="Group the items you sell together. Selecting this product on an invoice adds every item below."
         theme={theme}
-        onClose={() => edit(null)}
+        onClose={() => openDialog(null)}
       >
         {selected && (
           <form
             className="ic-dialog-body"
+            noValidate
             onSubmit={(event) => {
               event.preventDefault()
               const result = save(selected)
-              if (result.ok) edit(null)
-              else
+              if (result.ok) openDialog(null)
+              else {
+                setSaveAttempted(true)
                 setError(
                   result.message ??
                     'Product could not be saved. Check browser storage and try again.',
                 )
+              }
             }}
           >
             <div className="ic-fields">
@@ -113,15 +122,16 @@ export function ProductsPanel({
                 Product name
                 <input
                   maxLength={120}
+                  aria-invalid={saveAttempted && !selected.name.trim() ? true : undefined}
                   value={selected.name}
-                  onChange={(event) => edit({ ...selected, name: event.target.value })}
+                  onChange={(event) => updateProduct({ ...selected, name: event.target.value })}
                   required
                 />
               </label>
               <CurrencySelect
                 label="Product currency"
                 value={selected.currency}
-                onChange={(currency) => edit({ ...selected, currency })}
+                onChange={(currency) => updateProduct({ ...selected, currency })}
               />
             </div>
             <fieldset className="ic-bundle-items">
@@ -137,6 +147,7 @@ export function ProductsPanel({
                 currency={selected.currency}
                 caption="Product line items"
                 empty="Add at least one item to this product."
+                showErrors={saveAttempted}
               />
             </fieldset>
             {error && (
@@ -145,7 +156,7 @@ export function ProductsPanel({
               </p>
             )}
             <div className="ic-modal-actions">
-              <button className="ic-button" type="button" onClick={() => edit(null)}>
+              <button className="ic-button" type="button" onClick={() => openDialog(null)}>
                 Cancel
               </button>
               <button className="ic-button ic-primary" type="submit">

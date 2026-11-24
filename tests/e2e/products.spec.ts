@@ -157,3 +157,84 @@ test('fits mobile and includes products in the backup dialog workflows', async (
   await expect(restored.getByLabel('Description, item 1')).toHaveValue('Support session')
   await expect(restored.getByLabel('Rate, item 1')).toHaveValue('85')
 })
+
+test('highlights unfilled required fields in red inside catalog modals', async ({ page }, info) => {
+  const errorBorder = 'rgb(139, 35, 54)'
+  const errorBg = 'rgb(255, 242, 244)'
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Catalog', exact: true }).click()
+
+  // 1. New product modal
+  await page.getByRole('button', { name: 'Add product', exact: true }).click()
+  const productDialog = page.getByRole('dialog', { name: 'New product' })
+  const productName = productDialog.getByLabel('Product name')
+  const itemDescription = productDialog.getByLabel('Description, item 1')
+  await expect(productName).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(itemDescription).not.toHaveAttribute('aria-invalid', 'true')
+
+  await productDialog.getByRole('button', { name: 'Save product' }).click()
+  await expect(productDialog.getByRole('alert')).toHaveText('Enter a product name.')
+  await expect(productName).toHaveAttribute('aria-invalid', 'true')
+  await expect(productName).toHaveCSS('border-color', errorBorder)
+  await expect(productName).toHaveCSS('background-color', errorBg)
+  await expect(itemDescription).toHaveAttribute('aria-invalid', 'true')
+  await expect(itemDescription).toHaveCSS('border-color', errorBorder)
+  await expect(itemDescription).toHaveCSS('background-color', errorBg)
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await productDialog.screenshot({ path: info.outputPath('product-modal-invalid.png') })
+
+  await productName.fill('Maintenance plan')
+  await expect(productName).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(itemDescription).toHaveAttribute('aria-invalid', 'true')
+  await itemDescription.fill('Monthly checkup')
+  await expect(itemDescription).not.toHaveAttribute('aria-invalid', 'true')
+
+  await productDialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await page.getByRole('button', { name: 'Add product', exact: true }).click()
+  await expect(productDialog.getByLabel('Product name')).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(productDialog.getByLabel('Description, item 1')).not.toHaveAttribute(
+    'aria-invalid',
+    'true',
+  )
+  await productDialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+
+  // 2. New company modal
+  await page.getByRole('tab', { name: 'Companies', exact: true }).click()
+  await page.getByRole('button', { name: 'Add company', exact: true }).click()
+  const companyDialog = page.getByRole('dialog', { name: 'New company' })
+  const senderName = companyDialog.getByLabel('Sender name')
+  const nextNumber = companyDialog.getByLabel('Next number')
+  const padding = companyDialog.getByLabel('Number padding')
+  await expect(senderName).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(nextNumber).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(padding).not.toHaveAttribute('aria-invalid', 'true')
+
+  await nextNumber.fill('')
+  await padding.fill('')
+  await companyDialog.getByRole('button', { name: 'Save company' }).click()
+  await expect(companyDialog.getByRole('alert')).toHaveText('Enter a company name.')
+  for (const field of [senderName, nextNumber, padding]) {
+    await expect(field).toHaveAttribute('aria-invalid', 'true')
+    await expect(field).toHaveCSS('border-color', errorBorder)
+    await expect(field).toHaveCSS('background-color', errorBg)
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await companyDialog.screenshot({ path: info.outputPath('company-modal-invalid.png') })
+
+  await senderName.fill('North Studio')
+  await nextNumber.fill('1')
+  await padding.fill('4')
+  for (const field of [senderName, nextNumber, padding]) {
+    await expect(field).not.toHaveAttribute('aria-invalid', 'true')
+  }
+
+  await companyDialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await page.getByRole('button', { name: 'Add company', exact: true }).click()
+  await expect(companyDialog.getByLabel('Sender name')).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(companyDialog.getByLabel('Next number')).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(companyDialog.getByLabel('Number padding')).not.toHaveAttribute(
+    'aria-invalid',
+    'true',
+  )
+})
