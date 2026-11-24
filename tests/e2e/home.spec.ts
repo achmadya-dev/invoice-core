@@ -22,7 +22,7 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Invoice editor')
   await expect(page.getByLabel('Invoice number')).toHaveValue('INV-0001')
-  await expect(page.getByRole('combobox', { name: 'Client', exact: true })).toHaveValue('')
+  await expect(page.getByRole('textbox', { name: 'Client', exact: true })).toHaveValue('')
   await expect(page.getByText('Sign in', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /print/i })).toHaveCount(0)
 
@@ -42,7 +42,7 @@ test('edits, saves, downloads, and duplicates an invoice', async ({ page }, info
   await expect(resetDraft).toBeVisible()
   await resetDraft.click()
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
-  await expect(editor.getByRole('combobox', { name: 'Client', exact: true })).toHaveValue('')
+  await expect(editor.getByRole('textbox', { name: 'Client', exact: true })).toHaveValue('')
   await editor.getByRole('button', { name: 'Load example' }).click()
 
   const amount = page.locator('#invoice-editor .ic-amount dd')
@@ -148,9 +148,8 @@ test('uses company defaults, preserves historical sender details, and verifies r
     page.getByRole('article', { name: 'Invoice document' }).getByText('Indonesia'),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Edit', exact: true }).click()
-  const client = page.getByRole('combobox', { name: 'Client', exact: true })
+  const client = page.getByRole('textbox', { name: 'Client', exact: true })
   await client.fill('Synthetic Client')
-  await page.getByRole('option', { name: 'Add “Synthetic Client”' }).click()
   await page.getByLabel('Issue date').fill('2026-11-23')
   await page.getByLabel('Description, item 1').fill('Design services')
   await expect(page.getByLabel('Description, item 1')).toHaveValue('Design services')
@@ -172,7 +171,6 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await page.getByRole('button', { name: 'Close dialog' }).click()
   await page.getByRole('button', { name: 'MAP-0041', exact: true }).click()
   await client.fill('Changed after export')
-  await page.getByRole('option', { name: 'Add “Changed after export”' }).click()
   await page.getByRole('button', { name: 'Back to invoices' }).click()
   await page.getByRole('button', { name: 'Backup' }).click()
   const picker = page.getByLabel('Invoice Core backup file')

@@ -162,8 +162,8 @@ describe('product catalog', () => {
     expect(almostFull.items).toHaveLength(maxItems - 1)
   })
 
-  it('keeps new invoices empty and does not reinterpret entered rates when a company is selected', () => {
-    const draft = newInvoice(undefined, [])
+  it('starts with the local issue date and does not reinterpret rates when a company is selected', () => {
+    const draft = newInvoice(undefined, [], new Date(2026, 10, 24, 23, 55))
     const company = {
       ...newCompany('Studio'),
       currency: 'EUR' as const,
@@ -172,7 +172,7 @@ describe('product catalog', () => {
     }
     expect(draft).toMatchObject({
       number: 'INV-0001',
-      issueDate: '',
+      issueDate: '2026-11-24',
       dueDate: '',
       client: { name: '' },
       sender: { name: '' },
@@ -182,7 +182,7 @@ describe('product catalog', () => {
       sender: company.sender,
       number: 'INV-0001',
       currency: 'EUR',
-      issueDate: '',
+      issueDate: '2026-11-24',
       notes: 'Company notes',
       taxRate: '8',
     })

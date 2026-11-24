@@ -70,7 +70,7 @@ export function LineItems({
                       id={descriptionId(item.id)}
                       aria-label={`Description, item ${index + 1}`}
                       maxLength={240}
-                      placeholder="Service or product"
+                      placeholder={amounts ? 'e.g. Design services' : 'Service or product'}
                       value={item.description}
                       onChange={(event) => update(item.id, 'description', event.target.value)}
                     />

@@ -165,7 +165,7 @@ export const workspaceSchema = z
 
 export type Workspace = z.infer<typeof workspaceSchema>
 
-export const blankContact: Contact = { name: '', email: '', phone: '', address: '', country: '' }
+const blankContact: Contact = { name: '', email: '', phone: '', address: '', country: '' }
 export const manualCompanyId = '00000000-0000-4000-8000-000000000000'
 const blankSender = { ...blankContact, website: '', taxId: '', paymentDetails: '', logo: '' }
 
@@ -258,7 +258,7 @@ export function newInvoice(
       invoices,
       company,
     ),
-    issueDate: company ? localDate(now) : '',
+    issueDate: localDate(now),
     dueDate: company ? localDate(now, 14) : '',
     currency: company?.currency ?? 'USD',
     status: 'draft',

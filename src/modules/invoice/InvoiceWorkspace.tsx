@@ -180,8 +180,8 @@ export function InvoiceWorkspace() {
     editDraft((invoice) => ({
       ...invoice,
       number: 'EXAMPLE-001',
-      issueDate: invoice.issueDate || '2026-11-23',
-      dueDate: invoice.dueDate || '2026-12-07',
+      issueDate: '2026-11-23',
+      dueDate: '2026-12-07',
       sender: {
         ...invoice.sender,
         name: 'Northline Studio',

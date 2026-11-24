@@ -29,6 +29,7 @@ test('downloaded PDF matches the preview amounts and keeps all lines before the 
   const initialText = await downloadText()
   expect(initialText).toContain('$1,600.00')
   expect(initialText).not.toMatch(/Notes|Terms|Payment details/i)
+  expect(initialText).not.toContain('e.g.')
   await page.getByLabel('Notes', { exact: true }).fill('For the design team')
   await page.getByLabel('Terms', { exact: true }).fill('Due in 14 days')
   await page.getByLabel('Payment details', { exact: true }).fill('Use reference SAMPLE-001')

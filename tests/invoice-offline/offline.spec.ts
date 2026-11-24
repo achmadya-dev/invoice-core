@@ -67,7 +67,7 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
   await context.setOffline(true)
   await page.reload()
   await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
-  await expect(page.getByRole('combobox', { name: 'Client', exact: true })).toHaveValue(
+  await expect(page.getByRole('textbox', { name: 'Client', exact: true })).toHaveValue(
     'Local Offline Client',
   )
   await page.getByLabel('Quantity, item 2').fill('3')
