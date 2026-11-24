@@ -203,6 +203,8 @@ export function WorkspaceDialog({
   title,
   description,
   theme,
+  size = 'default',
+  headerExtra,
   onClose,
   children,
 }: {
@@ -210,6 +212,8 @@ export function WorkspaceDialog({
   title: string
   description: string
   theme: Theme
+  size?: 'default' | 'wide'
+  headerExtra?: ReactNode
   onClose: () => void
   children: ReactNode
 }) {
@@ -222,15 +226,37 @@ export function WorkspaceDialog({
     >
       <Dialog.Portal>
         <Dialog.Backdrop className="ic-modal-backdrop" />
-        <Dialog.Viewport className="ic-modal-viewport">
-          <Dialog.Popup className="ic-modal-popup ic-workspace-dialog" data-theme={theme}>
+        <Dialog.Viewport
+          className={
+            size === 'wide' ? 'ic-modal-viewport ic-invoice-modal-viewport' : 'ic-modal-viewport'
+          }
+        >
+          <Dialog.Popup
+            className={
+              size === 'wide'
+                ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-wide'
+                : 'ic-modal-popup ic-workspace-dialog'
+            }
+            data-theme={theme}
+          >
             <div className="ic-dialog-heading">
               <Dialog.Title className="ic-modal-title">{title}</Dialog.Title>
               <Dialog.Close className="ic-icon-button" aria-label="Close dialog">
                 <Icon name="close" />
               </Dialog.Close>
             </div>
-            <Dialog.Description className="ic-modal-description">{description}</Dialog.Description>
+            {headerExtra ? (
+              <div className="ic-dialog-intro">
+                <Dialog.Description className="ic-modal-description">
+                  {description}
+                </Dialog.Description>
+                {headerExtra}
+              </div>
+            ) : (
+              <Dialog.Description className="ic-modal-description">
+                {description}
+              </Dialog.Description>
+            )}
             {children}
           </Dialog.Popup>
         </Dialog.Viewport>

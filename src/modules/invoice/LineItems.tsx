@@ -114,8 +114,9 @@ export function LineItems({
                       aria-label={`Remove item ${index + 1}`}
                       onClick={() => {
                         const next = items[index + 1] ?? items[index - 1]
+                        const target = next ? descriptionId(next.id) : addButtonId
+                        document.getElementById(target)?.focus()
                         edit((current) => current.filter((line) => line.id !== item.id))
-                        focus(next ? descriptionId(next.id) : addButtonId)
                       }}
                     >
                       <Icon name="close" />

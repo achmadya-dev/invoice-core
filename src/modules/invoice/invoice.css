@@ -71,25 +71,25 @@
   }
 }
 
-.ic-workspace :focus-visible {
+:is(.ic-workspace, .ic-workspace-dialog) :focus-visible {
   outline: 2px solid var(--ic-accent);
   outline-offset: 3px;
 }
-.ic-workspace ::selection {
+:is(.ic-workspace, .ic-workspace-dialog) ::selection {
   background: var(--ic-stamp);
   color: #22213a;
 }
-.ic-workspace button,
-.ic-workspace summary {
+:is(.ic-workspace, .ic-workspace-dialog) button,
+:is(.ic-workspace, .ic-workspace-dialog) summary {
   cursor: pointer;
 }
-.ic-workspace button:disabled {
+:is(.ic-workspace, .ic-workspace-dialog) button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
-.ic-workspace h1,
-.ic-workspace h2,
-.ic-workspace h3 {
+:is(.ic-workspace, .ic-workspace-dialog) h1,
+:is(.ic-workspace, .ic-workspace-dialog) h2,
+:is(.ic-workspace, .ic-workspace-dialog) h3 {
   font-family: var(--ic-display);
   font-weight: 730;
 }
@@ -98,11 +98,11 @@
   line-height: 1;
   letter-spacing: -0.04em;
 }
-.ic-workspace h2 {
+:is(.ic-workspace, .ic-workspace-dialog) h2:not(.ic-modal-title) {
   font-size: 19px;
   line-height: 1.25;
 }
-.ic-workspace h3 {
+:is(.ic-workspace, .ic-workspace-dialog) h3 {
   font-size: 19px;
   letter-spacing: -0.02em;
 }
@@ -188,9 +188,6 @@
   background: var(--ic-stamp);
   color: #282049;
 }
-.ic-back {
-  margin-block-end: 10px;
-}
 @media (forced-colors: active) {
   .ic-nav button[aria-current] {
     outline: 1px solid Highlight;
@@ -257,7 +254,7 @@
   border: 1px solid #0000001f;
   flex-shrink: 0;
 }
-.ic-workspace .ic-color-control input.ic-color-native {
+:is(.ic-workspace, .ic-workspace-dialog) .ic-color-control input.ic-color-native {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -342,12 +339,9 @@
   border: 1px solid var(--ic-line);
   background: var(--ic-surface);
 }
-.ic-heading[data-panel='editor'],
 .ic-invoice-stage {
   width: min(100%, 940px);
   margin-inline: auto;
-}
-.ic-invoice-stage {
   background: var(--ic-desk);
 }
 .ic-panel-bar {
@@ -1022,7 +1016,7 @@
   color: #282049;
   background: var(--ic-stamp);
 }
-.ic-workspace .ic-switcher :focus-visible {
+:is(.ic-workspace, .ic-workspace-dialog) .ic-switcher :focus-visible {
   outline-color: var(--ic-stamp);
 }
 
@@ -1465,6 +1459,26 @@
   padding: 11px 22px;
   overflow-wrap: anywhere;
 }
+.ic-record-clickable {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.ic-records:last-child > .ic-record-clickable:last-child {
+  border-radius: 0 0 13px 13px;
+}
+.ic-record-clickable:hover:not(:has(.ic-actions:hover)),
+.ic-record-clickable:has(.ic-record-trigger:focus-visible) {
+  background: color-mix(in srgb, var(--ic-soft) 55%, var(--ic-surface));
+}
+.ic-record-clickable .ic-record-trigger:hover {
+  background: transparent;
+}
+.ic-record-clickable:hover:not(:has(.ic-actions:hover)) .ic-record-trigger {
+  text-decoration-color: currentColor;
+}
+.ic-record-clickable > .ic-actions {
+  cursor: default;
+}
 .ic-record p {
   margin-top: 5px;
   color: var(--ic-muted);
@@ -1500,6 +1514,20 @@
 .ic-dialog-body {
   margin-top: 16px;
 }
+.ic-dialog-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.ic-dialog-intro .ic-modal-description {
+  margin-top: 0;
+}
+.ic-invoice-modal-body {
+  margin-top: 14px;
+}
 
 .ic-modal-backdrop {
   position: fixed;
@@ -1521,6 +1549,10 @@
   padding: 20px;
   overflow-y: auto;
 }
+.ic-invoice-modal-viewport {
+  align-items: start;
+  padding: 20px;
+}
 .ic-confirm-backdrop {
   z-index: 70;
 }
@@ -1531,10 +1563,15 @@
   --ic-ink: #22213a;
   --ic-muted: #57556c;
   --ic-accent: #4837a6;
+  --ic-deep: #282049;
+  --ic-desk: #e8e5f4;
+  --ic-paper: #fff;
   --ic-surface: #fff;
+  --ic-ground: #f7f6fa;
   --ic-soft: #f0edf9;
   --ic-field: #fcfbfe;
   --ic-line: #dedbe8;
+  --ic-stamp: #f9e080;
   --ic-error: #8b2336;
   --ic-error-bg: #fff2f4;
   --ic-action-bg: #4837a6;
@@ -1560,15 +1597,24 @@
 .ic-workspace-dialog {
   width: min(100%, 760px);
 }
+.ic-workspace-dialog-wide {
+  width: min(100%, 988px);
+  transition: opacity 120ms ease-out;
+}
 .ic-modal-popup[data-theme='dark'] {
   color-scheme: dark;
   --ic-ink: #f3eefb;
   --ic-muted: #c1b9d2;
   --ic-accent: #d1c2ff;
+  --ic-deep: #221939;
+  --ic-desk: #463959;
+  --ic-paper: #fff;
   --ic-surface: #241d33;
+  --ic-ground: #191426;
   --ic-soft: #362d49;
   --ic-field: #21192f;
   --ic-line: #51465f;
+  --ic-stamp: #f9e080;
   --ic-error: #ffb6c6;
   --ic-error-bg: #3e2232;
   --ic-action-bg: #d4c6ff;
@@ -1580,10 +1626,15 @@
     --ic-ink: #f3eefb;
     --ic-muted: #c1b9d2;
     --ic-accent: #d1c2ff;
+    --ic-deep: #221939;
+    --ic-desk: #463959;
+    --ic-paper: #fff;
     --ic-surface: #241d33;
+    --ic-ground: #191426;
     --ic-soft: #362d49;
     --ic-field: #21192f;
     --ic-line: #51465f;
+    --ic-stamp: #f9e080;
     --ic-error: #ffb6c6;
     --ic-error-bg: #3e2232;
     --ic-action-bg: #d4c6ff;
@@ -1593,6 +1644,9 @@
 .ic-modal-popup[data-starting-style] {
   opacity: 0;
   transform: scale(0.97) translateY(4px);
+}
+.ic-workspace-dialog-wide[data-starting-style] {
+  transform: none;
 }
 .ic-modal-popup :focus-visible {
   outline: 2px solid var(--ic-accent);
@@ -1622,6 +1676,7 @@
   margin-top: 20px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .ic-record-clickable,
   .ic-modal-backdrop,
   .ic-modal-popup {
     transition: none;
@@ -1712,6 +1767,16 @@
   .ic-sheet-actions .ic-primary:nth-last-child(4) {
     grid-column: 1 / -1;
     margin-inline-start: 0;
+  }
+  .ic-invoice-modal-viewport {
+    padding: 8px;
+  }
+  .ic-workspace-dialog-wide {
+    padding: 14px;
+  }
+  .ic-dialog-intro {
+    align-items: start;
+    flex-direction: column;
   }
 }
 
@@ -1819,6 +1884,13 @@
   .ic-proof-table td {
     padding-inline: 4px;
   }
+  .ic-invoice-modal-viewport {
+    padding: 4px;
+  }
+  .ic-workspace-dialog-wide {
+    padding: 12px 8px;
+    border-radius: 12px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -1833,42 +1905,60 @@
     margin: 15mm;
   }
   .ic-workspace,
-  .ic-workspace .ic-shell {
+  .ic-workspace .ic-shell,
+  .ic-invoice-modal-viewport,
+  .ic-workspace-dialog-wide {
     display: block;
     width: 100%;
+    max-width: none;
     min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     color: #22213a;
     background: white;
   }
+  .ic-invoice-modal-viewport {
+    position: static;
+    overflow: visible;
+  }
+  .ic-invoice-modal-body {
+    margin: 0;
+  }
+  .ic-modal-backdrop,
   .ic-workspace .ic-topbar,
   .ic-workspace .ic-heading,
   .ic-workspace .ic-banner,
   .ic-workspace .ic-editor,
-  .ic-workspace #invoice-editor,
-  .ic-workspace .ic-invoice-stage .ic-panel-bar,
-  .ic-workspace .ic-sheet-tools,
-  .ic-workspace .ic-sheet-actions,
-  .ic-workspace .ic-footer {
+  .ic-workspace .ic-catalog,
+  .ic-workspace .ic-footer,
+  .ic-workspace-dialog-wide .ic-dialog-heading,
+  .ic-workspace-dialog-wide .ic-dialog-intro,
+  :is(.ic-workspace, .ic-workspace-dialog) #invoice-editor,
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-invoice-stage .ic-panel-bar,
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-sheet-tools,
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-sheet-actions {
     display: none;
   }
-  .ic-workspace #invoice-preview[data-print-only] {
+  :is(.ic-workspace, .ic-workspace-dialog) #invoice-preview[data-print-only] {
     display: block;
   }
-  .ic-workspace .ic-invoice-stage,
-  .ic-workspace .ic-proof-stage {
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-invoice-stage,
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-proof-stage {
     width: 100%;
     background: white;
     padding: 0;
   }
-  .ic-workspace .ic-proof {
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-proof {
     width: 100%;
     max-width: none;
     padding: 0;
     box-shadow: none;
     print-color-adjust: exact;
   }
-  .ic-workspace .ic-proof-table tr,
-  .ic-workspace .ic-amount {
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-proof-table tr,
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-amount {
     break-inside: avoid;
   }
 }

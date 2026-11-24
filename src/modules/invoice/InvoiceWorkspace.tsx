@@ -37,20 +37,15 @@ const panels = {
   invoices: 'Invoices',
   catalog: 'Catalog',
 } as const
-type Panel = keyof typeof panels | 'editor'
+type Panel = keyof typeof panels
 type Message = { text: string; error?: boolean }
 
 function panelFromHash(hash: string): Panel {
-  if (hash === '#editor') return 'editor'
   if (['#catalog', '#products', '#companies', '#templates'].includes(hash)) return 'catalog'
   return 'invoices'
 }
 
 const panelCopy = {
-  editor: {
-    title: 'Invoice editor',
-    detail: 'Edit directly on the invoice. Only saved invoices are kept.',
-  },
   invoices: {
     title: 'Invoices',
     detail: 'Browse and manage saved invoice history.',
@@ -70,6 +65,7 @@ export function InvoiceWorkspace() {
   const [catalogTab, setCatalogTab] = useState<'products' | 'companies'>('products')
   const [backupOpen, setBackupOpen] = useState(false)
   const [backupConfirm, setBackupConfirm] = useState<ConfirmState | null>(null)
+  const [editorConfirm, setEditorConfirm] = useState<ConfirmState | null>(null)
   const [view, setView] = useState<'edit' | 'preview'>('edit')
   const [pdfBusyId, setPdfBusyId] = useState<string | null>(null)
   const [offlineReady, setOfflineReady] = useState(false)
@@ -100,7 +96,7 @@ export function InvoiceWorkspace() {
         setCatalogTab(window.location.hash === '#companies' ? 'companies' : 'products')
       }
       setEditor(
-        next === 'editor'
+        window.location.hash === '#editor'
           ? {
               invoice: newInvoice(undefined, current.current?.data.invoices ?? []),
               edited: false,
@@ -110,6 +106,7 @@ export function InvoiceWorkspace() {
       setSaveAttempted(false)
       setBackupOpen(window.location.hash === '#backup')
       setBackupConfirm(null)
+      setEditorConfirm(null)
       setView('edit')
       setMessage(null)
     }
@@ -160,7 +157,8 @@ export function InvoiceWorkspace() {
 
   function show(next: Panel) {
     setPanel(next)
-    if (next !== 'editor') setEditor(null)
+    setEditor(null)
+    setEditorConfirm(null)
     setSaveAttempted(false)
     setView('edit')
     setMessage(null)
@@ -177,9 +175,24 @@ export function InvoiceWorkspace() {
   }
 
   function openEditor(invoice: Invoice, edited = false) {
+    setBackupOpen(false)
+    setBackupConfirm(null)
+    setEditorConfirm(null)
     setSaveAttempted(false)
+    setView('edit')
+    setMessage(null)
     setEditor({ invoice, edited })
-    show('editor')
+  }
+
+  function closeEditor() {
+    setEditor(null)
+    setEditorConfirm(null)
+    setSaveAttempted(false)
+    setView('edit')
+    setMessage(null)
+    if (window.location.hash === '#editor') {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+    }
   }
 
   function saveEditor() {
@@ -190,8 +203,7 @@ export function InvoiceWorkspace() {
       setSaveAttempted(true)
       setMessage({ text: result.message, error: true })
     } else if (commit(result.data)) {
-      setSaveAttempted(false)
-      show('invoices')
+      closeEditor()
       setMessage({ text: 'Invoice saved.' })
     }
   }
@@ -209,8 +221,9 @@ export function InvoiceWorkspace() {
     )
   }
 
-  function deleteInvoice(invoice: Invoice) {
-    setConfirmModal({
+  function deleteInvoice(invoice: Invoice, insideEditor = false) {
+    const setTargetConfirm = insideEditor ? setEditorConfirm : setConfirmModal
+    setTargetConfirm({
       title: `Delete invoice ${invoice.number}?`,
       description:
         'This removes the saved invoice from history and cannot be undone without a backup.',
@@ -221,7 +234,7 @@ export function InvoiceWorkspace() {
         if (!data) return
         const remaining = data.invoices.filter((entry) => entry.id !== invoice.id)
         if (commit({ ...data, invoices: remaining })) {
-          show('invoices')
+          if (insideEditor) closeEditor()
           setMessage({ text: 'Invoice deleted.' })
         }
       },
@@ -285,9 +298,7 @@ export function InvoiceWorkspace() {
                 key={key}
                 type="button"
                 disabled={!data}
-                aria-current={
-                  key === (panel === 'editor' ? 'invoices' : panel) ? 'page' : undefined
-                }
+                aria-current={key === panel ? 'page' : undefined}
                 onClick={() => show(key)}
               >
                 {panels[key]}
@@ -299,39 +310,9 @@ export function InvoiceWorkspace() {
       <main className="ic-shell">
         <div className="ic-heading" data-panel={panel}>
           <div>
-            {data && panel === 'editor' && (
-              <button
-                type="button"
-                className="ic-text-button ic-back"
-                onClick={() => show('invoices')}
-              >
-                <Icon name="back" /> Back to invoices
-              </button>
-            )}
             <h1>{copy.title}</h1>
             <p>{copy.detail}</p>
           </div>
-          {data && panel === 'editor' && draft && (
-            <div className="ic-actions ic-heading-actions ic-editor-appearance">
-              <ColorPicker
-                label="Accent color"
-                value={resolveAccentColor(draft)}
-                onChange={(accentColor) => editDraft((current) => ({ ...current, accentColor }))}
-              />
-              <SelectField
-                label="Layout"
-                value={resolveInvoiceLayout(draft)}
-                options={invoiceLayouts.map((value) => ({
-                  value,
-                  label: invoiceLayoutLabels[value],
-                }))}
-                onChange={(value) => {
-                  const match = invoiceLayouts.find((entry) => entry === value)
-                  if (match) editDraft((current) => ({ ...current, layout: match }))
-                }}
-              />
-            </div>
-          )}
           {data && panel === 'invoices' && (
             <div className="ic-actions ic-heading-actions">
               <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>
@@ -352,7 +333,7 @@ export function InvoiceWorkspace() {
             {storageWarning}
           </p>
         )}
-        {message && panel !== 'editor' && (
+        {message && !editor && (
           <p
             className={message.error ? 'ic-banner ic-error' : 'ic-banner'}
             role={message.error ? 'alert' : 'status'}
@@ -364,28 +345,6 @@ export function InvoiceWorkspace() {
           <p className="ic-banner" role="status">
             Opening the local workspace…
           </p>
-        )}
-        {data && panel === 'editor' && draft && (
-          <InvoiceEditor
-            key={draft.id}
-            draft={draft}
-            workspace={data}
-            edit={editDraft}
-            view={view}
-            setView={setView}
-            onSave={saveEditor}
-            notice={message ?? undefined}
-            showErrors={saveAttempted}
-            onDownload={() => void downloadPdf(draft)}
-            pdfBusy={pdfBusyId !== null}
-            onResetDraft={
-              editor?.edited && !isSavedDraft
-                ? () => openEditor(newInvoice(undefined, data.invoices))
-                : undefined
-            }
-            onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(draft) : undefined}
-            onDelete={isSavedDraft ? () => deleteInvoice(draft) : undefined}
-          />
         )}
         {data && panel === 'invoices' && (
           <InvoiceHistory
@@ -528,6 +487,71 @@ export function InvoiceWorkspace() {
               confirm={backupConfirm}
               theme={theme}
               onClose={() => setBackupConfirm(null)}
+            />
+          </WorkspaceDialog>
+        )}
+        {data && (
+          <WorkspaceDialog
+            open={Boolean(draft)}
+            title={isSavedDraft ? 'Invoice details' : 'New invoice'}
+            description="Edit directly on the invoice. Only saved invoices are kept."
+            theme={theme}
+            size="wide"
+            headerExtra={
+              draft ? (
+                <div className="ic-actions ic-editor-appearance">
+                  <ColorPicker
+                    label="Accent color"
+                    value={resolveAccentColor(draft)}
+                    onChange={(accentColor) =>
+                      editDraft((current) => ({ ...current, accentColor }))
+                    }
+                  />
+                  <SelectField
+                    label="Layout"
+                    value={resolveInvoiceLayout(draft)}
+                    options={invoiceLayouts.map((value) => ({
+                      value,
+                      label: invoiceLayoutLabels[value],
+                    }))}
+                    onChange={(value) => {
+                      const match = invoiceLayouts.find((entry) => entry === value)
+                      if (match) editDraft((current) => ({ ...current, layout: match }))
+                    }}
+                  />
+                </div>
+              ) : undefined
+            }
+            onClose={closeEditor}
+          >
+            {draft && (
+              <div className="ic-dialog-body ic-invoice-modal-body">
+                <InvoiceEditor
+                  key={draft.id}
+                  draft={draft}
+                  workspace={data}
+                  edit={editDraft}
+                  view={view}
+                  setView={setView}
+                  onSave={saveEditor}
+                  notice={message ?? undefined}
+                  showErrors={saveAttempted}
+                  onDownload={() => void downloadPdf(draft)}
+                  pdfBusy={pdfBusyId !== null}
+                  onResetDraft={
+                    editor?.edited && !isSavedDraft
+                      ? () => openEditor(newInvoice(undefined, data.invoices))
+                      : undefined
+                  }
+                  onDuplicate={isSavedDraft ? () => duplicateSavedInvoice(draft) : undefined}
+                  onDelete={isSavedDraft ? () => deleteInvoice(draft, true) : undefined}
+                />
+              </div>
+            )}
+            <ConfirmModal
+              confirm={editorConfirm}
+              theme={theme}
+              onClose={() => setEditorConfirm(null)}
             />
           </WorkspaceDialog>
         )}

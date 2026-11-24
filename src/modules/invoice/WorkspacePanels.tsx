@@ -112,10 +112,23 @@ export function InvoiceHistory({
           {visible.map((invoice) => {
             const totals = invoiceTotals(invoice)
             return (
-              <li className="ic-record" key={invoice.id}>
+              <li
+                className="ic-record ic-record-clickable"
+                key={invoice.id}
+                onClick={(event) => {
+                  if (
+                    event.target instanceof Element &&
+                    event.target.closest('button, a, input, select, textarea, .ic-actions')
+                  ) {
+                    return
+                  }
+                  if (window.getSelection()?.toString()) return
+                  open(invoice)
+                }}
+              >
                 <div>
                   <button
-                    className="ic-text-button ic-mono"
+                    className="ic-text-button ic-mono ic-record-trigger"
                     type="button"
                     onClick={() => open(invoice)}
                   >
@@ -138,6 +151,14 @@ export function InvoiceHistory({
                     onClick={() => downloadPdf(invoice)}
                   >
                     <Icon name="download" /> {pdfBusyId === invoice.id ? 'Preparing…' : 'PDF'}
+                  </button>
+                  <button
+                    className="ic-button"
+                    type="button"
+                    aria-label={`Edit ${invoice.number}`}
+                    onClick={() => open(invoice)}
+                  >
+                    Edit
                   </button>
                   <button
                     className="ic-button"
