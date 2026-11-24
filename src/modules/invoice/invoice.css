@@ -307,36 +307,10 @@
   background: var(--ic-surface);
 }
 .ic-invoice-stage {
+  display: grid;
+  gap: 12px;
   width: min(100%, 940px);
   margin-inline: auto;
-  background: var(--ic-desk);
-}
-.ic-panel-bar {
-  min-height: 54px;
-  padding: 10px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-.ic-editor .ic-panel-bar {
-  border-bottom: 1px solid var(--ic-line);
-}
-.ic-invoice-stage .ic-panel-bar {
-  border-radius: 14px 14px 0 0;
-  color: #fff;
-  background: var(--ic-deep);
-}
-.ic-panel-bar h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.ic-panel-bar h2 .ic-icon {
-  color: var(--ic-accent);
-}
-.ic-invoice-stage .ic-panel-bar h2 .ic-icon {
-  color: var(--ic-stamp);
 }
 .ic-fields {
   display: grid;
@@ -660,6 +634,7 @@
   font-weight: 670;
   color: var(--ic-accent);
   min-height: 36px;
+  cursor: pointer;
 }
 .ic-detail[open] > .ic-fields {
   padding-block: 3px 9px;
@@ -972,26 +947,34 @@
   font-size: 12px;
 }
 .ic-switcher {
-  display: flex;
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 3px;
   padding: 3px;
-  border: 1px solid #ffffff55;
+  min-height: 40px;
+  border: 1px solid var(--ic-line);
   border-radius: 8px;
+  background: var(--ic-soft);
 }
 .ic-switcher button {
-  min-height: 36px;
-  padding-inline: 12px;
+  min-width: 74px;
+  min-height: 32px;
+  padding: 0 12px;
   border-radius: 5px;
-  color: white;
+  color: var(--ic-muted);
   font-size: 13px;
-  font-weight: 730;
+  font-weight: 700;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.ic-switcher button:hover {
+  color: var(--ic-ink);
 }
 .ic-switcher button[aria-pressed='true'] {
-  color: #282049;
-  background: var(--ic-stamp);
-}
-:is(.ic-workspace, .ic-workspace-dialog) .ic-switcher :focus-visible {
-  outline-color: var(--ic-stamp);
+  color: var(--ic-ink);
+  background: var(--ic-surface);
+  box-shadow: 0 1px 3px rgb(25 20 38 / 12%);
 }
 
 #invoice-editor {
@@ -1006,7 +989,13 @@
   --ic-error-bg: #fff2f4;
 }
 .ic-sheet-tools {
-  padding: 14px 18px 4px;
+  padding: 12px 14px 8px;
+  border: 1px solid var(--ic-line);
+  border-radius: 12px;
+  background: var(--ic-ground);
+}
+.ic-sheet-tools[hidden] {
+  display: none;
 }
 .ic-sheet-pickers {
   display: grid;
@@ -1015,6 +1004,14 @@
 }
 .ic-sheet-tools .ic-detail {
   margin-top: 3px;
+}
+.ic-sheet-more-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.ic-proof-frame {
+  min-width: 0;
+  border-radius: 12px;
+  background: var(--ic-desk);
 }
 #invoice-editor :is(input:not([type='file']), textarea) {
   min-height: 30px;
@@ -1655,6 +1652,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ic-icon-button,
+  .ic-switcher button,
   .ic-record-clickable,
   .ic-modal-backdrop,
   .ic-modal-popup {
@@ -1754,8 +1752,25 @@
     padding: 14px;
   }
   .ic-dialog-intro {
-    align-items: start;
+    align-items: stretch;
     flex-direction: column;
+  }
+  .ic-editor-appearance {
+    width: 100%;
+  }
+  .ic-editor-appearance .ic-switcher {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .ic-editor-appearance .ic-switcher button {
+    min-width: 0;
+  }
+  .ic-editor-appearance .ic-field:not(.ic-color-field) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .ic-sheet-more-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1776,14 +1791,6 @@
     min-width: 0;
     padding: 6px 8px;
   }
-  .ic-panel-bar {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .ic-panel-bar h2 {
-    font-size: 17px;
-  }
-  .ic-panel-bar,
   .ic-panel-pad,
   .ic-filter,
   .ic-history-meta,
@@ -1807,6 +1814,9 @@
   }
   .ic-proof {
     padding: 14px;
+  }
+  .ic-sheet-tools {
+    padding: 10px 10px 6px;
   }
   .ic-proof-stage,
   .ic-sheet-actions {
@@ -1920,7 +1930,6 @@
   .ic-workspace-dialog-wide .ic-dialog-heading,
   .ic-workspace-dialog-wide .ic-dialog-intro,
   :is(.ic-workspace, .ic-workspace-dialog) #invoice-editor,
-  :is(.ic-workspace, .ic-workspace-dialog) .ic-invoice-stage .ic-panel-bar,
   :is(.ic-workspace, .ic-workspace-dialog) .ic-sheet-tools,
   :is(.ic-workspace, .ic-workspace-dialog) .ic-sheet-actions {
     display: none;
@@ -1929,6 +1938,7 @@
     display: block;
   }
   :is(.ic-workspace, .ic-workspace-dialog) .ic-invoice-stage,
+  :is(.ic-workspace, .ic-workspace-dialog) .ic-proof-frame,
   :is(.ic-workspace, .ic-workspace-dialog) .ic-proof-stage {
     width: 100%;
     background: white;
