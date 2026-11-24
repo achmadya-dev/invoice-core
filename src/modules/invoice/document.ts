@@ -9,7 +9,7 @@ import {
 } from './domain/invoice'
 
 export function contactLines(contact: Contact) {
-  return [contact.address, countryName(contact.country), contact.email, contact.phone].filter(
+  return [contact.email, contact.phone, contact.address, countryName(contact.country)].filter(
     Boolean,
   )
 }
@@ -41,7 +41,7 @@ export function invoiceDocument(invoice: Invoice) {
     clientDetails: contactLines(invoice.client),
     number: invoice.number || 'Unnumbered',
     issueDate: formatDate(invoice.issueDate),
-    dueDate: formatDate(invoice.dueDate),
+    dueDate: invoice.dueDate ? formatDate(invoice.dueDate) : '',
     lines: invoice.items.map((item, index) => ({
       id: item.id,
       description: item.description || 'Untitled item',

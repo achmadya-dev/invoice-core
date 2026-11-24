@@ -63,19 +63,34 @@ export function InvoicePreview({
       data-print-only={hidden || undefined}
     >
       <header className="ic-doc-heading">
-        <div className="ic-party">
+        <div className="ic-doc-brand">
           {proof.logo && <img className="ic-logo" src={proof.logo} alt="" />}
+        </div>
+        <div className="ic-doc-title">
+          <h3>Invoice</h3>
+          <div className="ic-mono">{proof.number}</div>
+          <dl className="ic-doc-dates">
+            <div>
+              <dt className="ic-doc-label">Issue date</dt>
+              <dd>{proof.issueDate}</dd>
+            </div>
+            {proof.dueDate && (
+              <div>
+                <dt className="ic-doc-label">Due date</dt>
+                <dd>{proof.dueDate}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </header>
+      <div className="ic-doc-meta">
+        <div className="ic-party">
+          <span className="ic-doc-label">From</span>
           <strong>{proof.sender}</strong>
           {proof.senderDetails.map((line, index) => (
             <div key={index}>{line}</div>
           ))}
         </div>
-        <div className="ic-doc-title">
-          <h3>Invoice</h3>
-          <div className="ic-mono">{proof.number}</div>
-        </div>
-      </header>
-      <div className="ic-doc-meta">
         <div className="ic-party">
           <span className="ic-doc-label">Bill to</span>
           <strong>{proof.client}</strong>
@@ -83,18 +98,6 @@ export function InvoicePreview({
             <div key={index}>{line}</div>
           ))}
         </div>
-        <dl>
-          <div>
-            <dt className="ic-doc-label">Issue date</dt>
-            <dd>{proof.issueDate}</dd>
-          </div>
-          {proof.dueDate && (
-            <div>
-              <dt className="ic-doc-label">Due date</dt>
-              <dd>{proof.dueDate}</dd>
-            </div>
-          )}
-        </dl>
       </div>
       <table className="ic-proof-table">
         <caption className="sr-only">Invoice line items in {currency}</caption>

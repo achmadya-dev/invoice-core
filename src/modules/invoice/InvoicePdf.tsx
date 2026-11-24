@@ -25,7 +25,8 @@ const style = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 20,
   },
-  party: { width: '51%' },
+  brand: { width: '48%' },
+  party: { flex: 1 },
   logo: { width: 132, height: 60, objectFit: 'contain', objectPosition: 'left', marginBottom: 8 },
   name: { fontSize: 17, marginBottom: 3 },
   title: {
@@ -34,8 +35,10 @@ const style = StyleSheet.create({
     lineHeight: 1.05,
     marginBottom: 5,
   },
-  right: { width: '44%', textAlign: 'right' },
-  meta: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 21 },
+  right: { width: '48%', alignItems: 'flex-end', textAlign: 'right' },
+  headerDates: { flexDirection: 'row', justifyContent: 'flex-end', gap: 18, marginTop: 10 },
+  headerDateItem: { alignItems: 'flex-end' },
+  meta: { flexDirection: 'row', justifyContent: 'space-between', gap: 20, paddingVertical: 21 },
   caption: {
     color: '#57556c',
     fontFamily: 'Helvetica-Bold',
@@ -43,7 +46,6 @@ const style = StyleSheet.create({
     letterSpacing: 0.55,
     textTransform: 'uppercase',
   },
-  dateGap: { marginTop: 6 },
   dateValue: { fontFamily: 'Helvetica-Bold' },
   row: {
     flexDirection: 'row',
@@ -148,35 +150,40 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
                   },
           ]}
         >
-          <View style={style.party}>
+          <View style={style.brand}>
             {proof.logo && <Image src={proof.logo} style={style.logo} />}
+          </View>
+          <View style={style.right}>
+            <Text style={[style.title, { color: palette.accent }]}>Invoice</Text>
+            <Text>{proof.number}</Text>
+            <View style={style.headerDates}>
+              <View style={style.headerDateItem}>
+                <Text style={style.caption}>Issue date</Text>
+                <Text style={style.dateValue}>{proof.issueDate}</Text>
+              </View>
+              {proof.dueDate && (
+                <View style={style.headerDateItem}>
+                  <Text style={style.caption}>Due date</Text>
+                  <Text style={style.dateValue}>{proof.dueDate}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+        <View style={style.meta}>
+          <View style={style.party}>
+            <Text style={style.caption}>From</Text>
             <Text style={[style.name, { fontFamily: boldFont(proof.sender) }]}>{proof.sender}</Text>
             {proof.senderDetails.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
           </View>
-          <View style={style.right}>
-            <Text style={[style.title, { color: palette.accent }]}>Invoice</Text>
-            <Text>{proof.number}</Text>
-          </View>
-        </View>
-        <View style={style.meta}>
           <View style={style.party}>
             <Text style={style.caption}>Bill to</Text>
             <Text style={[style.name, { fontFamily: boldFont(proof.client) }]}>{proof.client}</Text>
             {proof.clientDetails.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
-          </View>
-          <View style={style.right}>
-            <Text style={style.caption}>Issue date</Text>
-            <Text style={style.dateValue}>{proof.issueDate}</Text>
-            {invoice.dueDate && (
-              <>
-                <Text style={[style.caption, style.dateGap]}>Due date</Text>
-                <Text style={style.dateValue}>{proof.dueDate}</Text>
-              </>
-            )}
           </View>
         </View>
         <View

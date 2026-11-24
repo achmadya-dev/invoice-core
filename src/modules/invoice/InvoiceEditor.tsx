@@ -297,7 +297,7 @@ export function InvoiceEditor({
               </fieldset>
             </div>
           </header>
-          <div className="ic-doc-meta ic-sheet-columns">
+          <div className="ic-doc-meta">
             <div className="ic-party ic-sheet-party">
               <span className="ic-doc-label">From</span>
               <ContactFields

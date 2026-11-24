@@ -399,7 +399,7 @@ export function ContactFields({
     <>
       {contactFields.map((field) => (
         <label
-          className={`ic-field${sheet && field.key === 'name' ? 'ic-sheet-name' : ''}`}
+          className={sheet && field.key === 'name' ? 'ic-field ic-sheet-name' : 'ic-field'}
           key={field.key}
         >
           <span className={sheet ? 'sr-only' : undefined}>
@@ -415,7 +415,7 @@ export function ContactFields({
           />
         </label>
       ))}
-      <label className={`ic-field${sheet ? '' : 'ic-span'}`}>
+      <label className={sheet ? 'ic-field' : 'ic-field ic-span'}>
         <span className={sheet ? 'sr-only' : undefined}>{partyLabel} address</span>
         <textarea
           maxLength={1500}

@@ -88,8 +88,17 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
   await page.goto('/')
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await page.getByLabel('Invoice number').fill('IDR-2026-01')
+  await page.getByLabel('Due date').fill('2026-12-08')
   await page.getByLabel('Sender name').fill('Nusantara Studio')
+  await page.getByLabel('Sender email').fill('hello@nusantara.dev')
+  await page.getByLabel('Sender phone').fill('082116030304')
+  await page.getByLabel('Sender address').fill('Jl. Merdeka No. 10')
+  await page.getByLabel('Website').fill('https://nusantara.dev')
+  await page.getByLabel('Tax ID').fill('12.345.678.7-213.000')
   await page.getByRole('textbox', { name: 'Client', exact: true }).fill('Maju Bersama')
+  await page.getByLabel('Billing contact email').fill('rio@example.com')
+  await page.getByLabel('Billing contact phone').fill('0881234567890')
+  await page.getByLabel('Billing contact address').fill('Cipageran')
   await page.getByRole('combobox', { name: 'Currency', exact: true }).click()
   await page.getByRole('option', { name: /^IDR —/ }).click()
   await page.getByLabel('Description, item 1').fill('Product design sprint')
@@ -119,11 +128,12 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
     await page.getByRole('combobox', { name: 'Layout', exact: true }).click()
     await page.getByRole('option', { name: layoutLabel, exact: true }).click()
 
-    const editorAmount = page.locator('#invoice-editor .ic-amount dd')
+    const editor = page.locator('#invoice-editor')
+    const editorAmount = editor.locator('.ic-amount dd')
     await expect(editorAmount).toHaveText('IDR 2,500,000')
     expect(await editorAmount.evaluate(isSingleLine)).toBe(true)
     expect(
-      await page.locator('#invoice-editor .ic-amount dt').evaluate((el) =>
+      await editor.locator('.ic-amount dt').evaluate((el) =>
         el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE
           ? (() => {
               const r = document.createRange()
@@ -133,6 +143,7 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
           : false,
       ),
     ).toBe(true)
+    await editor.screenshot({ path: info.outputPath(`editor-${layoutKey}.png`) })
 
     const pendingPdf = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download PDF' }).click()
@@ -147,6 +158,11 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
       })
       expect(pdfText).toContain('IDR 2,500,000')
       expect(pdfText).toContain('Amount due')
+      expect(pdfText).toContain('FROM')
+      expect(pdfText).toContain('BILL TO')
+      expect(pdfText.indexOf('hello@nusantara.dev')).toBeLessThan(
+        pdfText.indexOf('Jl. Merdeka No. 10'),
+      )
       expect(pdfText).toContain('Thank you for your business.')
       expect(pdfText).toContain('Net 14 days')
     }
@@ -164,6 +180,12 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
     await page.getByRole('button', { name: 'Preview', exact: true }).click()
     const preview = page.locator('#invoice-preview')
     await expect(preview).toHaveAttribute('data-invoice-layout', layoutKey)
+    const previewText = await preview.innerText()
+    expect(previewText).toContain('FROM')
+    expect(previewText).toContain('BILL TO')
+    expect(previewText.indexOf('hello@nusantara.dev')).toBeLessThan(
+      previewText.indexOf('Jl. Merdeka No. 10'),
+    )
     await expect(preview.locator('.ic-amount dd')).toHaveText('IDR 2,500,000')
     expect(await preview.locator('.ic-amount dd').evaluate(isSingleLine)).toBe(true)
     await preview.screenshot({ path: info.outputPath(`preview-${layoutKey}.png`) })
