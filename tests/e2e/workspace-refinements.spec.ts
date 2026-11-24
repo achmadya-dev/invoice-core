@@ -590,3 +590,55 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   await detailsDialog.getByRole('button', { name: 'Close dialog' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
+
+test('keeps fixed-amount discount currency unit on one line in summary', async ({ page }, info) => {
+  const singleLineText = (element: Element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+    const first = walker.nextNode()
+    let last = first
+    while (walker.nextNode()) last = walker.currentNode
+    if (!first || !last) return false
+    const range = document.createRange()
+    range.setStart(first, 0)
+    range.setEnd(last, last.textContent?.length ?? 0)
+    return range.getClientRects().length === 1
+  }
+
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'New invoice' })
+  await expect(dialog).toBeVisible()
+
+  await dialog.getByLabel('Description, item 1').fill('Design sprint')
+  await dialog.getByLabel('Rate, item 1').fill('1000')
+  await dialog.locator('details.ic-detail summary').click()
+  await dialog.getByRole('combobox', { name: 'Discount type', exact: true }).click()
+  await page.getByRole('option', { name: 'Fixed amount', exact: true }).click()
+
+  const discountInput = dialog.getByLabel('Discount amount', { exact: true })
+  await discountInput.fill('250')
+  await expect(dialog.locator('#invoice-editor .ic-amount dd')).toHaveText('$750.00')
+
+  const discountUnit = dialog.locator('.ic-summary-input-row').first().locator('.ic-summary-unit')
+  await expect(discountUnit).toHaveText('USD')
+  expect(await discountUnit.evaluate(singleLineText)).toBe(true)
+
+  const discountRowBox = await dialog.locator('.ic-summary-input-row').nth(0).boundingBox()
+  const taxRowBox = await dialog.locator('.ic-summary-input-row').nth(1).boundingBox()
+  if (!discountRowBox || !taxRowBox) throw new Error('Expected visible summary input rows')
+  expect(Math.abs(discountRowBox.height - taxRowBox.height)).toBeLessThanOrEqual(2)
+
+  await dialog.getByRole('combobox', { name: 'Currency', exact: true }).click()
+  await page.getByRole('option', { name: /^IDR —/ }).click()
+  await expect(discountUnit).toHaveText('IDR')
+  expect(await discountUnit.evaluate(singleLineText)).toBe(true)
+  await expect(dialog.locator('#invoice-editor .ic-amount dd')).toHaveText('IDR 750')
+  await dialog
+    .locator('.ic-sheet-summary')
+    .screenshot({ path: info.outputPath('summary-fixed-discount.png') })
+
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+  expect(await discountUnit.evaluate(singleLineText)).toBe(true)
+})
