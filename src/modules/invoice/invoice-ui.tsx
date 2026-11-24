@@ -1,6 +1,7 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog'
 import { Combobox } from '@base-ui/react/combobox'
 import { Dialog } from '@base-ui/react/dialog'
+import { Popover } from '@base-ui/react/popover'
 import { Select } from '@base-ui/react/select'
 import { countryCodes, countryName, currencies, currencyName } from './domain/catalog'
 import {
@@ -615,5 +616,117 @@ export function ConfirmModal({
         </AlertDialog.Viewport>
       </AlertDialog.Portal>
     </AlertDialog.Root>
+  )
+}
+
+const accentSwatches = [
+  { name: 'Indigo', hex: '#4837a6' },
+  { name: 'Slate', hex: '#334155' },
+  { name: 'Emerald', hex: '#047857' },
+  { name: 'Teal', hex: '#0f766e' },
+  { name: 'Blue', hex: '#1d4ed8' },
+  { name: 'Violet', hex: '#6d28d9' },
+  { name: 'Amber', hex: '#b45309' },
+  { name: 'Rose', hex: '#be123c' },
+  { name: 'Crimson', hex: '#b91c1c' },
+  { name: 'Charcoal', hex: '#18181b' },
+] as const
+
+export function ColorPicker({
+  label,
+  value,
+  theme,
+  onChange,
+}: {
+  label: string
+  value: string
+  theme: Theme
+  onChange: (hex: string) => void
+}) {
+  const labelId = useId()
+  const valueId = useId()
+  const [open, setOpen] = useState(false)
+  const [hexDraft, setHexDraft] = useState(value.toUpperCase())
+  const normalized = value.toLowerCase()
+
+  return (
+    <div className="ic-field">
+      <span id={labelId}>{label}</span>
+      <Popover.Root
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen)
+          if (nextOpen) setHexDraft(value.toUpperCase())
+        }}
+        modal={false}
+      >
+        <Popover.Trigger
+          className="ic-select-trigger ic-color-trigger"
+          aria-labelledby={`${labelId} ${valueId}`}
+        >
+          <span className="ic-color-trigger-value">
+            <span
+              className="ic-color-swatch"
+              style={{ backgroundColor: value }}
+              aria-hidden="true"
+            />
+            <span id={valueId} className="ic-mono">
+              {value.toUpperCase()}
+            </span>
+          </span>
+          <Icon name="chevron" />
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Positioner sideOffset={6} collisionPadding={12} align="start">
+            <Popover.Popup className="ic-select-popup ic-color-popup" data-theme={theme}>
+              <div className="ic-color-swatches" role="group" aria-label="Color presets">
+                {accentSwatches.map((swatch) => (
+                  <button
+                    key={swatch.hex}
+                    type="button"
+                    className="ic-color-swatch-btn"
+                    style={{ backgroundColor: swatch.hex }}
+                    aria-label={swatch.name}
+                    aria-pressed={normalized === swatch.hex}
+                    onClick={() => {
+                      onChange(swatch.hex)
+                      setHexDraft(swatch.hex.toUpperCase())
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="ic-color-custom">
+                <input
+                  type="text"
+                  className="ic-mono"
+                  aria-label="Hex color"
+                  maxLength={7}
+                  value={hexDraft}
+                  onChange={(event) => {
+                    const next = event.target.value
+                    setHexDraft(next)
+                    if (/^#[0-9a-fA-F]{6}$/.test(next)) onChange(next.toLowerCase())
+                  }}
+                  onBlur={() => setHexDraft(value.toUpperCase())}
+                />
+                <label className="ic-color-wheel" title="Custom color">
+                  <input
+                    type="color"
+                    aria-label="Custom color"
+                    value={value}
+                    onChange={(event) => {
+                      const next = event.target.value.toLowerCase()
+                      onChange(next)
+                      setHexDraft(next.toUpperCase())
+                    }}
+                  />
+                  <span>Pick</span>
+                </label>
+              </div>
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
+    </div>
   )
 }
