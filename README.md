@@ -2,6 +2,8 @@
 
 A local-first invoice editor with direct editing on the invoice sheet, downloadable A4 PDF, reusable company profiles, and searchable history. There is no login, server database, or cloud sync.
 
+Live workspace: [https://invoice.achmadya.dev](https://invoice.achmadya.dev)
+
 ## Run locally
 
 Use the Bun version in [`.bun-version`](.bun-version). Node 26 is used by the test tooling, not the application runtime.
@@ -42,3 +44,15 @@ Alternatively, build the standalone image with `docker build -t invoice-core .` 
 ## Development
 
 Start with [the development guide](START_HERE.md) and [repository instructions](AGENTS.md). See [product scope](docs/PRODUCT.md), [invoice rules](docs/DOMAIN.md), [architecture](docs/ARCHITECTURE.md), and [design](docs/DESIGN.md) before changing behavior.
+
+## Contributing
+
+Contributions are welcome. Read the [contributing guide](CONTRIBUTING.md) and [code standards](docs/CODE_STANDARDS.md) before opening a pull request.
+
+## Security
+
+Invoice Core keeps all workspace data in the current browser profile. See the [security policy](SECURITY.md) for reporting vulnerabilities privately.
+
+## License
+
+Licensed under the [MIT License](LICENSE). Embedded fonts ship under the SIL Open Font License in [`public/licenses/`](public/licenses/OFL-Bricolage-Grotesque.txt).

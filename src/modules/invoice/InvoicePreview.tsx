@@ -15,7 +15,7 @@ export function invoicePaletteVars(palette: InvoicePalette): CSSProperties {
   } as CSSProperties
 }
 
-export function DocumentTotals({ proof, currency }: { proof: DocumentProof; currency: Currency }) {
+function DocumentTotals({ proof, currency }: { proof: DocumentProof; currency: Currency }) {
   return (
     <div>
       <dl className="ic-summary">

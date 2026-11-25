@@ -33,13 +33,7 @@ This document is the normative implementation contract. Follow `AGENTS.md` and t
 
 ## Future server features
 
-Invoice Core does not require runtime credentials, a database, or account infrastructure. Only introduce them through an approved product and architecture decision.
-
-- Validate server function inputs at the server using the domain schema and enforce authorization before protected side effects. Never trust a submitted role, ownership claim, tenant ID, or price. Preserve TanStack Start's CSRF middleware.
-- Keep SQL, driver internals, and secrets server-only. Use parameterized SQL, validate rows at the repository boundary, and enforce concurrency-sensitive invariants in the database.
-- Parse any runtime configuration once at a typed boundary. Do not scatter `process.env` reads or expose server config through `VITE_*`. Build and test launchers may explicitly consume environment settings.
-- Do not change applied SQL migrations or run migrations against an unknown target. Use reviewed forward migrations; confirm recovery and isolate any real database test target.
-- Normalize unexpected failures centrally, preserving useful request IDs and safe structured context without logging private payloads.
+Invoice Core does not require runtime credentials, a server database, or account infrastructure; do not introduce them without an approved product decision and ADR. Any future server endpoints must validate untrusted inputs at the server with the domain schema, enforce authorization before protected side effects, and keep database internals and secrets server-only.
 
 ## Verification and sensitive changes
 

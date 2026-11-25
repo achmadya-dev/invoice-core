@@ -8,7 +8,7 @@ import {
   type Invoice,
 } from './domain/invoice'
 
-export function contactLines(contact: Contact) {
+function contactLines(contact: Contact) {
   return [contact.email, contact.phone, contact.address, countryName(contact.country)].filter(
     Boolean,
   )

@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { countryCodes, currencies } from './catalog'
 
 const invoiceStatuses = ['draft', 'sent', 'paid'] as const
-export const themes = ['system', 'light', 'dark'] as const
+const themes = ['system', 'light', 'dark'] as const
 export const defaultAccentColor = '#4837a6'
 export const invoiceLayouts = ['classic', 'modern', 'minimal'] as const
 export type InvoiceLayout = (typeof invoiceLayouts)[number]
@@ -18,9 +18,9 @@ export type InvoicePalette = {
   amountInk: string
   line: string
 }
-export const invoiceThemes = ['indigo', 'slate', 'emerald', 'amber', 'rose'] as const
-export type InvoiceTheme = (typeof invoiceThemes)[number]
-export const invoiceThemePalettes: Record<InvoiceTheme, InvoicePalette> = {
+const invoiceThemes = ['indigo', 'slate', 'emerald', 'amber', 'rose'] as const
+type InvoiceTheme = (typeof invoiceThemes)[number]
+const invoiceThemePalettes: Record<InvoiceTheme, InvoicePalette> = {
   indigo: {
     accent: '#4837a6',
     soft: '#f0edf9',
@@ -110,7 +110,7 @@ const legacyTemplateLimit = 50
 export const maxProducts = legacyTemplateLimit * maxItems
 export const maxBackupBytes = 8 * 1024 * 1024
 export const maxLogoBytes = 256 * 1024
-export const currencySchema = z.enum(currencies)
+const currencySchema = z.enum(currencies)
 export type Currency = z.infer<typeof currencySchema>
 
 const id = z.uuid()
@@ -311,7 +311,7 @@ function nextNumber(used: Set<string>, prefix: string, padding: number, start = 
   return { number: '', sequence }
 }
 
-export function nextInvoiceNumber(company: Company, invoices: Invoice[]) {
+function nextInvoiceNumber(company: Company, invoices: Invoice[]) {
   const used = new Set(
     invoices
       .filter((invoice) => invoice.companyId === company.id)
@@ -521,7 +521,7 @@ export function addProductLines(
   }
 }
 
-export function invoiceError(invoice: Invoice) {
+function invoiceError(invoice: Invoice) {
   if (
     !invoice.sender.name.trim() ||
     !invoice.client.name.trim() ||
@@ -539,7 +539,7 @@ export function invoiceError(invoice: Invoice) {
   return null
 }
 
-export function companyError(company: Company) {
+function companyError(company: Company) {
   if (!company.sender.name.trim()) return 'Enter a company name.'
   if (!decimalValid(company.taxRate, 'percent')) return 'Enter a tax rate between 0 and 100.'
   if (
@@ -553,6 +553,28 @@ export function companyError(company: Company) {
     return 'Enter a positive sequence number and a padding width from 1 to 8.'
   }
   return null
+}
+
+export function saveCompany(
+  workspace: Workspace,
+  company: Company,
+): { ok: true; data: Workspace } | { ok: false; message: string } {
+  const error = companyError(company)
+  if (error) return { ok: false, message: error }
+  if (!companySchema.safeParse(company).success) {
+    return {
+      ok: false,
+      message: 'Some company fields are invalid. Check the entries and try again.',
+    }
+  }
+  const exists = workspace.companies.some((entry) => entry.id === company.id)
+  if (!exists && workspace.companies.length >= maxCompanies) {
+    return { ok: false, message: 'Remove a company before saving a new one.' }
+  }
+  const companies = exists
+    ? workspace.companies.map((entry) => (entry.id === company.id ? company : entry))
+    : [...workspace.companies, company]
+  return { ok: true, data: { ...workspace, companies } }
 }
 
 export function saveInvoice(

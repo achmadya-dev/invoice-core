@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
-  companyError,
   formatBytes,
   formatDate,
   formatMoney,
@@ -67,7 +66,7 @@ export function InvoiceHistory({
   const first = (currentPage - 1) * pageSize
   const visible = filtered.slice(first, first + pageSize)
   return (
-    <section className="ic-editor ic-panel" aria-label="Invoice history">
+    <section className="ic-editor" aria-label="Invoice history">
       <div className="ic-filter">
         <label className="ic-field">
           Search invoices
@@ -216,7 +215,7 @@ export function Companies({
   theme,
 }: {
   companies: Company[]
-  save: (company: Company) => boolean
+  save: (company: Company) => { ok: true } | { ok: false; message?: string }
   remove: (company: Company) => void
   theme: Theme
 }) {
@@ -240,20 +239,15 @@ export function Companies({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected) return
-    const problem = companyError(selected)
-    if (problem) {
-      setSaveAttempted(true)
-      setError(problem)
-      return
-    }
-    if (save(selected)) edit(null)
+    const result = save(selected)
+    if (result.ok) edit(null)
     else {
       setSaveAttempted(true)
-      setError('Company could not be saved. Check browser storage and try again.')
+      setError(result.message ?? 'Company could not be saved. Check browser storage and try again.')
     }
   }
   return (
-    <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="companies-title">
+    <section className="ic-editor ic-master-panel" aria-labelledby="companies-title">
       <h2 id="companies-title" className="sr-only">
         Companies
       </h2>
@@ -457,7 +451,7 @@ export function Backup({
   )
   return (
     <div className="ic-backup-layout ic-dialog-body">
-      <section className="ic-backup-storage" aria-label="Local storage">
+      <section aria-label="Local storage">
         <h2 className="ic-backup-section-title">Local storage</h2>
         <dl className="ic-stats">
           <div>

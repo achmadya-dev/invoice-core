@@ -1,13 +1,13 @@
 # Review procedure
 
-Read the task, actual diff, `docs/CODE_STANDARDS.md`, affected domain/context, tests, and recorded local verification evidence independently. No GitHub Actions CI is configured. Use `docs/PATTERNS.md` to detect unnecessary new patterns, but treat `docs/CODE_STANDARDS.md` as the normative contract.
+Read the task, actual diff, `docs/CODE_STANDARDS.md`, affected domain/context, tests, and recorded local verification evidence independently. GitHub Actions CI (`.github/workflows/ci.yml`) runs automated `check` and `browser` jobs, while reviewers still verify local evidence and domain accuracy. Use `docs/PATTERNS.md` to detect unnecessary new patterns, but treat `docs/CODE_STANDARDS.md` as the normative contract.
 
 Review in this order:
 
 1. **Contract**: does the implementation satisfy the accepted behavior without unrelated scope?
-2. **Boundaries**: are domain, repository, server-function, route, and shared-server responsibilities separated correctly?
-3. **Trust/security**: are untrusted inputs validated, authorization/policy checks before side effects, secrets protected, and server-only dependencies kept out of client code?
-4. **Data integrity**: are SQL queries parameterized, concurrency-sensitive invariants enforced by the database, migrations safe/forward-only, and known database errors translated narrowly?
+2. **Boundaries**: are `domain/`, `document.ts`, `*.browser.ts`, UI components, and `routes/` responsibilities separated correctly?
+3. **Trust/security**: are untrusted inputs (forms, `localStorage`, imported JSON backups, uploaded logos) validated at boundaries, and client-only PDF/offline modules kept out of SSR?
+4. **Data integrity**: are decimal calculations rounded consistently, storage writes guarded against unreadable overwrites or stale tabs, and backup schema versions preserved?
 5. **Failure behavior**: are expected business failures explicit and unexpected failures preserved rather than swallowed?
 6. **Tests**: do tests prove behavior at the cheapest correct layer, include meaningful negative cases, and avoid merely mirroring the implementation?
 7. **Simplicity**: did the change avoid speculative dependencies, generic service/helper layers, and abstractions without a current concrete need?

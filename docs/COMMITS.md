@@ -44,25 +44,25 @@ Scope is optional and should describe the area changed, not a person's name or t
 The subject should describe the result, not the act of working on it. Keep it specific, ideally 72 characters or fewer, and omit an issue number when it can go in a footer.
 
 ```text
-feat(auth): add password reset flow
-fix(api): reject malformed pagination cursor
-refactor(domain): extract order pricing policy
-test(checkout): cover declined payment path
+feat(invoice): add product bundle picker
+fix(pdf): keep long currency totals on one line
+refactor(domain): extract company validation helper
+test(backup): reject oversized workspace payloads
 docs(workflow): clarify release evidence
-ci(github): verify pull request metadata
+ci(github): run verify checks on pull requests
 ```
 
-Avoid vague subjects such as `fix: update code`, `chore: changes`, or `feat: work on auth`.
+Avoid vague subjects such as `fix: update code`, `chore: changes`, or `feat: work on invoice`.
 
 ## Body and breaking changes
 
 Use a body when a commit needs more context. Focus on why the change exists and its impact instead of repeating the diff.
 
 ```text
-fix(checkout): prevent duplicate payment submission
+fix(invoice): prevent duplicate invoice number collisions
 
-Disable the submit path after the first accepted request so retries from
-rapid clicks cannot create multiple payment intents.
+Trim leading and trailing spaces and compare sender keys case-insensitively
+before advancing the company numbering sequence.
 
 Refs #214
 ```

@@ -30,7 +30,9 @@ try {
   execFileSync('gh', ['auth', 'status'], { stdio: 'pipe' })
   console.log('OK GitHub CLI authenticated')
 } catch {
-  console.log('OPTIONAL GitHub CLI not ready; use docs/tasks for local planning')
+  console.log(
+    'OPTIONAL GitHub CLI not authenticated; run gh auth login to manage issues and PRs from the CLI',
+  )
 }
 const owners = readFileSync('.github/CODEOWNERS', 'utf8')
 console.log(
@@ -39,5 +41,5 @@ console.log(
     : 'SETUP configure CODEOWNERS with a real reviewer',
 )
 console.log(
-  'MANUAL No GitHub Actions CI is configured. Review local verification evidence and configure available GitHub PR protections without requiring nonexistent checks.',
+  'MANUAL GitHub Actions CI is configured in .github/workflows/ci.yml. Verify repository branch protection and rulesets in GitHub settings separately.',
 )

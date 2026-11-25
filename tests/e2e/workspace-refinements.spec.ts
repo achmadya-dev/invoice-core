@@ -340,8 +340,8 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
 
   // 2. Edited new draft: Create invoice + Reset draft equal 50/50 row 1, Download PDF full row 2
-  await sheet.getByLabel('Sender name').fill('Nusantara Studio')
-  await sheet.getByRole('textbox', { name: 'Client', exact: true }).fill('Maju Bersama')
+  await sheet.getByLabel('Sender name').fill('Northline Studio')
+  await sheet.getByRole('textbox', { name: 'Client', exact: true }).fill('Fieldwork Press')
   await sheet.getByLabel('Description, item 1').fill('Product design sprint')
 
   const resetBtn = stage.getByRole('button', { name: 'Reset draft', exact: true })
@@ -423,7 +423,7 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
 test('opens invoices in a modal from Create, row click, Edit, and Duplicate without triggering row actions', async ({
   page,
 }, info) => {
-  const company = { ...newCompany('Achmadya Dev'), padding: 8 }
+  const company = { ...newCompany('Northline Studio'), padding: 8 }
   const firstDraft = newInvoice(company, [])
   const firstResult = saveInvoice(
     { ...newWorkspace(), companies: [company] },
@@ -481,6 +481,7 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   await newDialog
     .locator('.ic-dialog-heading')
     .screenshot({ path: info.outputPath('modal-close-hover.png') })
+  await expect(newDialog).toHaveCSS('opacity', '1')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -511,6 +512,7 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
     .click()
   const detailsDialog = page.getByRole('dialog', { name: 'Invoice details' })
   await expect(detailsDialog).toBeVisible()
+  await expect(detailsDialog).toHaveCSS('opacity', '1')
   await expect(detailsDialog.getByLabel('Invoice number')).toHaveValue('INV-00000001')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.screenshot({ path: info.outputPath('invoice-modal-desktop.png') })
@@ -569,6 +571,7 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   await expect(detailsDialog).toBeVisible()
   await detailsDialog.getByRole('button', { name: 'Delete', exact: true }).click()
   await expect(confirm).toBeVisible()
+  await expect(confirm).toHaveCSS('opacity', '1')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await confirm.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(confirm).toHaveCount(0)
@@ -795,6 +798,7 @@ test('places compact saved client and product modal triggers beside Bill to and 
   await clientBtn.click()
   const clientModal = page.getByRole('dialog', { name: 'Use saved client' })
   await expect(clientModal).toBeVisible()
+  await expect(clientModal).toHaveCSS('opacity', '1')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.emulateMedia({ colorScheme: 'dark' })
   await expect(clientModal).toHaveCSS('color-scheme', 'dark')
@@ -808,6 +812,7 @@ test('places compact saved client and product modal triggers beside Bill to and 
   await productBtn.click()
   const productModal = page.getByRole('dialog', { name: 'Add product' })
   await expect(productModal).toBeVisible()
+  await expect(productModal).toHaveCSS('opacity', '1')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await productModal.getByRole('button', { name: 'Close dialog' }).click()
   await expect(productModal).toHaveCount(0)

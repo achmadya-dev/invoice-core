@@ -2,11 +2,11 @@
 
 ## Sources of truth
 
-Code and repository documentation describe the current system. Issues capture requests and acceptance criteria; pull requests capture changes and verification evidence. Use `docs/tasks/TEMPLATE.md` for a versioned local plan when GitHub is unavailable, or when an issue cannot carry a necessary local plan. Do not commit completed task logs by default; see `docs/tasks/README.md`. Link records instead of duplicating information that will quickly go stale.
+Code and repository documentation describe the current system. GitHub issues capture requests and acceptance criteria; pull requests capture changes and verification evidence. Link records instead of duplicating information that will quickly go stale.
 
 ## Progress without status bookkeeping
 
-The agent owns routine progress records. An open issue holds the scope, an open PR holds the change and verification, and a merged PR closes its linked issue when `Closes #...` is used. Do not require a Project board, labels, manual state transitions, or status-only commits. When blocked, the agent records the reason and next action in the issue or local task and tells the user what decision or access is needed. A retained local task may use its `Status` field, but it is a truthful note, not a separate workflow gate.
+The agent owns routine progress records. An open issue holds the scope, an open PR holds the change and verification, and a merged PR closes its linked issue when `Closes #...` is used. Do not require a Project board, labels, manual state transitions, or status-only commits. When blocked, the agent records the reason and next action in the issue or PR and tells the user what decision or access is needed.
 
 The agent works during an active request, not as an unattended background service. The user supplies the outcome and decides material unknowns, merge for each PR, and other external or irreversible actions.
 
@@ -18,15 +18,15 @@ The agent works during an active request, not as an unattended background servic
 
 ## Default path for natural-language requests
 
-The user may simply describe an outcome, such as "Let an administrator export their own account data" or "Fix the account form error." The agent handles routine workflow steps without asking for each one. These are instructions to coding agents, not permission to take external actions beyond the request.
+The user may simply describe an outcome, such as "Add a currency filter to invoice history" or "Fix the PDF total alignment on narrow viewports." The agent handles routine workflow steps without asking for each one. These are instructions to coding agents, not permission to take external actions beyond the request.
 
 1. **Route the request.** A question gets an answer; "plan/design only" produces a plan without application changes; "review" reports findings without fixes. A clear request to build/fix/refactor authorizes the corresponding reversible work. Read `AGENTS.md`, product/domain context, Git status, the nearest implementation, and the relevant runbook. A user's "do it" is not a substitute for undecided business rules.
-2. **Establish the task.** Reuse a matching issue or task; otherwise prefer a real same-repository issue when GitHub access is available, or create a local `docs/tasks/` record when it is not. Use both only when a durable local plan adds value, and link them instead of duplicating details. Write the goal, numbered acceptance criteria, risk, verification, compatibility, and any material unknowns before changing application behavior. Proceed when the authorized scope is clear; ask only about material unknowns. If GitHub is unavailable, keep truthful local links (`not-created`) and continue authorized work where possible.
+2. **Establish the task.** Reuse a matching issue; otherwise create a real same-repository issue when GitHub access is available. Write the goal, numbered acceptance criteria, risk, verification, compatibility, and any material unknowns before changing application behavior. Proceed when the authorized scope is clear; ask only about material unknowns.
 3. **Work without extra ceremony.** For implementation, create/use one task branch from the appropriate base (not `main`), implement the smallest complete change, add relevant tests, and run the checks. Ask about decisions affecting data, money, access, scope, or external side effects before acting on them. Do not create duplicate issues, overwrite user changes, or request routine approval again. A plan-only or review-only request stops before this step.
-4. **Prepare review.** Record the tested revision, actual command results, failures, and limitations in the issue/PR or local task. Inspect the final diff and sensitive paths, verify the PR body with the trusted-base `scripts/check-pr.mjs`, and create a PR using `.github/PULL_REQUEST_TEMPLATE.md` if access and authorization exist. If a PR cannot be created, provide a local handoff rather than a fabricated link. Transfer any local-only evidence into the issue/PR and remove a redundant local task on the same branch before merge. Git hooks and self-reported local results are not hosted CI or independent approval.
+4. **Prepare review.** Record the tested revision, actual command results, failures, and limitations in the issue/PR. Inspect the final diff and sensitive paths, verify the PR body with the trusted-base `scripts/check-pr.mjs`, and create a PR using `.github/PULL_REQUEST_TEMPLATE.md` if access and authorization exist. If a PR cannot be created, report the verified local state rather than a fabricated link. Local Git hooks and self-reported results are not independent review or approval.
 5. **Finish only when appropriate.** Respond to review feedback on the same branch; re-run affected tests after changes. Ask for explicit permission to merge each PR; deployment, production migration, payment, and other destructive actions require action-specific authorization. The narrow post-merge task-branch cleanup in this workflow is the only branch-deletion exception. After an authorized merge, report the outcome and confirm the linked issue closed. If a decision or access blocks progress, record the blocker and next action without creating a new status workflow.
 
-For example, "Fix the account form error" authorizes investigation, a regression test, the fix, local verification, and a reviewable PR without the user spelling out those steps. "Plan how to fix the account form error" stops after a plan. "Deploy the fix" is a separate action that requires a specific target and authorization. Agents may use a GitHub Project board if one is configured, but this repository does not require one.
+For example, "Fix the PDF download filename escaping" authorizes investigation, a regression test, the fix, local verification, and a reviewable PR without the user spelling out those steps. "Plan how to add multi-page invoice numbering" stops after a plan. "Deploy the fix" is a separate action that requires a specific target and authorization. Agents may use a GitHub Project board if one is configured, but this repository does not require one.
 
 ## UI review evidence
 
@@ -52,7 +52,7 @@ Delete only the eligible task branch, using normal non-force deletion. If any ch
 1. Read the product/domain context, related code, Git status, and relevant tests.
 2. Define the outcome, scope, invariants, numbered acceptance criteria, risks, steps, and verification.
 3. Ask only about material choices. Record routine assumptions.
-4. Create a GitHub issue or a local task from the template as appropriate. Reuse a matching record before creating another; create both only when a local plan adds value and link them. Keep durable decisions in their canonical documentation rather than in a task log. Record the plan revision and source of authorization; never invent approval.
+4. Create or reuse a GitHub issue. Keep durable decisions in their canonical documentation rather than in an issue comment log. Record the plan revision and source of authorization; never invent approval.
 5. Update the plan when material scope changes. Earlier authorization does not automatically apply to new scope.
 
 ## Implementation
@@ -78,9 +78,9 @@ Use Conventional Commits as described in `docs/COMMITS.md`:
 Examples:
 
 ```text
-feat(auth): add password reset flow
-fix(api): reject malformed pagination cursor
-refactor(domain): extract order pricing policy
+feat(invoice): add product bundle picker
+fix(pdf): keep long currency totals on one line
+refactor(domain): extract company validation helper
 docs: clarify local setup
 ```
 
@@ -88,15 +88,11 @@ Mark breaking changes with `!` or a `BREAKING CHANGE:` footer. AI agents follow 
 
 ## Review and merge
 
-Run the PR verifier locally to check metadata structure and some sensitive paths. Reviewers check substance, acceptance criteria, tests, and domain impact. There is no GitHub Actions CI or automatic approval, auto-merge, or deployment. Local results are self-reported and do not provide an independent gate.
+Run the PR verifier locally to check metadata structure and some sensitive paths. Reviewers check substance, acceptance criteria, tests, and domain impact. GitHub Actions CI (`.github/workflows/ci.yml`) runs automated checks, but there is no automatic approval, auto-merge, or deployment. Local results are self-reported and do not provide an independent gate.
 
 `scripts/check-pr.mjs` is the executable metadata contract, retained for local use. The pull request template is the starting point; check the body and changed-file list against the verifier from the trusted base revision before submitting. The CLI entry point expects `GITHUB_EVENT_PATH` with a pull-request event and both base/head revisions available locally; its `validatePr(body, files)` export can be used for a local check. Record the result and tested commit on the PR. If the contract fails, correct the metadata or scope; do not bypass the verifier.
 
 Repository owners should configure the GitHub protections available to them and remove any required checks that no longer run. If you are the only human contributor, see the solo workflow in `docs/GITHUB_SETUP.md`; do not add a fake reviewer to satisfy a rule.
-
-## Handoff
-
-When interrupting unfinished work or handing it to another session, the agent records the task, branch, latest commit, uncommitted files, test results, blockers, and next step in `docs/HANDOFF.md` if the context would otherwise be lost. Do not create a handoff for a completed PR or store secrets or a full chat transcript.
 
 ## Definition of done
 

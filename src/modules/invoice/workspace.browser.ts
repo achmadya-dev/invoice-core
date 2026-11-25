@@ -21,8 +21,7 @@ export function decodeWorkspace(raw: string): Workspace | null {
 }
 
 export type LocalWorkspace = { data: Workspace; raw: string | null; damaged: boolean }
-export const storageUnavailable =
-  'Browser storage is unavailable or full. Export a backup before leaving.'
+const storageUnavailable = 'Browser storage is unavailable or full. Export a backup before leaving.'
 
 export function loadWorkspace(): LocalWorkspace & { warning: string } {
   try {

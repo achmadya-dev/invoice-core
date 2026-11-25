@@ -2,6 +2,16 @@
   "name": "invoice-core",
   "version": "0.1.0",
   "private": true,
+  "description": "A local-first invoice editor with direct editing, live preview, downloadable A4 PDF, reusable company profiles, and offline support.",
+  "license": "MIT",
+  "homepage": "https://invoice.achmadya.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/achmadya-dev/invoice-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/achmadya-dev/invoice-core/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "bunx --bun vite --host 127.0.0.1",
@@ -19,7 +29,6 @@
     "check": "bun run format:check && bun run lint && bun run test:policy && bun run test && bun run build && bun run typecheck",
     "verify": "bun run check && bun run test:e2e && bun run test:production && bun run test:offline",
     "prepare": "husky",
-    "task:new": "bun scripts/new-task.mjs",
     "doctor": "bun scripts/doctor.mjs",
     "test:production": "bun scripts/smoke-production.mjs"
   },

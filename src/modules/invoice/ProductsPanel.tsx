@@ -31,7 +31,7 @@ export function ProductsPanel({
     setError('')
   }
   return (
-    <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="products-title">
+    <section className="ic-editor ic-master-panel" aria-labelledby="products-title">
       <h2 id="products-title" className="sr-only">
         Products
       </h2>

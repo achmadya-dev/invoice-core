@@ -2,14 +2,14 @@
 
 Manage branch protection in the Invoice Core repository settings. Repository files do not enable or prove those protections.
 
-Never commit `.env`, `node_modules`, build output, or credentials. Use `docs/tasks/TEMPLATE.md` for local planning when GitHub is unavailable. Do not invent historical issues or pull requests.
+Never commit `.env`, `node_modules`, build output, or credentials. Do not invent historical issues or pull requests.
 
 ## Repository settings
 
-1. Enable Issues. No GitHub Actions workflow is required.
+1. Enable Issues and GitHub Actions. [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs the `Quality, unit tests, and build` (`check`) and `Browser E2E and offline suite` (`browser`) jobs.
 2. Use the pull request template and link a real issue. Run `bun run verify` locally and record the tested commit, results, and limitations in the PR.
-3. Run the metadata verifier from a trusted base revision against the PR body and changed-file list; see `docs/WORKFLOW.md`. It is not a hosted check.
-4. Add a ruleset for `main` when supported: require pull requests, block force pushes and branch deletion. Do **not** require `quality`, `database-and-browser`, `pr-contract`, or any other check that does not run. Remove those required checks from existing rulesets or branch protection before relying on this workflow; otherwise merges may remain blocked.
+3. Run the metadata verifier (`scripts/check-pr.mjs`) from a trusted base revision against the PR body and changed-file list; see `docs/WORKFLOW.md`.
+4. Add a ruleset for `main` when supported: require pull requests, block force pushes and branch deletion, and require only checks that actually run in `.github/workflows/ci.yml` (such as `Quality, unit tests, and build` and `Browser E2E and offline suite`). Do **not** require nonexistent checks.
 5. Do not grant agents or agent GitHub Apps ruleset bypass access.
 6. Set `.github/CODEOWNERS` to a real account or team with write access.
 7. If an independent reviewer is available, require a review and CODEOWNERS approval; dismiss stale approvals after code changes.
@@ -23,9 +23,9 @@ GitHub does not allow an author to approve their own pull request. If you are th
 
 ## Issues and pull requests
 
-With GitHub access, start from a real issue containing the accepted criteria. Without it, use `bun run task:new first-feature` and `docs/tasks/TEMPLATE.md` as the local fallback. After implementation, push the branch and use `.github/PULL_REQUEST_TEMPLATE.md` to prepare the PR body.
+Start from a real GitHub issue containing the accepted criteria. After implementation, push the branch and use `.github/PULL_REQUEST_TEMPLATE.md` to prepare the PR body.
 
-Do not create a local task just to copy the issue. Replace example paths with real files and use the actual issue number in the pull request template. The local PR verifier validates the issue-reference format, not whether the issue exists or is correct; a reviewer must check the link. Re-run it after editing the PR body or changing the file list.
+Replace example paths with real files and use the actual issue number in the pull request template. The local PR verifier validates the issue-reference format, not whether the issue exists or is correct; a reviewer must check the link. Re-run it after editing the PR body or changing the file list.
 
 ## Local hooks and formatting
 
@@ -49,7 +49,7 @@ Reinstall hooks after cloning or changing Git configuration with:
 bun run prepare
 ```
 
-Local Git hooks can be bypassed. Without hosted CI there is no independently enforced test gate: reviewers must assess the recorded commands, results, tested commit, and changed files themselves.
+Local Git hooks can be bypassed. Even with GitHub Actions CI running `.github/workflows/ci.yml`, reviewers must still inspect the recorded commands, results, tested commit, and changed files themselves.
 
 ## Agent tools
 
