@@ -10,7 +10,7 @@ export function validatePr(body, files) {
   const risk = body.match(/^Risk: (low|medium|high)\s*$/m)?.[1]
   if (!risk) errors.push('Set Risk: low, medium, or high')
   const critical = files.some((file) =>
-    /^(?:\.github\/|\.ai\/|\.cursor\/|\.githooks\/|scripts\/|db\/migrations\/|AGENTS\.md$|CLAUDE\.md$|docs\/(?:ARCHITECTURE|CODE_STANDARDS|PATTERNS)\.md$|docs\/workflows\/|package(?:-lock)?\.json$|bun\.lockb?$|bunfig\.toml$|\.bun-version$|\.nvmrc$|\.npmrc$|.*(?:auth|payment|ledger|tenant)[^/]*\/)/i.test(
+    /^(?:\.github\/|\.ai\/|\.agents\/|\.claude\/|\.codex\/|\.cursor\/|\.opencode\/|\.husky\/|scripts\/|AGENTS\.md$|CLAUDE\.md$|docs\/(?:ARCHITECTURE|CODE_STANDARDS|PATTERNS)\.md$|docs\/workflows\/|package(?:-lock)?\.json$|bun\.lockb?$|bunfig\.toml$|\.bun-version$|\.nvmrc$|\.npmrc$|.*(?:auth|payment|ledger|tenant)[^/]*\/)/i.test(
       file,
     ),
   )

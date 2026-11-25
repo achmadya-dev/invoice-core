@@ -32,6 +32,8 @@ for (const file of [
   'bun.lock',
   'bunfig.toml',
   '.bun-version',
+  '.husky/pre-commit',
+  '.agents/agents/reviewer.md',
   'docs/ARCHITECTURE.md',
   'docs/CODE_STANDARDS.md',
   'docs/PATTERNS.md',

@@ -39,5 +39,5 @@ console.log(
     : 'SETUP configure CODEOWNERS with a real reviewer',
 )
 console.log(
-  'MANUAL No GitHub Actions CI is configured. Review local verification evidence and configure available GitHub PR protections without requiring nonexistent checks.',
+  'MANUAL GitHub Actions CI is configured in .github/workflows/ci.yml. Verify repository branch protection and rulesets in GitHub settings separately.',
 )
