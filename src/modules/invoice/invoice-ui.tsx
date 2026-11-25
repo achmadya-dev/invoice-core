@@ -15,7 +15,7 @@ export const fieldsGridClass = 'grid grid-cols-2 gap-x-3 gap-y-2.5 max-[480px]:g
 export const buttonClass =
   'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-line bg-ic-surface px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-accent enabled:hover:bg-ic-soft'
 export const primaryButtonClass =
-  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-accent bg-ic-accent px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-white enabled:hover:brightness-[0.92]'
+  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-action-bg bg-ic-action-bg px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-action-ink enabled:hover:brightness-[0.92]'
 export const dangerButtonClass =
   'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-error bg-ic-error-bg px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-error enabled:hover:brightness-95'
 export const textButtonClass =
@@ -50,6 +50,8 @@ const icons = {
   upload: 'M12 15V3m-5 5 5-5 5 5M4 16v4h16v-4',
   chevron: 'm6 9 6 6 6-6',
   check: 'm5 12 4 4L19 6',
+  sun: 'M12 3v2m0 14v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M3 12h2m14 0h2M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+  moon: 'M20 14.5A7.5 7.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z',
   pipette:
     'm14 4 6 6m-2-2-9.5 9.5a2 2 0 0 1-1.1.55L4 19l.95-3.4a2 2 0 0 1 .55-1.1L15 5l3 3Zm-5 1 6 6',
 } as const
@@ -402,7 +404,7 @@ export function CountrySelect({
         </Combobox.InputGroup>
         <Combobox.Portal>
           <Combobox.Positioner className="z-63 outline-none" sideOffset={4}>
-            <Combobox.Popup className="ic-country-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-lg border border-ic-line bg-ic-surface p-1 text-ic-ink scheme-light shadow-[0_10px_28px_rgb(25_20_38/18%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
+            <Combobox.Popup className="ic-country-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-lg border border-ic-line bg-ic-surface p-1 text-ic-ink shadow-[0_10px_28px_rgb(25_20_38/18%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
               <Combobox.Empty>
                 <div className="p-[9px] text-[13px] text-ic-muted">No countries match.</div>
               </Combobox.Empty>
@@ -744,7 +746,7 @@ export function ColorPicker({
         title={value.toUpperCase()}
       >
         <span
-          className="size-[18px] shrink-0 rounded-full border border-[#0000001f]"
+          className="size-[18px] shrink-0 rounded-full border border-ic-line"
           style={{ backgroundColor: value }}
           aria-hidden="true"
         />

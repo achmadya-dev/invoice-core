@@ -309,7 +309,7 @@ test('never resumes or backs up an unsaved form and always creates a fresh invoi
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download backup' }).click()
   const backup = JSON.parse(await readFile(await (await pending).path(), 'utf8'))
-  expect(backup).toEqual({ version: 4, companies: [], invoices: [], products: [], theme: 'light' })
+  expect(backup).toEqual({ version: 4, companies: [], invoices: [], products: [], theme: 'system' })
 })
 
 test('aligns invoice sheet action buttons cleanly across mobile states', async ({ page }, info) => {
@@ -710,7 +710,7 @@ test('removes the nested dark editor header bar and aligns More options in 3 col
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 
   await page.emulateMedia({ colorScheme: 'dark' })
-  await expect(dialog).toHaveCSS('color-scheme', 'light')
+  await expect(dialog).toHaveCSS('color-scheme', 'dark')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 
   await page.emulateMedia({ colorScheme: 'light' })
@@ -801,7 +801,7 @@ test('places compact saved client and product modal triggers beside Bill to and 
   await expect(clientModal).toHaveCSS('opacity', '1')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.emulateMedia({ colorScheme: 'dark' })
-  await expect(clientModal).toHaveCSS('color-scheme', 'light')
+  await expect(clientModal).toHaveCSS('color-scheme', 'dark')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.emulateMedia({ colorScheme: 'light' })
   await clientModal.screenshot({ path: info.outputPath('invoice-picker-modal-desktop.png') })

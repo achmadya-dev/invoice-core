@@ -12,7 +12,7 @@ These screenshots illustrate the live Invoice Core interface in [`README.md`](..
 | [`invoice-editor.png`](invoice-editor.png) | Direct on-sheet editor (`INV-0042`, Classic layout) | `1280×1010` | Light |
 | [`invoice-preview-modern.png`](invoice-preview-modern.png) | Read-only A4 Preview (`INV-0043`, Modern emerald layout) | `1280×900` | Light |
 | [`workspace-invoices.png`](workspace-invoices.png) | Invoices tab with searchable history | `1280×820` | Light |
-| [`catalog-products.png`](catalog-products.png) | Products catalog tab with multi-line bundles | `1280×640` | Light |
+| [`catalog-products-dark.png`](catalog-products-dark.png) | Products catalog tab with multi-line bundles (topbar Dark mode enabled) | `1280×640` | Dark |
 | [`mobile-workspace.png`](mobile-workspace.png) | Responsive mobile Invoices workspace | `390×844` | Light |
 
 ## Update policy

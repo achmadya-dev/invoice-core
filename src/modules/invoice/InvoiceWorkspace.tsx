@@ -11,6 +11,7 @@ import {
   saveInvoice,
   saveProduct,
   type Invoice,
+  type Theme,
   type Workspace,
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
@@ -84,6 +85,8 @@ export function InvoiceWorkspace() {
   const [confirmModal, setConfirmModal] = useState<ConfirmState | null>(null)
   const [saveAttempted, setSaveAttempted] = useState(false)
   const [editor, setEditor] = useState<{ invoice: Invoice; edited: boolean } | null>(null)
+  const [systemDark, setSystemDark] = useState(false)
+  const [damagedTheme, setDamagedTheme] = useState<Theme | null>(null)
   const draft = editor?.invoice
 
   useEffect(() => {
@@ -91,6 +94,12 @@ export function InvoiceWorkspace() {
     current.current = initial
     setLocal(initial)
     setStorageWarning(initial.warning)
+    const darkMedia = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (darkMedia) {
+      setSystemDark(darkMedia.matches)
+    }
+    const onMediaChange = (event: MediaQueryListEvent) => setSystemDark(event.matches)
+    darkMedia?.addEventListener('change', onMediaChange)
     const crossTab = (event: StorageEvent) => {
       if (
         (event.key === storageKey || event.key === null) &&
@@ -123,6 +132,7 @@ export function InvoiceWorkspace() {
     window.addEventListener('hashchange', syncFromLocation)
     window.addEventListener('popstate', syncFromLocation)
     return () => {
+      darkMedia?.removeEventListener('change', onMediaChange)
       window.removeEventListener('storage', crossTab)
       window.removeEventListener('hashchange', syncFromLocation)
       window.removeEventListener('popstate', syncFromLocation)
@@ -140,6 +150,18 @@ export function InvoiceWorkspace() {
     }
   }, [])
 
+  const theme: Theme = local?.damaged
+    ? (damagedTheme ?? local.data.theme)
+    : (local?.data.theme ?? 'system')
+  const isDark = theme === 'dark' || (theme === 'system' && systemDark)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    return () => {
+      delete document.documentElement.dataset.theme
+    }
+  }, [theme])
+
   function commit(data: Workspace, options: { restore?: boolean } = {}) {
     const before = current.current
     if (!before) return false
@@ -150,6 +172,7 @@ export function InvoiceWorkspace() {
     }
     current.current = result.value
     setLocal(result.value)
+    setDamagedTheme(null)
     setStorageWarning('')
     return true
   }
@@ -281,12 +304,26 @@ export function InvoiceWorkspace() {
     }
   }
 
+  function toggleTheme() {
+    const nextTheme: Theme = isDark ? 'light' : 'dark'
+    const active = current.current
+    if (!active) return
+    if (active.damaged) {
+      setDamagedTheme(nextTheme)
+      return
+    }
+    commit({ ...active.data, theme: nextTheme })
+  }
+
   const data = local?.data
   const copy = tabCopy[tab]
   const isSavedDraft =
     data && draft ? data.invoices.some((invoice) => invoice.id === draft.id) : false
   return (
-    <div className="ic-workspace min-h-screen bg-ic-ground text-ic-ink print:block print:min-h-0 print:bg-white print:p-0 print:text-ic-ink">
+    <div
+      className="ic-workspace min-h-screen bg-ic-ground text-ic-ink print:block print:min-h-0 print:bg-white print:p-0 print:text-ic-ink"
+      data-theme={theme}
+    >
       <header className="ic-topbar bg-ic-deep text-white print:hidden">
         <div className={`${shellClass} flex min-h-16 items-center justify-between gap-4`}>
           <button
@@ -299,6 +336,26 @@ export function InvoiceWorkspace() {
             </span>{' '}
             Invoice Core
           </button>
+          {data && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isDark}
+              className="inline-flex min-h-9 flex-none items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-bold whitespace-nowrap text-white transition-colors duration-150 hover:bg-white/20 motion-reduce:transition-none"
+              onClick={toggleTheme}
+            >
+              <Icon name={isDark ? 'moon' : 'sun'} className="size-4 flex-none text-ic-stamp" />
+              <span className="max-[380px]:sr-only">Dark mode</span>
+              <span
+                aria-hidden="true"
+                className={`inline-flex h-[18px] w-8 flex-none items-center rounded-full p-0.5 transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'bg-ic-stamp/35' : 'bg-white/25'}`}
+              >
+                <span
+                  className={`size-3.5 rounded-full transition-transform duration-150 motion-reduce:transition-none ${isDark ? 'translate-x-3.5 bg-ic-stamp' : 'translate-x-0 bg-white'}`}
+                />
+              </span>
+            </button>
+          )}
         </div>
       </header>
       <main className={shellClass}>

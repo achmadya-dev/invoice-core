@@ -7,7 +7,7 @@ Invoice Core is a single TanStack Start application. Bun serves the Nitro build,
 ## Invoice boundaries
 
 - `src/routes/` owns route metadata, initial HTML and the not-found and error states. `/` is the only product route.
-- `src/modules/invoice/` owns editing, preview, searchable history, sender profiles, backup/restore, and the light-only workspace UI (preserving legacy `theme` backup compatibility).
+- `src/modules/invoice/` owns editing, preview, searchable history, sender profiles, backup/restore, and the light/dark workspace UI (including the topbar theme switch and persisted `theme` preference in backups).
 - `domain/` owns the versioned workspace schema, invoice and numbering invariants, and decimal calculations. It does not import React or browser I/O.
 - `workspace.browser.ts` owns browser storage and file I/O. It validates stored or imported data before use and does not overwrite unreadable data without confirmation.
 - `document.ts` translates one invoice into formatted document data for the preview and the client-only PDF renderer.
