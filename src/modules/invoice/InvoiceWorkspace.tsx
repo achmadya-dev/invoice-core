@@ -341,18 +341,26 @@ export function InvoiceWorkspace() {
               type="button"
               role="switch"
               aria-checked={isDark}
-              className="inline-flex min-h-9 flex-none items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-bold whitespace-nowrap text-white transition-colors duration-150 hover:bg-white/20 motion-reduce:transition-none"
+              aria-label="Dark mode"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="group relative inline-grid h-9 w-16 flex-none grid-cols-2 items-center rounded-[9px] border border-white/15 bg-black/20 p-[3px] transition-colors duration-150 hover:border-white/25 hover:bg-black/30 motion-reduce:transition-none"
               onClick={toggleTheme}
             >
-              <Icon name={isDark ? 'moon' : 'sun'} className="size-4 flex-none text-ic-stamp" />
-              <span className="max-[380px]:sr-only">Dark mode</span>
               <span
                 aria-hidden="true"
-                className={`inline-flex h-[18px] w-8 flex-none items-center rounded-full p-0.5 transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'bg-ic-stamp/35' : 'bg-white/25'}`}
+                className={`pointer-events-none absolute top-[3px] left-[3px] size-7 rounded-md bg-white/15 shadow-[0_1px_2px_rgb(0_0_0/25%)] transition-transform duration-200 ease-out motion-reduce:transition-none ${isDark ? 'translate-x-full' : 'translate-x-0'}`}
+              />
+              <span
+                aria-hidden="true"
+                className={`relative z-1 grid size-7 place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-white/45 group-hover:text-white/75' : 'text-white'}`}
               >
-                <span
-                  className={`size-3.5 rounded-full transition-transform duration-150 motion-reduce:transition-none ${isDark ? 'translate-x-3.5 bg-ic-stamp' : 'translate-x-0 bg-white'}`}
-                />
+                <Icon name="sun" className="size-[15px] flex-none" />
+              </span>
+              <span
+                aria-hidden="true"
+                className={`relative z-1 grid size-7 place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-white' : 'text-white/45 group-hover:text-white/75'}`}
+              >
+                <Icon name="moon" className="size-[15px] flex-none" />
               </span>
             </button>
           )}
