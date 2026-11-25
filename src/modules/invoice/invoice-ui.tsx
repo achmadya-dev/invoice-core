@@ -19,21 +19,11 @@ const countryOptions = countryCodes
 
 const icons = {
   mark: 'M4 5h10l6 6v8h-5v-6l-4-4H4zM4 13h5l3 3v3H4z',
-  document:
-    'M13 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9m-6-6v6h6m-6-6 6 6M8 13h8m-8 4h5',
   edit: 'M12 20H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h10m-5 12 1-4 7.5-7.5a1.4 1.4 0 0 1 2 2L13 15l-3 2Z',
   plus: 'M12 5v14M5 12h14',
   close: 'm7 7 10 10M17 7 7 17',
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4',
   upload: 'M12 15V3m-5 5 5-5 5 5M4 16v4h16v-4',
-  expand: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
-  collapse: 'M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7',
-  arrow: 'M5 12h14m-5-5 5 5-5 5',
-  back: 'M19 12H5m5 5-5-5 5-5',
-  system: 'M3 5h18v12H3zM12 17v3m-4 0h8',
-  light:
-    'M16 12a4 4 0 1 1-8 0 4 4 0 1 1 8 0ZM12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5',
-  dark: 'M20.8 14.4A9 9 0 0 1 9.6 3.2a9 9 0 1 0 11.2 11.2Z',
   chevron: 'm6 9 6 6 6-6',
   check: 'm5 12 4 4L19 6',
   pipette:

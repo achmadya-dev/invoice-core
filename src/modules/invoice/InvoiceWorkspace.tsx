@@ -7,6 +7,7 @@ import {
   newWorkspace,
   resolveAccentColor,
   resolveInvoiceLayout,
+  saveCompany,
   saveInvoice,
   saveProduct,
   type Invoice,
@@ -401,13 +402,13 @@ export function InvoiceWorkspace() {
                   companies={data.companies}
                   theme={data.theme}
                   save={(company) => {
-                    const exists = data.companies.some((entry) => entry.id === company.id)
-                    const companies = exists
-                      ? data.companies.map((entry) => (entry.id === company.id ? company : entry))
-                      : [...data.companies, company]
-                    const ok = commit({ ...data, companies })
-                    if (ok) setMessage({ text: 'Sender profile saved.' })
-                    return ok
+                    const latest = current.current?.data
+                    if (!latest) return { ok: false }
+                    const result = saveCompany(latest, company)
+                    if (!result.ok) return result
+                    if (!commit(result.data)) return { ok: false }
+                    setMessage({ text: 'Sender profile saved.' })
+                    return { ok: true }
                   }}
                   remove={(company) => {
                     setConfirmModal({
@@ -442,6 +443,13 @@ export function InvoiceWorkspace() {
             onClose={() => {
               setBackupOpen(false)
               setBackupConfirm(null)
+              if (window.location.hash === '#backup') {
+                window.history.replaceState(
+                  null,
+                  '',
+                  `${window.location.pathname}${window.location.search}`,
+                )
+              }
             }}
           >
             {backupOpen && (

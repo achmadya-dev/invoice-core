@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
-  companyError,
   formatBytes,
   formatDate,
   formatMoney,
@@ -216,7 +215,7 @@ export function Companies({
   theme,
 }: {
   companies: Company[]
-  save: (company: Company) => boolean
+  save: (company: Company) => { ok: true } | { ok: false; message?: string }
   remove: (company: Company) => void
   theme: Theme
 }) {
@@ -240,16 +239,11 @@ export function Companies({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selected) return
-    const problem = companyError(selected)
-    if (problem) {
-      setSaveAttempted(true)
-      setError(problem)
-      return
-    }
-    if (save(selected)) edit(null)
+    const result = save(selected)
+    if (result.ok) edit(null)
     else {
       setSaveAttempted(true)
-      setError('Company could not be saved. Check browser storage and try again.')
+      setError(result.message ?? 'Company could not be saved. Check browser storage and try again.')
     }
   }
   return (

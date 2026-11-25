@@ -5,10 +5,12 @@ import {
   formatMoney,
   formatRate,
   invoiceTotals,
+  maxCompanies,
   newCompany,
   newInvoice,
   newItem,
   newWorkspace,
+  saveCompany,
   saveInvoice,
   type Invoice,
 } from '../../src/modules/invoice/domain/invoice'
@@ -149,5 +151,46 @@ describe('local invoice workspace', () => {
     expect(formatBytes(512)).toBe('512 B')
     expect(formatBytes(2560)).toBe('2.5 KB')
     expect(formatBytes(1_572_864)).toBe('1.50 MB')
+  })
+
+  it('validates and enforces capacity limits when saving companies', () => {
+    const workspace = newWorkspace()
+    const studio = newCompany('Northline Studio')
+    const created = saveCompany(workspace, studio)
+    if (!created.ok) throw new Error(created.message)
+    expect(created.data.companies).toEqual([studio])
+
+    const updated = saveCompany(created.data, { ...studio, prefix: 'NL-' })
+    if (!updated.ok) throw new Error(updated.message)
+    expect(updated.data.companies).toEqual([{ ...studio, prefix: 'NL-' }])
+
+    expect(
+      saveCompany(workspace, { ...studio, sender: { ...studio.sender, name: ' ' } }),
+    ).toMatchObject({
+      ok: false,
+    })
+    expect(saveCompany(workspace, { ...studio, taxRate: '101' })).toMatchObject({ ok: false })
+    expect(saveCompany(workspace, { ...studio, taxRate: '-1' })).toMatchObject({ ok: false })
+    expect(saveCompany(workspace, { ...studio, padding: 9 })).toMatchObject({ ok: false })
+    expect(
+      saveCompany(workspace, {
+        ...studio,
+        sender: { ...studio.sender, logo: 'https://example.invalid/logo.png' },
+      }),
+    ).toMatchObject({ ok: false })
+
+    const atCapacity = {
+      ...workspace,
+      companies: Array.from({ length: maxCompanies }, (_, index) =>
+        newCompany(`Studio ${index + 1}`),
+      ),
+    }
+    expect(saveCompany(atCapacity, newCompany('Overflow Studio'))).toMatchObject({
+      ok: false,
+      message: 'Remove a company before saving a new one.',
+    })
+    const existing = atCapacity.companies[0]
+    if (!existing) throw new Error('Expected a seeded company')
+    expect(saveCompany(atCapacity, { ...existing, prefix: 'EDIT-' })).toMatchObject({ ok: true })
   })
 })
