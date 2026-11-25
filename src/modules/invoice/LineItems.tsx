@@ -128,7 +128,7 @@ export function LineItems({
           </table>
         )}
       </div>
-      <div className="ic-actions ic-line-controls">
+      <div className="ic-actions">
         <button
           id={addButtonId}
           className="ic-button"

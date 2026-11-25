@@ -8,6 +8,7 @@ test('home has no automatically detectable accessibility violations', async ({ p
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Edit invoice' })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCSS('opacity', '1')
 
   const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations).toEqual([])

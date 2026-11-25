@@ -19,6 +19,7 @@ test('omits theme selector while respecting system color scheme and accessibilit
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 
   await backup.click()
+  await expect(dialog).toHaveCSS('opacity', '1')
   await expect(dialog.getByRole('combobox', { name: 'Theme', exact: true })).toHaveCount(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await dialog.getByRole('button', { name: 'Close dialog' }).click()

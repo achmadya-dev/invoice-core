@@ -66,7 +66,7 @@ export function InvoiceHistory({
   const first = (currentPage - 1) * pageSize
   const visible = filtered.slice(first, first + pageSize)
   return (
-    <section className="ic-editor ic-panel" aria-label="Invoice history">
+    <section className="ic-editor" aria-label="Invoice history">
       <div className="ic-filter">
         <label className="ic-field">
           Search invoices
@@ -247,7 +247,7 @@ export function Companies({
     }
   }
   return (
-    <section className="ic-editor ic-panel ic-master-panel" aria-labelledby="companies-title">
+    <section className="ic-editor ic-master-panel" aria-labelledby="companies-title">
       <h2 id="companies-title" className="sr-only">
         Companies
       </h2>
@@ -451,7 +451,7 @@ export function Backup({
   )
   return (
     <div className="ic-backup-layout ic-dialog-body">
-      <section className="ic-backup-storage" aria-label="Local storage">
+      <section aria-label="Local storage">
         <h2 className="ic-backup-section-title">Local storage</h2>
         <dl className="ic-stats">
           <div>
