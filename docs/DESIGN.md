@@ -4,7 +4,7 @@
 
 ## Visual system
 
-- Deep indigo (`#282049`) frames navigation and the proof. Working actions use indigo (`#4837a6`), the desk uses lavender (`#e8e5f4`), and yellow (`#f9e080`) marks the brand and amount due. Dark theme adjusts the desk and editor but preserves the white print proof.
+- Deep indigo (`#282049`) frames navigation and the proof. Working actions use indigo (`#4837a6`), the desk uses lavender (`#e8e5f4`), and yellow (`#f9e080`) marks the brand and amount due. Dark theme (following system color scheme by default or toggled from the topbar **Dark mode** switch) adjusts the desk, modals, and workspace while preserving the white print proof.
 - Bricolage Grotesque gives headings and the wordmark their shape; system sans keeps form labels and inputs familiar; tabular and monospace figures distinguish amounts and record references.
 - The amount slip is the strongest mark inside the invoice. Editing controls never appear in the read-only or printed document. PDF uses the same document data and calculation as preview, with a paginated A4 layout.
 - Present **Invoices**, **Products**, and **Companies** as three tabs on a single page, without a separate topbar switcher, keeping the same searchable list layout across Products and Companies.

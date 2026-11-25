@@ -12,7 +12,7 @@ Switch to **Preview** for a read-only document and back to **Edit** without losi
 
 ## Data and access
 
-No login is required. Invoice data, products, company profiles, and logos are stored in the browser profile for the current origin; UI appearance follows the browser's system color scheme while preserving `theme` compatibility in backups. They are not encrypted by the app or synchronized. Use a dedicated browser profile on a shared device and edit the workspace in one tab at a time. Export a private JSON backup before clearing site data, moving origins, or replacing the workspace. Restore accepts Invoice Core backups only.
+No login is required. Invoice data, products, company profiles, and logos are stored in the browser profile for the current origin; appearance defaults to the browser's system color scheme and can be toggled with the topbar **Dark mode** switch (persisted locally and in backups). They are not encrypted by the app or synchronized. Use a dedicated browser profile on a shared device and edit the workspace in one tab at a time. Export a private JSON backup before clearing site data, moving origins, or replacing the workspace. Restore accepts Invoice Core backups only.
 
 The built workspace can be installed and reopened offline in supported browsers after preparation on HTTPS or localhost.
 

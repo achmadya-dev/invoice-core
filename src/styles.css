@@ -1,1 +1,226 @@
 @import 'tailwindcss';
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('./modules/invoice/assets/bricolage-grotesque-latin.woff2') format('woff2');
+  font-weight: 400 800;
+  font-display: swap;
+}
+
+@theme {
+  --color-ic-ink: #22213a;
+  --color-ic-muted: #57556c;
+  --color-ic-accent: #4837a6;
+  --color-ic-deep: #282049;
+  --color-ic-desk: #e8e5f4;
+  --color-ic-paper: #ffffff;
+  --color-ic-surface: #ffffff;
+  --color-ic-ground: #f7f6fa;
+  --color-ic-soft: #f0edf9;
+  --color-ic-field: #fcfbfe;
+  --color-ic-line: #dedbe8;
+  --color-ic-stamp: #f9e080;
+  --color-ic-error: #8b2336;
+  --color-ic-error-bg: #fff2f4;
+  --color-ic-action-bg: #4837a6;
+  --color-ic-action-ink: #ffffff;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --color-ic-ink: #f3eefb;
+    --color-ic-muted: #c1b9d2;
+    --color-ic-accent: #d1c2ff;
+    --color-ic-deep: #221939;
+    --color-ic-desk: #463959;
+    --color-ic-surface: #241d33;
+    --color-ic-ground: #191426;
+    --color-ic-soft: #362d49;
+    --color-ic-field: #21192f;
+    --color-ic-line: #51465f;
+    --color-ic-error: #ffb6c6;
+    --color-ic-error-bg: #3e2232;
+    --color-ic-action-bg: #d4c6ff;
+    --color-ic-action-ink: #241b40;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme='system'] {
+      color-scheme: dark;
+      --color-ic-ink: #f3eefb;
+      --color-ic-muted: #c1b9d2;
+      --color-ic-accent: #d1c2ff;
+      --color-ic-deep: #221939;
+      --color-ic-desk: #463959;
+      --color-ic-surface: #241d33;
+      --color-ic-ground: #191426;
+      --color-ic-soft: #362d49;
+      --color-ic-field: #21192f;
+      --color-ic-line: #51465f;
+      --color-ic-error: #ffb6c6;
+      --color-ic-error-bg: #3e2232;
+      --color-ic-action-bg: #d4c6ff;
+      --color-ic-action-ink: #241b40;
+    }
+  }
+  .ic-proof {
+    color-scheme: light;
+    --color-ic-ink: #22213a;
+    --color-ic-muted: #57556c;
+    --color-ic-accent: #4837a6;
+    --color-ic-desk: #e8e5f4;
+    --color-ic-paper: #ffffff;
+    --color-ic-surface: #ffffff;
+    --color-ic-ground: #f7f6fa;
+    --color-ic-soft: #f0edf9;
+    --color-ic-field: #fcfbfe;
+    --color-ic-line: #dedbe8;
+    --color-ic-error: #8b2336;
+    --color-ic-error-bg: #fff2f4;
+    --color-ic-action-bg: #4837a6;
+    --color-ic-action-ink: #ffffff;
+  }
+  .ic-workspace,
+  .ic-modal-popup {
+    font:
+      14px/1.45 system-ui,
+      sans-serif;
+  }
+  :is(.ic-workspace, .ic-modal-popup) :focus-visible {
+    outline: 2px solid var(--color-ic-accent);
+    outline-offset: 3px;
+  }
+  .ic-topbar :focus-visible {
+    outline-color: var(--color-ic-stamp);
+  }
+  :is(.ic-workspace, .ic-modal-popup) ::selection {
+    background: var(--color-ic-stamp);
+    color: #22213a;
+  }
+  :is(.ic-workspace, .ic-modal-popup) :is(button, summary) {
+    cursor: pointer;
+  }
+  :is(.ic-workspace, .ic-modal-popup) button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  :is(.ic-workspace, .ic-modal-popup) :is(h1, h2, h3) {
+    font-family: var(--font-display);
+    font-weight: 730;
+  }
+  .ic-workspace h1 {
+    font-size: clamp(34px, 4vw, 52px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  :is(.ic-workspace, .ic-workspace-dialog) :is(input, select, textarea) {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    padding: 7px 9px;
+    border: 1px solid var(--color-ic-line);
+    border-radius: 7px;
+    color: var(--color-ic-ink);
+    background: var(--color-ic-field);
+    font:
+      400 14px/1.4 system-ui,
+      sans-serif;
+    caret-color: var(--color-ic-accent);
+  }
+  :is(.ic-workspace, .ic-workspace-dialog) select {
+    appearance: auto;
+    padding-right: 4px;
+  }
+  :is(.ic-workspace, .ic-workspace-dialog) :is(input, textarea)::placeholder {
+    color: var(--color-ic-muted);
+    opacity: 1;
+  }
+  :is(.ic-workspace, .ic-workspace-dialog) :is(input, textarea)[aria-invalid='true'] {
+    border-color: var(--color-ic-error);
+    background: var(--color-ic-error-bg);
+  }
+  :is(.ic-workspace, .ic-workspace-dialog) input[type='file'] {
+    font-size: 12px;
+  }
+  :is(.ic-workspace, .ic-workspace-dialog) input::file-selector-button {
+    margin-right: 8px;
+    padding: 4px 7px;
+    border-radius: 4px;
+    background: var(--color-ic-soft);
+    color: var(--color-ic-accent);
+  }
+  #invoice-editor :is(input:not([type='file']), textarea) {
+    min-height: 30px;
+    padding: 3px 0;
+    border-color: transparent;
+    border-radius: 3px;
+    background: transparent;
+    font: inherit;
+    cursor: text;
+  }
+  #invoice-editor :is(input:not([type='file']), textarea):hover {
+    background: var(--color-ic-field);
+  }
+  #invoice-editor :is(input, textarea):focus-visible {
+    outline-offset: 2px;
+  }
+  #invoice-editor input[aria-invalid='true'] {
+    border-color: var(--color-ic-error);
+    background: var(--color-ic-error-bg);
+  }
+  #invoice-editor textarea {
+    field-sizing: content;
+    resize: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ic-modal-popup,
+  .ic-select-popup,
+  .ic-country-popup {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  .ic-select-trigger,
+  .ic-country-group {
+    border-color: ButtonText;
+    color: FieldText;
+    background: Field;
+  }
+  .ic-select-option[data-highlighted],
+  .ic-country-option[data-highlighted] {
+    color: HighlightText;
+    background: Highlight;
+  }
+  .ic-switcher button[aria-pressed='true'] {
+    border: 1px solid Highlight;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  :root {
+    color-scheme: light;
+    --color-ic-ink: #22213a;
+    --color-ic-muted: #57556c;
+    --color-ic-line: #dedbe8;
+  }
+  .ic-proof {
+    print-color-adjust: exact;
+  }
+  .ic-proof-table tr,
+  .ic-amount {
+    break-inside: avoid;
+  }
+}

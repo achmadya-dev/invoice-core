@@ -11,15 +11,22 @@ import {
   saveInvoice,
   saveProduct,
   type Invoice,
+  type Theme,
   type Workspace,
 } from './domain/invoice'
 import { InvoiceEditor } from './InvoiceEditor'
 import { ProductsPanel } from './ProductsPanel'
 import {
+  actionsClass,
+  bannerClass,
+  buttonClass,
   ColorPicker,
   ConfirmModal,
+  errorBannerClass,
   Icon,
+  primaryButtonClass,
   SelectField,
+  shellClass,
   WorkspaceDialog,
   type ConfirmState,
 } from './invoice-ui'
@@ -78,6 +85,8 @@ export function InvoiceWorkspace() {
   const [confirmModal, setConfirmModal] = useState<ConfirmState | null>(null)
   const [saveAttempted, setSaveAttempted] = useState(false)
   const [editor, setEditor] = useState<{ invoice: Invoice; edited: boolean } | null>(null)
+  const [systemDark, setSystemDark] = useState(false)
+  const [damagedTheme, setDamagedTheme] = useState<Theme | null>(null)
   const draft = editor?.invoice
 
   useEffect(() => {
@@ -85,6 +94,12 @@ export function InvoiceWorkspace() {
     current.current = initial
     setLocal(initial)
     setStorageWarning(initial.warning)
+    const darkMedia = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (darkMedia) {
+      setSystemDark(darkMedia.matches)
+    }
+    const onMediaChange = (event: MediaQueryListEvent) => setSystemDark(event.matches)
+    darkMedia?.addEventListener('change', onMediaChange)
     const crossTab = (event: StorageEvent) => {
       if (
         (event.key === storageKey || event.key === null) &&
@@ -117,6 +132,7 @@ export function InvoiceWorkspace() {
     window.addEventListener('hashchange', syncFromLocation)
     window.addEventListener('popstate', syncFromLocation)
     return () => {
+      darkMedia?.removeEventListener('change', onMediaChange)
       window.removeEventListener('storage', crossTab)
       window.removeEventListener('hashchange', syncFromLocation)
       window.removeEventListener('popstate', syncFromLocation)
@@ -134,6 +150,18 @@ export function InvoiceWorkspace() {
     }
   }, [])
 
+  const theme: Theme = local?.damaged
+    ? (damagedTheme ?? local.data.theme)
+    : (local?.data.theme ?? 'system')
+  const isDark = theme === 'dark' || (theme === 'system' && systemDark)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    return () => {
+      delete document.documentElement.dataset.theme
+    }
+  }, [theme])
+
   function commit(data: Workspace, options: { restore?: boolean } = {}) {
     const before = current.current
     if (!before) return false
@@ -144,6 +172,7 @@ export function InvoiceWorkspace() {
     }
     current.current = result.value
     setLocal(result.value)
+    setDamagedTheme(null)
     setStorageWarning('')
     return true
   }
@@ -244,11 +273,7 @@ export function InvoiceWorkspace() {
   }
 
   function clearWorkspace() {
-    const fresh = newWorkspace()
-    const ok = commit(
-      { ...fresh, theme: current.current?.data.theme ?? 'system' },
-      { restore: true },
-    )
+    const ok = commit(newWorkspace(), { restore: true })
     if (ok) {
       show('invoices')
       setMessage({ text: 'Local workspace cleared.' })
@@ -279,37 +304,77 @@ export function InvoiceWorkspace() {
     }
   }
 
+  function toggleTheme() {
+    const nextTheme: Theme = isDark ? 'light' : 'dark'
+    const active = current.current
+    if (!active) return
+    if (active.damaged) {
+      setDamagedTheme(nextTheme)
+      return
+    }
+    commit({ ...active.data, theme: nextTheme })
+  }
+
   const data = local?.data
-  const theme = data?.theme ?? 'system'
   const copy = tabCopy[tab]
   const isSavedDraft =
     data && draft ? data.invoices.some((invoice) => invoice.id === draft.id) : false
   return (
-    <div className="ic-workspace" data-theme={theme}>
-      <header className="ic-topbar">
-        <div className="ic-shell ic-topbar-inner">
-          <button type="button" className="ic-brand" onClick={() => show('invoices')}>
-            <span className="ic-brand-mark">
-              <Icon name="mark" />
+    <div
+      className="ic-workspace min-h-screen bg-ic-ground text-ic-ink print:block print:min-h-0 print:bg-white print:p-0 print:text-ic-ink"
+      data-theme={theme}
+    >
+      <header className="ic-topbar bg-ic-deep text-white print:hidden">
+        <div className={`${shellClass} flex min-h-16 items-center justify-between gap-4`}>
+          <button
+            type="button"
+            className="inline-flex flex-none items-center gap-2.5 font-display text-[23px]/none font-[750] tracking-[-0.03em] whitespace-nowrap max-[480px]:gap-[7px] max-[480px]:text-[19px]"
+            onClick={() => show('invoices')}
+          >
+            <span className="grid size-[34px] place-items-center rounded-[9px] bg-ic-stamp text-ic-deep max-[480px]:size-[31px]">
+              <Icon name="mark" className="size-5 flex-none" />
             </span>{' '}
             Invoice Core
           </button>
+          {data && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isDark}
+              className="inline-flex min-h-9 flex-none items-center gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-bold whitespace-nowrap text-white transition-colors duration-150 hover:bg-white/20 motion-reduce:transition-none"
+              onClick={toggleTheme}
+            >
+              <Icon name={isDark ? 'moon' : 'sun'} className="size-4 flex-none text-ic-stamp" />
+              <span className="max-[380px]:sr-only">Dark mode</span>
+              <span
+                aria-hidden="true"
+                className={`inline-flex h-[18px] w-8 flex-none items-center rounded-full p-0.5 transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'bg-ic-stamp/35' : 'bg-white/25'}`}
+              >
+                <span
+                  className={`size-3.5 rounded-full transition-transform duration-150 motion-reduce:transition-none ${isDark ? 'translate-x-3.5 bg-ic-stamp' : 'translate-x-0 bg-white'}`}
+                />
+              </span>
+            </button>
+          )}
         </div>
       </header>
-      <main className="ic-shell">
-        <div className="ic-heading" data-panel={tab}>
+      <main className={shellClass}>
+        <div
+          className="flex items-end justify-between gap-5 pt-8 pb-5 max-[900px]:pt-[25px] max-[900px]:pb-4 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-3 print:hidden"
+          data-panel={tab}
+        >
           <div>
             <h1>{copy.title}</h1>
-            <p>{copy.detail}</p>
+            <p className="mt-[9px] text-ic-muted">{copy.detail}</p>
           </div>
           {data && (
-            <div className="ic-actions ic-heading-actions">
-              <button type="button" className="ic-button" onClick={() => setBackupOpen(true)}>
+            <div className={`${actionsClass} flex-none`}>
+              <button type="button" className={buttonClass} onClick={() => setBackupOpen(true)}>
                 Backup
               </button>
               <button
                 type="button"
-                className="ic-button ic-primary"
+                className={primaryButtonClass}
                 onClick={() => openEditor(newInvoice(undefined, data.invoices))}
               >
                 <Icon name="plus" /> Create invoice
@@ -318,26 +383,30 @@ export function InvoiceWorkspace() {
           )}
         </div>
         {storageWarning && (
-          <p className="ic-banner ic-error" role="alert">
+          <p className={errorBannerClass} role="alert">
             {storageWarning}
           </p>
         )}
         {message && !editor && (
           <p
-            className={message.error ? 'ic-banner ic-error' : 'ic-banner'}
+            className={message.error ? errorBannerClass : bannerClass}
             role={message.error ? 'alert' : 'status'}
           >
             {message.text}
           </p>
         )}
         {!data && (
-          <p className="ic-banner" role="status">
+          <p className={bannerClass} role="status">
             Opening the local workspace…
           </p>
         )}
         {data && (
-          <div className="ic-workspace-sections">
-            <div className="ic-workspace-tabs" role="tablist" aria-label="Workspace sections">
+          <div className="grid gap-4 print:hidden">
+            <div
+              className="inline-grid grid-cols-3 gap-1 justify-self-start rounded-[10px] border border-ic-line bg-ic-soft p-1 max-[480px]:w-full max-[480px]:justify-self-stretch"
+              role="tablist"
+              aria-label="Workspace sections"
+            >
               {(Object.keys(tabs) as Tab[]).map((key) => (
                 <button
                   key={key}
@@ -346,6 +415,7 @@ export function InvoiceWorkspace() {
                   id={`tab-${key}`}
                   aria-selected={tab === key}
                   aria-controls={`panel-${key}`}
+                  className="min-h-10 min-w-[112px] rounded-[7px] px-4 py-1.5 text-[13px] font-[730] text-ic-muted aria-selected:bg-ic-surface aria-selected:text-ic-ink aria-selected:shadow-[0_1px_3px_rgb(25_20_38/12%)] max-[480px]:min-w-0 max-[480px]:px-2 max-[480px]:py-1.5"
                   onClick={() => show(key)}
                 >
                   {tabs[key]}
@@ -365,7 +435,6 @@ export function InvoiceWorkspace() {
               ) : tab === 'products' ? (
                 <ProductsPanel
                   products={data.products}
-                  theme={theme}
                   save={(product) => {
                     const latest = current.current?.data
                     if (!latest) return { ok: false }
@@ -400,7 +469,6 @@ export function InvoiceWorkspace() {
               ) : (
                 <Companies
                   companies={data.companies}
-                  theme={data.theme}
                   save={(company) => {
                     const latest = current.current?.data
                     if (!latest) return { ok: false }
@@ -439,7 +507,6 @@ export function InvoiceWorkspace() {
             open={backupOpen}
             title="Backup"
             description="Export, restore, or clear the workspace on this device."
-            theme={theme}
             onClose={() => {
               setBackupOpen(false)
               setBackupConfirm(null)
@@ -469,11 +536,7 @@ export function InvoiceWorkspace() {
                 requestConfirm={setBackupConfirm}
               />
             )}
-            <ConfirmModal
-              confirm={backupConfirm}
-              theme={theme}
-              onClose={() => setBackupConfirm(null)}
-            />
+            <ConfirmModal confirm={backupConfirm} onClose={() => setBackupConfirm(null)} />
           </WorkspaceDialog>
         )}
         {data && (
@@ -481,16 +544,21 @@ export function InvoiceWorkspace() {
             open={Boolean(draft)}
             title={isSavedDraft ? 'Invoice details' : 'New invoice'}
             description="Edit directly on the invoice. Only saved invoices are kept."
-            theme={theme}
             size="wide"
             headerExtra={
               draft ? (
-                <div className="ic-actions ic-editor-appearance">
-                  <nav className="ic-switcher" aria-label="Invoice view">
+                <div
+                  className={`${actionsClass} ic-editor-appearance items-end gap-2.5 max-[620px]:w-full [&>:not(:first-child)]:min-w-[136px] max-[620px]:[&>:not(:first-child)]:min-w-0 max-[620px]:[&>:not(:first-child)]:flex-1 [&>:nth-child(2)]:min-w-0`}
+                >
+                  <nav
+                    className="ic-switcher inline-grid min-h-10 grid-cols-2 gap-[3px] rounded-lg border border-ic-line bg-ic-soft p-[3px] max-[620px]:w-full max-[620px]:flex-[1_1_100%]"
+                    aria-label="Invoice view"
+                  >
                     <button
                       type="button"
                       aria-pressed={view === 'edit'}
                       aria-controls="invoice-editor"
+                      className="min-h-8 min-w-[74px] rounded-[5px] px-3 py-0 text-[13px] font-bold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_3px_rgb(25_20_38/12%)] motion-reduce:transition-none max-[620px]:min-w-0"
                       onClick={() => setView('edit')}
                     >
                       Edit
@@ -499,6 +567,7 @@ export function InvoiceWorkspace() {
                       type="button"
                       aria-pressed={view === 'preview'}
                       aria-controls="invoice-preview"
+                      className="min-h-8 min-w-[74px] rounded-[5px] px-3 py-0 text-[13px] font-bold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_3px_rgb(25_20_38/12%)] motion-reduce:transition-none max-[620px]:min-w-0"
                       onClick={() => setView('preview')}
                     >
                       Preview
@@ -529,7 +598,7 @@ export function InvoiceWorkspace() {
             onClose={closeEditor}
           >
             {draft && (
-              <div className="ic-dialog-body ic-invoice-modal-body">
+              <div className="mt-3.5 print:m-0">
                 <InvoiceEditor
                   key={draft.id}
                   draft={draft}
@@ -551,19 +620,15 @@ export function InvoiceWorkspace() {
                 />
               </div>
             )}
-            <ConfirmModal
-              confirm={editorConfirm}
-              theme={theme}
-              onClose={() => setEditorConfirm(null)}
-            />
+            <ConfirmModal confirm={editorConfirm} onClose={() => setEditorConfirm(null)} />
           </WorkspaceDialog>
         )}
-        <footer className="ic-footer">
+        <footer className="flex flex-wrap justify-between gap-2 pt-[17px] pb-6 text-xs text-ic-muted print:hidden">
           <span>Invoice data stays in this browser. Keep a backup.</span>
           {offlineReady && <span role="status">Available offline</span>}
         </footer>
       </main>
-      <ConfirmModal confirm={confirmModal} theme={theme} onClose={() => setConfirmModal(null)} />
+      <ConfirmModal confirm={confirmModal} onClose={() => setConfirmModal(null)} />
     </div>
   )
 }

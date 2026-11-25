@@ -35,8 +35,8 @@ All screenshots below are captured from a built production instance populated wi
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <strong>Reusable product groups &amp; automatic dark mode</strong><br>
-      Define multi-line service bundles across currencies; the interface automatically adapts to your system color scheme.<br><br>
+      <strong>Reusable product groups &amp; dark mode</strong><br>
+      Define multi-line service bundles across currencies and toggle light or dark theme from the topbar switch.<br><br>
       <img src="docs/images/catalog-products-dark.png" alt="Products catalog tab in dark mode showing multi-line product groups in USD and GBP">
     </td>
     <td width="50%" valign="top">
@@ -51,7 +51,7 @@ All screenshots below are captured from a built production instance populated wi
 
 - **Direct on-sheet editor:** Type directly onto the invoice paper for numbers, dates, sender/client info, line items, notes, terms, and payment details, or upload an inline PNG/JPEG logo in the header.
 - **Click-to-open records:** Click any saved invoice, product, or company row to open it for viewing and editing without extra row clutter.
-- **Layouts & styling:** Choose `Classic`, `Modern`, or `Minimal` layouts and pair them with any custom 6-digit hex accent color.
+- **Layouts, theme & styling:** Follow your system color scheme by default or toggle light/dark appearance from the topbar **Dark mode** switch (while keeping a crisp white A4 sheet), and pair `Classic`, `Modern`, or `Minimal` layouts with any custom 6-digit hex accent color.
 - **Client-side A4 PDF:** Render paginated A4 PDFs directly in the browser (**PDF** on rows, **Download PDF** inside Edit and Preview modes) with embedded Latin, Greek, and Cyrillic fonts (`Bricolage Grotesque` & `Noto Sans`).
 - **Reusable catalog:** Store **Companies** (with independent number prefixes, padding, default currency, tax label/rate, and terms) and multi-line **Products** filtered by invoice currency.
 - **v1–v4 JSON backup & offline support:** Export or restore validated workspace snapshots (`invoice-core:workspace:v1` key with backward-compatible v1–v4 decoding) and install the production app as an offline PWA on HTTPS or localhost.

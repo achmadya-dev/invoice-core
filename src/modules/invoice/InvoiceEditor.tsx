@@ -18,15 +18,31 @@ import {
   type Sender,
   type Workspace,
 } from './domain/invoice'
-import { InvoicePreview, invoicePaletteVars } from './InvoicePreview'
 import {
+  amountCardClass,
+  InvoicePreview,
+  invoicePaletteVars,
+  proofCardClass,
+  proofHeadingVariantClass,
+  summaryListBaseClass,
+} from './InvoicePreview'
+import {
+  actionsClass,
+  buttonClass,
   ContactFields,
   CountrySelect,
   CurrencySelect,
+  dangerButtonClass,
+  docLabelClass,
+  fieldClass,
+  fieldsGridClass,
   Icon,
   LogoField,
   PickerModal,
+  primaryButtonClass,
   SelectField,
+  sheetChipClass,
+  sheetFieldLabelClass,
 } from './invoice-ui'
 import { LineItems } from './LineItems'
 
@@ -125,12 +141,20 @@ export function InvoiceEditor({
   }
 
   return (
-    <section className="ic-invoice-stage" aria-labelledby="editor-title">
+    <section
+      className="ic-invoice-stage mx-auto grid w-[min(100%,940px)] min-w-0 gap-3 rounded-[14px] print:block print:w-full print:bg-white print:p-0"
+      aria-labelledby="editor-title"
+    >
       <h2 id="editor-title" className="sr-only">
         {editing ? 'Edit invoice' : 'Document preview'}
       </h2>
-      <div className="ic-sheet-tools" hidden={!editing} role="region" aria-label="Invoice options">
-        <div className="ic-sheet-pickers">
+      <div
+        className={`ic-sheet-tools rounded-xl border border-ic-line bg-ic-ground px-3.5 pt-3 pb-2 max-[480px]:px-2.5 max-[480px]:pt-2.5 max-[480px]:pb-1.5 print:hidden ${editing ? '' : 'hidden'}`}
+        hidden={!editing}
+        role="region"
+        aria-label="Invoice options"
+      >
+        <div className="grid grid-cols-2 gap-2.5">
           <SelectField
             label="Company"
             value={draft.companyId}
@@ -159,19 +183,19 @@ export function InvoiceEditor({
             }}
           />
         </div>
-        <details className="ic-detail">
-          <summary>More options</summary>
-          <div className="ic-fields ic-sheet-more-fields">
+        <details className="ic-detail mt-[3px] text-[13px] [&[open]>div]:pt-[3px] [&[open]>div]:pb-[9px]">
+          <summary className="min-h-9 cursor-pointer py-[5px] font-[670] text-ic-accent">
+            More options
+          </summary>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-2.5 max-[620px]:grid-cols-1 max-[480px]:gap-[9px]">
             <CountrySelect
               label="Sender country"
               value={draft.sender.country}
-              theme={workspace.theme}
               onChange={(country) => setSender({ country })}
             />
             <CountrySelect
               label="Billing contact country"
               value={draft.client.country}
-              theme={workspace.theme}
               onChange={(country) =>
                 edit((current) => ({ ...current, client: { ...current.client, country } }))
               }
@@ -188,29 +212,34 @@ export function InvoiceEditor({
           </div>
         </details>
       </div>
-      <div className="ic-proof-frame">
-        <div className="ic-proof-stage">
+      <div className="min-w-0 rounded-xl bg-ic-desk print:w-full print:bg-white print:p-0">
+        <div className="p-3 max-[480px]:px-1.5 print:w-full print:bg-white print:p-0">
           <article
             id="invoice-editor"
-            className="ic-proof"
+            className={`${proofCardClass} print:hidden [&_:focus-visible]:outline-(--ic-doc-accent) ${editing ? '' : 'hidden'}`}
             aria-label="Editable invoice"
             data-invoice-accent={accentColor}
             data-invoice-layout={invoiceLayout}
             style={invoicePaletteVars(palette)}
             hidden={!editing}
           >
-            <header className="ic-doc-heading ic-sheet-columns">
+            <header
+              className={`grid grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] items-start gap-x-[clamp(12px,3vw,38px)] gap-y-3 max-[620px]:grid-cols-1 ${proofHeadingVariantClass}`}
+            >
               <LogoField
                 key={draft.companyId}
                 logo={draft.sender.logo}
                 inline
                 onChange={(logo) => setSender({ logo })}
               />
-              <div className="ic-doc-title">
-                <h3>Invoice</h3>
-                <label className="ic-field">
-                  <span className="ic-doc-label">Invoice number</span>
+              <div className="flex-[0_0_48%] text-right text-ic-muted max-[620px]:text-start">
+                <h3 className="mb-2 font-display text-[clamp(26px,3.3vw,45px)]/[0.95] font-extrabold tracking-[-0.04em] text-(--ic-doc-accent)">
+                  Invoice
+                </h3>
+                <label className={fieldClass}>
+                  <span className={docLabelClass}>Invoice number</span>
                   <input
+                    className="text-right max-[620px]:text-start"
                     value={draft.number}
                     maxLength={120}
                     aria-invalid={showErrors && !draft.number.trim() ? true : undefined}
@@ -218,10 +247,12 @@ export function InvoiceEditor({
                     onChange={(event) => set('number', event.target.value)}
                   />
                 </label>
-                <fieldset className="ic-fields ic-sheet-dates">
+                <fieldset
+                  className={`${fieldsGridClass} mt-2 text-start max-[620px]:text-start max-[360px]:grid-cols-1`}
+                >
                   <legend className="sr-only">Invoice dates</legend>
-                  <label className="ic-field">
-                    <span className="ic-doc-label">Issue date</span>
+                  <label className={fieldClass}>
+                    <span className={docLabelClass}>Issue date</span>
                     <input
                       type="date"
                       aria-invalid={showErrors && !draft.issueDate ? true : undefined}
@@ -229,8 +260,8 @@ export function InvoiceEditor({
                       onChange={(event) => setDate('issueDate', event.target.value)}
                     />
                   </label>
-                  <label className="ic-field">
-                    <span className="ic-doc-label">Due date</span>
+                  <label className={fieldClass}>
+                    <span className={docLabelClass}>Due date</span>
                     <input
                       type="date"
                       aria-invalid={
@@ -245,10 +276,10 @@ export function InvoiceEditor({
                 </fieldset>
               </div>
             </header>
-            <div className="ic-doc-meta">
-              <div className="ic-party ic-sheet-party">
-                <div className="ic-sheet-label-row">
-                  <span className="ic-doc-label">From</span>
+            <div className="grid grid-cols-2 items-start gap-x-[clamp(12px,3vw,38px)] gap-y-3 py-[21px] max-[620px]:grid-cols-1">
+              <div className="grid min-w-0 gap-0.5 text-xs whitespace-pre-line">
+                <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
+                  <span className={docLabelClass}>From</span>
                 </div>
                 <ContactFields
                   party="sender"
@@ -258,31 +289,33 @@ export function InvoiceEditor({
                   invalidName={showErrors && !draft.sender.name.trim()}
                 />
                 {draft.sender.country && <span>{countryName(draft.sender.country)}</span>}
-                <label className="ic-field">
+                <label className={sheetFieldLabelClass}>
                   <span className="sr-only">Website</span>
                   <input
                     maxLength={120}
+                    className="min-h-[22px] py-px leading-[1.45]"
                     placeholder="e.g. example.com"
                     value={draft.sender.website}
                     onChange={(event) => setSender({ website: event.target.value })}
                   />
                 </label>
-                <label className="ic-field">
+                <label className={sheetFieldLabelClass}>
                   <span className="sr-only">Tax ID</span>
                   <input
                     maxLength={120}
+                    className="min-h-[22px] py-px leading-[1.45]"
                     placeholder="e.g. Tax ID 12345"
                     value={draft.sender.taxId}
                     onChange={(event) => setSender({ taxId: event.target.value })}
                   />
                 </label>
               </div>
-              <div className="ic-party ic-sheet-party">
-                <div className="ic-sheet-label-row">
-                  <span className="ic-doc-label">Bill to</span>
+              <div className="grid min-w-0 gap-0.5 text-xs whitespace-pre-line">
+                <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
+                  <span className={docLabelClass}>Bill to</span>
                   <button
                     type="button"
-                    className="ic-sheet-chip"
+                    className={sheetChipClass}
                     onClick={() => setPickerModal('client')}
                   >
                     Use saved client
@@ -301,20 +334,20 @@ export function InvoiceEditor({
               </div>
             </div>
             <section aria-labelledby="sheet-lines">
-              <div className="ic-sheet-label-row ic-sheet-line-heading">
-                <h4 id="sheet-lines" className="ic-doc-label">
+              <div className="flex min-h-6 flex-wrap items-center justify-between gap-2 py-2">
+                <h4 id="sheet-lines" className={docLabelClass}>
                   Line items
                 </h4>
                 <button
                   type="button"
-                  className="ic-sheet-chip"
+                  className={sheetChipClass}
                   onClick={() => {
                     setProductQuery('')
                     setProductError('')
                     setPickerModal('product')
                   }}
                 >
-                  <Icon name="plus" /> Add product
+                  <Icon name="plus" className="size-3 flex-none" /> Add product
                 </button>
               </div>
               <LineItems
@@ -327,20 +360,25 @@ export function InvoiceEditor({
                 showErrors={showErrors}
               />
             </section>
-            <div className="ic-sheet-summary">
-              <dl className="ic-summary">
+            <div className="ic-sheet-summary mt-[18px] grid justify-items-stretch border-t border-(--ic-doc-line) pt-3 max-[620px]:grid-cols-1">
+              <dl
+                className={`${summaryListBaseClass} w-full [&>div:not(.ic-amount)]:w-[min(100%,360px)] [&>div:not(.ic-amount)]:items-center [&>div:not(.ic-amount)]:gap-3`}
+              >
                 <div>
                   <dt>Subtotal</dt>
                   <dd>{totals ? formatMoney(totals.subtotal, draft.currency) : '—'}</dd>
                 </div>
                 <div className="ic-summary-input-row">
-                  <dt>
-                    <label className="ic-summary-inline" htmlFor="sheet-discount">
+                  <dt className="flex max-w-[216px] min-w-0 flex-1 items-center justify-between gap-2">
+                    <label
+                      className="inline-flex min-w-0 flex-1 items-center justify-between gap-2"
+                      htmlFor="sheet-discount"
+                    >
                       <span>Discount</span>
-                      <span className="ic-summary-control">
+                      <span className="inline-flex shrink-0 items-center gap-1">
                         <input
                           id="sheet-discount"
-                          className="ic-summary-inline-input"
+                          className="min-h-[26px] w-[68px] shrink-0 px-1 py-0.5 text-right tabular-nums max-[480px]:w-14"
                           aria-label={
                             draft.discountKind === 'percent' ? 'Discount (%)' : 'Discount amount'
                           }
@@ -356,7 +394,10 @@ export function InvoiceEditor({
                           value={draft.discount}
                           onChange={(event) => set('discount', event.target.value)}
                         />
-                        <span className="ic-summary-unit" aria-hidden="true">
+                        <span
+                          className="ic-summary-unit w-9 shrink-0 text-left text-[11px] font-semibold [overflow-wrap:normal] whitespace-nowrap text-ic-muted max-[480px]:w-8"
+                          aria-hidden="true"
+                        >
                           {draft.discountKind === 'percent' ? '%' : draft.currency}
                         </span>
                       </span>
@@ -365,13 +406,16 @@ export function InvoiceEditor({
                   <dd>{totals ? formatMoney(-totals.discount, draft.currency) : '—'}</dd>
                 </div>
                 <div className="ic-summary-input-row">
-                  <dt>
-                    <label className="ic-summary-inline" htmlFor="sheet-tax-rate">
+                  <dt className="flex max-w-[216px] min-w-0 flex-1 items-center justify-between gap-2">
+                    <label
+                      className="inline-flex min-w-0 flex-1 items-center justify-between gap-2"
+                      htmlFor="sheet-tax-rate"
+                    >
                       <span>{draft.taxLabel.trim() || 'Tax'}</span>
-                      <span className="ic-summary-control">
+                      <span className="inline-flex shrink-0 items-center gap-1">
                         <input
                           id="sheet-tax-rate"
-                          className="ic-summary-inline-input"
+                          className="min-h-[26px] w-[68px] shrink-0 px-1 py-0.5 text-right tabular-nums max-[480px]:w-14"
                           aria-label="Tax rate (%)"
                           inputMode="decimal"
                           maxLength={16}
@@ -380,7 +424,10 @@ export function InvoiceEditor({
                           value={draft.taxRate}
                           onChange={(event) => set('taxRate', event.target.value)}
                         />
-                        <span className="ic-summary-unit" aria-hidden="true">
+                        <span
+                          className="ic-summary-unit w-9 shrink-0 text-left text-[11px] font-semibold [overflow-wrap:normal] whitespace-nowrap text-ic-muted max-[480px]:w-8"
+                          aria-hidden="true"
+                        >
                           %
                         </span>
                       </span>
@@ -389,13 +436,16 @@ export function InvoiceEditor({
                   <dd>{totals ? formatMoney(totals.tax, draft.currency) : '—'}</dd>
                 </div>
                 <div className="ic-summary-input-row">
-                  <dt>
-                    <label className="ic-summary-inline" htmlFor="sheet-shipping">
+                  <dt className="flex max-w-[216px] min-w-0 flex-1 items-center justify-between gap-2">
+                    <label
+                      className="inline-flex min-w-0 flex-1 items-center justify-between gap-2"
+                      htmlFor="sheet-shipping"
+                    >
                       <span>Shipping</span>
-                      <span className="ic-summary-control">
+                      <span className="inline-flex shrink-0 items-center gap-1">
                         <input
                           id="sheet-shipping"
-                          className="ic-summary-inline-input"
+                          className="min-h-[26px] w-[68px] shrink-0 px-1 py-0.5 text-right tabular-nums max-[480px]:w-14"
                           aria-label="Shipping"
                           inputMode="decimal"
                           maxLength={16}
@@ -404,22 +454,28 @@ export function InvoiceEditor({
                           value={draft.shipping}
                           onChange={(event) => set('shipping', event.target.value)}
                         />
-                        <span className="ic-summary-unit" aria-hidden="true" />
+                        <span
+                          className="ic-summary-unit w-9 shrink-0 text-left text-[11px] font-semibold [overflow-wrap:normal] whitespace-nowrap text-ic-muted max-[480px]:w-8"
+                          aria-hidden="true"
+                        />
                       </span>
                     </label>
                   </dt>
                   <dd>{totals ? formatMoney(totals.shipping, draft.currency) : '—'}</dd>
                 </div>
-                <div className="ic-amount">
-                  <dt>
-                    Amount due <span className="ic-mono">{draft.currency}</span>
+                <div className={amountCardClass}>
+                  <dt className="shrink-0 font-display text-[15px]/[1.1] font-[750] whitespace-nowrap">
+                    Amount due{' '}
+                    <span className="mt-1 block font-mono text-xs/[1.4]">{draft.currency}</span>
                   </dt>
-                  <dd>{proof.total}</dd>
+                  <dd className="ml-auto font-display text-[clamp(18px,2.8vw,30px)]/[1.08] font-extrabold tracking-[-0.025em] [overflow-wrap:normal] [word-break:normal] whitespace-nowrap">
+                    {proof.total}
+                  </dd>
                 </div>
               </dl>
-              {proof.warning && <p className="ic-proof-warning">{proof.warning}</p>}
+              {proof.warning && <p className="mt-2.5 text-xs text-ic-error">{proof.warning}</p>}
             </div>
-            <div className="ic-doc-extras ic-sheet-extras">
+            <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3.5 border-t border-ic-line pt-4 text-xs whitespace-pre-line max-[620px]:grid-cols-1">
               {(
                 [
                   {
@@ -430,8 +486,11 @@ export function InvoiceEditor({
                   { key: 'terms', label: 'Terms', placeholder: 'e.g. Payment due within 14 days.' },
                 ] as const
               ).map(({ key, label, placeholder }) => (
-                <label className="ic-field" key={key}>
-                  <span className="ic-doc-label">{label}</span>
+                <label
+                  className="relative grid min-w-0 content-start gap-[5px] text-xs font-normal"
+                  key={key}
+                >
+                  <span className={docLabelClass}>{label}</span>
                   <textarea
                     maxLength={1500}
                     rows={1}
@@ -441,8 +500,8 @@ export function InvoiceEditor({
                   />
                 </label>
               ))}
-              <label className="ic-field ic-span">
-                <span className="ic-doc-label">Payment details</span>
+              <label className="relative col-span-full grid min-w-0 content-start gap-[5px] text-xs font-normal">
+                <span className={docLabelClass}>Payment details</span>
                 <textarea
                   maxLength={1500}
                   rows={1}
@@ -452,7 +511,7 @@ export function InvoiceEditor({
                 />
               </label>
             </div>
-            <footer className="ic-doc-footer">
+            <footer className="mt-8 flex justify-between gap-3 border-t border-(--ic-doc-line) pt-[9px] text-[11px] text-ic-muted">
               <span>{proof.number}</span>
               <span>{draft.currency}</span>
             </footer>
@@ -466,33 +525,39 @@ export function InvoiceEditor({
             hidden={editing}
           />
         </div>
-        <div className="ic-sheet-actions">
+        <div className="grid gap-2.5 px-3 pb-3 text-xs max-[480px]:px-1.5 print:hidden">
           {notice && (
             <p
-              className={notice.error ? 'ic-error' : 'ic-muted'}
+              className={`rounded-md bg-ic-surface px-2.5 py-2 ${notice.error ? 'ic-error text-ic-error' : 'text-ic-muted'}`}
               role={notice.error ? 'alert' : 'status'}
             >
               {notice.text}
             </p>
           )}
-          <div className="ic-actions">
+          <div
+            className={`${actionsClass} max-[620px]:grid max-[620px]:grid-cols-2 max-[620px]:[&>button]:w-full max-[620px]:[&>button]:min-w-0 max-[620px]:[&>button]:justify-center max-[480px]:[&>button]:px-2.5`}
+          >
             {editing && (
               <>
-                <button type="button" className="ic-button ic-primary" onClick={onSave}>
+                <button
+                  type="button"
+                  className={`${primaryButtonClass} ${saved || !onResetDraft ? 'max-[620px]:col-span-full' : ''}`}
+                  onClick={onSave}
+                >
                   {saved ? 'Save changes' : 'Create invoice'}
                 </button>
                 {onResetDraft && (
-                  <button type="button" className="ic-button" onClick={onResetDraft}>
+                  <button type="button" className={buttonClass} onClick={onResetDraft}>
                     Reset draft
                   </button>
                 )}
                 {onDuplicate && (
-                  <button type="button" className="ic-button" onClick={onDuplicate}>
+                  <button type="button" className={buttonClass} onClick={onDuplicate}>
                     Duplicate
                   </button>
                 )}
                 {onDelete && (
-                  <button type="button" className="ic-button ic-danger" onClick={onDelete}>
+                  <button type="button" className={dangerButtonClass} onClick={onDelete}>
                     Delete
                   </button>
                 )}
@@ -500,7 +565,7 @@ export function InvoiceEditor({
             )}
             <button
               type="button"
-              className="ic-button ic-sheet-download"
+              className={`${buttonClass} ms-auto max-[620px]:col-span-full max-[620px]:ms-0`}
               disabled={pdfBusy}
               onClick={onDownload}
             >
@@ -512,7 +577,6 @@ export function InvoiceEditor({
       <ClientPicker
         open={pickerModal === 'client'}
         invoices={workspace.invoices}
-        theme={workspace.theme}
         onChange={(client) => set('client', client)}
         onClose={() => setPickerModal(null)}
       />
@@ -535,7 +599,6 @@ export function InvoiceEditor({
           detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
         }))}
         error={productError || undefined}
-        theme={workspace.theme}
         onQuery={(query) => {
           setProductQuery(query)
           setProductError('')
