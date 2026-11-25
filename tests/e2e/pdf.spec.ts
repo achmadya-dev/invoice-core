@@ -89,16 +89,16 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await page.getByLabel('Invoice number').fill('IDR-2026-01')
   await page.getByLabel('Due date').fill('2026-12-08')
-  await page.getByLabel('Sender name').fill('Nusantara Studio')
-  await page.getByLabel('Sender email').fill('hello@nusantara.dev')
-  await page.getByLabel('Sender phone').fill('082116030304')
-  await page.getByLabel('Sender address').fill('Jl. Merdeka No. 10')
-  await page.getByLabel('Website').fill('https://nusantara.dev')
-  await page.getByLabel('Tax ID').fill('12.345.678.7-213.000')
-  await page.getByRole('textbox', { name: 'Client', exact: true }).fill('Maju Bersama')
-  await page.getByLabel('Billing contact email').fill('rio@example.com')
-  await page.getByLabel('Billing contact phone').fill('0881234567890')
-  await page.getByLabel('Billing contact address').fill('Cipageran')
+  await page.getByLabel('Sender name').fill('Example Studio ID')
+  await page.getByLabel('Sender email').fill('billing@example.com')
+  await page.getByLabel('Sender phone').fill('+62 800 0000 0100')
+  await page.getByLabel('Sender address').fill('10 Example Avenue, Suite 4')
+  await page.getByLabel('Website').fill('https://example.com')
+  await page.getByLabel('Tax ID').fill('00.000.000.0-000.000')
+  await page.getByRole('textbox', { name: 'Client', exact: true }).fill('Example Client Corp')
+  await page.getByLabel('Billing contact email').fill('ap@example.com')
+  await page.getByLabel('Billing contact phone').fill('+62 800 0000 0101')
+  await page.getByLabel('Billing contact address').fill('25 Sample Street')
   await page.getByRole('combobox', { name: 'Currency', exact: true }).click()
   await page.getByRole('option', { name: /^IDR —/ }).click()
   await page.getByLabel('Description, item 1').fill('Product design sprint')
@@ -160,8 +160,8 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
       expect(pdfText).toContain('Amount due')
       expect(pdfText).toContain('FROM')
       expect(pdfText).toContain('BILL TO')
-      expect(pdfText.indexOf('hello@nusantara.dev')).toBeLessThan(
-        pdfText.indexOf('Jl. Merdeka No. 10'),
+      expect(pdfText.indexOf('billing@example.com')).toBeLessThan(
+        pdfText.indexOf('10 Example Avenue, Suite 4'),
       )
       expect(pdfText).toContain('Thank you for your business.')
       expect(pdfText).toContain('Net 14 days')
@@ -183,8 +183,8 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
     const previewText = await preview.innerText()
     expect(previewText).toContain('FROM')
     expect(previewText).toContain('BILL TO')
-    expect(previewText.indexOf('hello@nusantara.dev')).toBeLessThan(
-      previewText.indexOf('Jl. Merdeka No. 10'),
+    expect(previewText.indexOf('billing@example.com')).toBeLessThan(
+      previewText.indexOf('10 Example Avenue, Suite 4'),
     )
     await expect(preview.locator('.ic-amount dd')).toHaveText('IDR 2,500,000')
     expect(await preview.locator('.ic-amount dd').evaluate(isSingleLine)).toBe(true)

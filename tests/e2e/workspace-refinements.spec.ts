@@ -340,8 +340,8 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
 
   // 2. Edited new draft: Create invoice + Reset draft equal 50/50 row 1, Download PDF full row 2
-  await sheet.getByLabel('Sender name').fill('Nusantara Studio')
-  await sheet.getByRole('textbox', { name: 'Client', exact: true }).fill('Maju Bersama')
+  await sheet.getByLabel('Sender name').fill('Northline Studio')
+  await sheet.getByRole('textbox', { name: 'Client', exact: true }).fill('Fieldwork Press')
   await sheet.getByLabel('Description, item 1').fill('Product design sprint')
 
   const resetBtn = stage.getByRole('button', { name: 'Reset draft', exact: true })
@@ -423,7 +423,7 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
 test('opens invoices in a modal from Create, row click, Edit, and Duplicate without triggering row actions', async ({
   page,
 }, info) => {
-  const company = { ...newCompany('Achmadya Dev'), padding: 8 }
+  const company = { ...newCompany('Northline Studio'), padding: 8 }
   const firstDraft = newInvoice(company, [])
   const firstResult = saveInvoice(
     { ...newWorkspace(), companies: [company] },
