@@ -29,7 +29,6 @@
     "check": "bun run format:check && bun run lint && bun run test:policy && bun run test && bun run build && bun run typecheck",
     "verify": "bun run check && bun run test:e2e && bun run test:production && bun run test:offline",
     "prepare": "husky",
-    "task:new": "bun scripts/new-task.mjs",
     "doctor": "bun scripts/doctor.mjs",
     "test:production": "bun scripts/smoke-production.mjs"
   },

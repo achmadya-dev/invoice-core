@@ -2,7 +2,7 @@
 
 Manage branch protection in the Invoice Core repository settings. Repository files do not enable or prove those protections.
 
-Never commit `.env`, `node_modules`, build output, or credentials. Use `docs/tasks/TEMPLATE.md` for local planning when GitHub is unavailable. Do not invent historical issues or pull requests.
+Never commit `.env`, `node_modules`, build output, or credentials. Do not invent historical issues or pull requests.
 
 ## Repository settings
 
@@ -23,9 +23,9 @@ GitHub does not allow an author to approve their own pull request. If you are th
 
 ## Issues and pull requests
 
-With GitHub access, start from a real issue containing the accepted criteria. Without it, use `bun run task:new first-feature` and `docs/tasks/TEMPLATE.md` as the local fallback. After implementation, push the branch and use `.github/PULL_REQUEST_TEMPLATE.md` to prepare the PR body.
+Start from a real GitHub issue containing the accepted criteria. After implementation, push the branch and use `.github/PULL_REQUEST_TEMPLATE.md` to prepare the PR body.
 
-Do not create a local task just to copy the issue. Replace example paths with real files and use the actual issue number in the pull request template. The local PR verifier validates the issue-reference format, not whether the issue exists or is correct; a reviewer must check the link. Re-run it after editing the PR body or changing the file list.
+Replace example paths with real files and use the actual issue number in the pull request template. The local PR verifier validates the issue-reference format, not whether the issue exists or is correct; a reviewer must check the link. Re-run it after editing the PR body or changing the file list.
 
 ## Local hooks and formatting
 

@@ -30,7 +30,9 @@ try {
   execFileSync('gh', ['auth', 'status'], { stdio: 'pipe' })
   console.log('OK GitHub CLI authenticated')
 } catch {
-  console.log('OPTIONAL GitHub CLI not ready; use docs/tasks for local planning')
+  console.log(
+    'OPTIONAL GitHub CLI not authenticated; run gh auth login to manage issues and PRs from the CLI',
+  )
 }
 const owners = readFileSync('.github/CODEOWNERS', 'utf8')
 console.log(
