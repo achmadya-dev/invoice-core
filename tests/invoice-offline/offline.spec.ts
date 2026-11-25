@@ -12,6 +12,15 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
   page,
   context,
 }) => {
+  const pageErrors: Error[] = []
+  const cspErrors: string[] = []
+  page.on('pageerror', (error) => pageErrors.push(error))
+  page.on('console', (message) => {
+    if (message.type() === 'error' && /content security policy/i.test(message.text())) {
+      cspErrors.push(message.text())
+    }
+  })
+
   const workspace = newWorkspace()
   const company = newCompany('Offline Studio')
   const draft = newInvoice(company, [])
@@ -79,4 +88,6 @@ test('keeps a saved workspace, retires the old shell, and exports PDF offline', 
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByRole('button', { name: 'INV-0001', exact: true }).click()
   await expect(page.getByLabel('Quantity, item 2')).toHaveValue('2')
+  expect(pageErrors).toEqual([])
+  expect(cspErrors).toEqual([])
 })
