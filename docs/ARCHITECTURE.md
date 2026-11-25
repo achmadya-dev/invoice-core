@@ -16,6 +16,8 @@ Invoice Core is a single TanStack Start application. Bun serves the Nitro build,
 
 The production service worker caches only the public invoice shell and same-origin static assets. It does not cache user data, arbitrary routes, or writes. The worker updates independently of the Local Storage workspace schema. See the [recovery runbook](runbooks/RECOVERY.md) before an origin change or rollback.
 
+Nitro `routeRules` in [`vite.config.ts`](../vite.config.ts) configure default response security headers (`Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy`) and `Cache-Control: no-cache, must-revalidate` for `/invoice-sw.js` while keeping immutable caching for hashed `/assets/**`.
+
 Maintainers should verify HTTPS, asset and manifest availability, offline reopening, and backup restoration before releasing. No credential or migration step is needed.
 
 ## History

@@ -24,6 +24,43 @@ let startupError
 server.on('error', (error) => {
   startupError = error
 })
+function assertSecurityHeaders(headers, target) {
+  assert.equal(
+    headers.get('x-content-type-options'),
+    'nosniff',
+    `${target} must set X-Content-Type-Options: nosniff`,
+  )
+  assert.equal(headers.get('x-frame-options'), 'DENY', `${target} must set X-Frame-Options: DENY`)
+  assert.equal(
+    headers.get('referrer-policy'),
+    'no-referrer',
+    `${target} must set Referrer-Policy: no-referrer`,
+  )
+  assert.ok(
+    headers.get('permissions-policy')?.includes('camera=()'),
+    `${target} must restrict Permissions-Policy`,
+  )
+  const csp = headers.get('content-security-policy') ?? ''
+  assert.ok(csp.includes("default-src 'self'"), `${target} CSP must include default-src 'self'`)
+  assert.ok(
+    csp.includes("frame-ancestors 'none'"),
+    `${target} CSP must include frame-ancestors 'none'`,
+  )
+  assert.ok(csp.includes("object-src 'none'"), `${target} CSP must include object-src 'none'`)
+  assert.ok(
+    csp.includes('wasm-unsafe-eval'),
+    `${target} CSP must allow Yoga WASM via 'wasm-unsafe-eval'`,
+  )
+  assert.ok(
+    !csp.includes('upgrade-insecure-requests'),
+    `${target} CSP must not force HTTPS upgrades on loopback`,
+  )
+  assert.ok(
+    !/(?:^|[\s;])'unsafe-eval'(?:$|[\s;])/.test(csp),
+    `${target} CSP must not allow 'unsafe-eval'`,
+  )
+}
+
 try {
   let response
   for (let attempt = 0; attempt < 60; attempt++) {
@@ -38,21 +75,44 @@ try {
   }
   assert.ok(response, `Production server did not start: ${output}`)
   assert.equal(response.status, 200, output)
+  assertSecurityHeaders(response.headers, 'Home page')
   const html = await response.text()
   assert.ok(html.includes('<html lang="en">'), 'Home page must declare English as its language')
   assert.match(html, /<h1>Invoices<\/h1>/, 'Home page should render the invoice list shell')
   assert.ok(html.includes('Opening the local workspace'), 'Browser data must load after hydration')
   assert.ok(html.includes('/invoice.webmanifest'), 'Home page should link the PWA manifest')
   assert.ok(!html.includes('Sign in'), 'Home page must not expose a sign-in control')
+
+  const assetMatch = html.match(/\/assets\/[^"]+\.(?:css|js)/)
+  assert.ok(assetMatch, 'Home page must reference a hashed static bundle asset')
+  const assetResponse = await fetch(`${origin}${assetMatch[0]}`)
+  assert.equal(assetResponse.status, 200, `Asset ${assetMatch[0]} must return HTTP 200`)
+  assert.match(
+    assetResponse.headers.get('cache-control') ?? '',
+    /immutable/,
+    `Asset ${assetMatch[0]} must preserve immutable caching`,
+  )
+  assertSecurityHeaders(assetResponse.headers, `Asset ${assetMatch[0]}`)
+
+  const swResponse = await fetch(`${origin}/invoice-sw.js`)
+  assert.equal(swResponse.status, 200, '/invoice-sw.js must return HTTP 200')
+  assert.equal(
+    swResponse.headers.get('cache-control'),
+    'no-cache, must-revalidate',
+    '/invoice-sw.js must disable stale caching',
+  )
+  assertSecurityHeaders(swResponse.headers, 'Service worker')
+
   for (const path of ['/login', '/account', '/api/auth/get-session']) {
     const removed = await fetch(`${origin}${path}`, { redirect: 'manual' })
     assert.equal(removed.status, 404, `Removed route ${path} must return 404`)
+    assertSecurityHeaders(removed.headers, `Removed route ${path}`)
     assert.ok((await removed.text()).includes('Page not found'))
   }
   const formerSignIn = await fetch(`${origin}/api/auth/sign-in/email`, { method: 'POST' })
   assert.equal(formerSignIn.status, 404, 'Former sign-in endpoint must not accept requests')
   console.log(
-    `Production smoke passed on Bun ${process.versions.bun}: invoice shell HTTP 200; former account and auth routes HTTP 404.`,
+    `Production smoke passed on Bun ${process.versions.bun}: invoice shell HTTP 200 with security headers and SW no-cache; former account and auth routes HTTP 404.`,
   )
 } finally {
   server.kill('SIGTERM')
