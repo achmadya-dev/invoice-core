@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 
 async function chooseOption(page: Page, label: string, option: string | RegExp) {
@@ -183,10 +184,23 @@ test('uses company defaults, preserves historical sender details, and verifies r
   await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
   await expect(page.getByRole('status')).toHaveText('Invoice saved.')
   await tabs.getByRole('tab', { name: 'Companies', exact: true }).click()
-  await page.getByRole('button', { name: 'Edit Maple Studio' }).click()
+  await expect(page.getByRole('button', { name: 'Edit Maple Studio' })).toHaveCount(0)
+  const mapleRow = page.locator('.ic-record', { hasText: 'Maple Studio' })
+  await expect(mapleRow.locator('.ic-actions button')).toHaveText(['Delete'])
+  await page.getByRole('button', { name: 'Delete Maple Studio' }).click()
+  const companyDeleteConfirm = page.getByRole('alertdialog')
+  await expect(companyDeleteConfirm).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await companyDeleteConfirm.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(companyDeleteConfirm).toHaveCount(0)
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await mapleRow.getByText('IDR', { exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Edit company' })).toBeVisible()
   await page.getByLabel('Sender name').fill('Maple Studio Updated')
   await page.getByRole('button', { name: 'Save company' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Maple Studio Updated', exact: true }),
+  ).toBeVisible()
   await tabs.getByRole('tab', { name: 'Invoices', exact: true }).click()
   await expect(page.getByText('Maple Studio ·', { exact: false })).toBeVisible()
 

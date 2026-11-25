@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { matchesProduct, maxProducts, newProduct, type Product, type Theme } from './domain/invoice'
-import { CurrencySelect, Icon, WorkspaceDialog } from './invoice-ui'
+import { CurrencySelect, Icon, shouldOpenRecordRow, WorkspaceDialog } from './invoice-ui'
 import { LineItems } from './LineItems'
 
 export function ProductsPanel({
@@ -63,23 +63,29 @@ export function ProductsPanel({
       ) : (
         <ul className="ic-records">
           {matches.map((product) => (
-            <li className="ic-record" key={product.id}>
+            <li
+              className="ic-record ic-record-clickable"
+              key={product.id}
+              onClick={(event) => {
+                if (shouldOpenRecordRow(event)) openDialog(product)
+              }}
+            >
               <div>
-                <h3>{product.name}</h3>
+                <h3>
+                  <button
+                    className="ic-text-button ic-record-trigger"
+                    type="button"
+                    onClick={() => openDialog(product)}
+                  >
+                    {product.name}
+                  </button>
+                </h3>
                 <p>
                   {product.items.length} {product.items.length === 1 ? 'item' : 'items'} ·{' '}
                   {product.currency}
                 </p>
               </div>
               <div className="ic-actions">
-                <button
-                  className="ic-button"
-                  type="button"
-                  aria-label={`Edit ${product.name}`}
-                  onClick={() => openDialog(product)}
-                >
-                  Edit
-                </button>
                 <button
                   className="ic-text-button"
                   type="button"
