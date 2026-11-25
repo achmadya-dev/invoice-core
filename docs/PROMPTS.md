@@ -4,7 +4,7 @@ Name the issue or task when one exists; there is no need to repeat every reposit
 
 ## Ordinary request (default)
 
-Say what outcome you want in plain language, for example: "Fix the account form error when the server is unavailable." The agent follows `AGENTS.md`: it records criteria, works on a branch, tests locally, and prepares a PR for a clear authorized change without asking you to restate each workflow step. Say "plan only" or "review only" to stop before implementation. Merge, deployment, and real database changes are separate decisions.
+Say what outcome you want in plain language, for example: "Fix the backup restore error when the JSON file exceeds the size limit." The agent follows `AGENTS.md`: it records criteria, works on a branch, tests locally, and prepares a PR for a clear authorized change without asking you to restate each workflow step. Say "plan only" or "review only" to stop before implementation. Merge, deployment, and real database changes are separate decisions.
 
 ## Kickoff
 
@@ -12,7 +12,7 @@ Read `AGENTS.md`. This project is for [users] and should solve [problem]. Propos
 
 ## Plan a feature
 
-Read `AGENTS.md` and the relevant code. Plan [feature], including acceptance criteria, failure examples, invariants, database/API impact, and verification. Save the plan as a GitHub issue or a local task created from the template. Do not change application code yet.
+Read `AGENTS.md` and the relevant code. Plan [feature], including acceptance criteria, failure examples, invariants, storage/schema compatibility impact, and verification. Save the plan as a GitHub issue or a local task created from the template. Do not change application code yet.
 
 ## Plan with a prototype
 

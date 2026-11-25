@@ -1,8 +1,8 @@
 # SQLite default and portable SQL
 
-Status: accepted; the temporary PostgreSQL adapter compatibility choice was superseded by [ADR 0002](0002-kysely-as-the-application-persistence-adapter.md)
+Status: superseded by [ADR 0003](0003-browser-local-invoice-workspace.md) (partially superseded earlier by [ADR 0002](0002-kysely-as-the-application-persistence-adapter.md))
 Date: 2026-11-16
-Task/issue: https://github.com/achmadya-dev/ai-project-template/issues/37
+Origin: inherited from the initial repository template
 
 ## Context
 

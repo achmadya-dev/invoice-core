@@ -18,7 +18,7 @@ Older builds cannot read v4. Keep a current private v4 backup before rolling bac
 
 ## Retired database
 
-The current app cannot connect to or migrate the old database. Existing tables, files, and volumes remain untouched. The original SQL is preserved in [the migration archive](../../db/migrations/README.md). If old account data requires recovery or disposal, first verify the target and approve a separate plan and backup. Do not run the archived SQL or remove Docker volumes as part of an application rollback.
+The current app cannot connect to or migrate any external database. Inherited template SQL migration files were removed from the working tree in PR #27 and remain only in earlier Git history. If legacy external data requires recovery or disposal, first verify the target and approve a separate plan and backup. Do not run historical SQL or remove Docker volumes as part of an application rollback.
 
 ## Release readiness
 

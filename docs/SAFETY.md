@@ -15,4 +15,4 @@ The PR verifier checks metadata and sensitive-path hints, not correctness, secur
 - Keep invoice data out of network requests, service worker caches, analytics, and logs. Validate JSON backups before asking to replace local state.
 - Use a dedicated browser profile on shared devices. Back up before changing origin or clearing browser storage; see [recovery](runbooks/RECOVERY.md).
 - Keep development services on loopback. No production access, deployment, data deletion, or migration is authorized by ordinary implementation work.
-- The archived SQL migrations are historical. Do not edit them, run them, or delete data from an existing database as part of application cleanup.
+- Historical template SQL migrations were removed from the working tree (PR #27) and remain only in earlier Git history. Never run historical SQL or delete data from an existing database as part of application cleanup.

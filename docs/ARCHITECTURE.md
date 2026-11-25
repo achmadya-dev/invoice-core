@@ -7,7 +7,7 @@ Invoice Core is a single TanStack Start application. Bun serves the Nitro build,
 ## Invoice boundaries
 
 - `src/routes/` owns route metadata, initial HTML and the not-found and error states. `/` is the only product route.
-- `src/modules/invoice/` owns editing, preview, searchable history, sender profiles, backup/restore, and theme.
+- `src/modules/invoice/` owns editing, preview, searchable history, sender profiles, backup/restore, and system color-scheme integration (preserving legacy `theme` backup compatibility).
 - `domain/` owns the versioned workspace schema, invoice and numbering invariants, and decimal calculations. It does not import React or browser I/O.
 - `workspace.browser.ts` owns browser storage and file I/O. It validates stored or imported data before use and does not overwrite unreadable data without confirmation.
 - `document.ts` translates one invoice into formatted document data for the preview and the client-only PDF renderer.
@@ -20,4 +20,4 @@ Maintainers should verify HTTPS, asset and manifest availability, offline reopen
 
 ## History
 
-[ADR 0003](adr/0003-browser-local-invoice-workspace.md) retires the previous authentication and server database choices. The original SQL remains in [the migration archive](../db/migrations/README.md); the current application cannot run it.
+[ADR 0003](adr/0003-browser-local-invoice-workspace.md) retires the previous authentication and server database choices. Inherited template SQL migration files were removed from the working tree in PR #27 (recoverable only from earlier Git history); the current application has no database or migration runner.

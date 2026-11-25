@@ -12,6 +12,8 @@ Invoice Core invoices, history, sender profiles, and backups already live in a b
 
 Remove account routes, auth services, and unused server persistence. Preserve the existing invoice storage key and backup schema. Keep the old SQL migration files byte-for-byte for history and recovery, but do not ship or run a migration runner. This supersedes the runtime and provider choices in ADRs 0001 and 0002.
 
+(Note: PR #27 later removed the unused template `db/migrations/` directory from the working tree; the SQL files remain preserved in earlier Git history.)
+
 Hiding only the sign-in link would leave an unused auth surface. Connecting invoice storage to accounts would create synchronization, authorization, and recovery requirements outside the product scope.
 
 ## Consequences and evaluation

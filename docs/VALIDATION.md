@@ -8,4 +8,4 @@ Use the pinned Bun version and Node 26 for tooling. Install Chromium with `bunx 
 - `bun run test:offline`: offline reload and PDF download in Chromium against an existing production build.
 - `bun run verify`: all of the above in order. No database or credentials are needed.
 
-Record the tested commit and actual results in the pull request. Never claim these local checks represent hosted CI.
+GitHub Actions runs the `check` and `browser` jobs defined in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Record the tested commit and actual local results in the pull request; never claim unrun checks passed.

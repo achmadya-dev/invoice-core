@@ -1,8 +1,8 @@
 # Kysely as the application persistence adapter
 
-Status: accepted
+Status: superseded by [ADR 0003](0003-browser-local-invoice-workspace.md)
 Date: 2026-11-16
-Task/issue: https://github.com/achmadya-dev/ai-project-template/issues/55
+Origin: inherited from the initial repository template
 
 ## Context
 

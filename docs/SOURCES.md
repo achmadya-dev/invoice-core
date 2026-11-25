@@ -3,7 +3,6 @@
 Accessed 2026-10-02. Installed package code and executed checks take precedence over examples for the exact pinned versions.
 
 - https://tanstack.com/start/latest/docs/framework/react/build-from-scratch
-- https://tanstack.com/start/latest/docs/framework/react/guide/server-functions
 - https://tanstack.com/start/latest/docs/framework/react/guide/hosting
 - https://agents.md/
 - https://opencode.ai/docs/rules/
