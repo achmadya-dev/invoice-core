@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Contact, Invoice, Theme } from './domain/invoice'
+import type { Contact, Invoice } from './domain/invoice'
 import { PickerModal } from './invoice-ui'
 
 function normalized(value: string) {
@@ -9,13 +9,11 @@ function normalized(value: string) {
 export function ClientPicker({
   open,
   invoices,
-  theme,
   onChange,
   onClose,
 }: {
   open: boolean
   invoices: Invoice[]
-  theme: Theme
   onChange: (client: Contact) => void
   onClose: () => void
 }) {
@@ -43,7 +41,6 @@ export function ClientPicker({
       actionLabel="Select"
       query={query}
       options={options}
-      theme={theme}
       onQuery={setQuery}
       onSelect={(value) => {
         const selected = previous.get(value)

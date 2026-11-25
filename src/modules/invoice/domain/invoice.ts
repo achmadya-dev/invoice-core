@@ -195,7 +195,6 @@ export type Company = z.infer<typeof companySchema>
 export type LineItem = z.infer<typeof itemSchema>
 export type Product = z.infer<typeof productSchema>
 export type Invoice = z.infer<typeof invoiceSchema>
-export type Theme = (typeof themes)[number]
 
 function unique(values: string[]) {
   return new Set(values).size === values.length
@@ -380,7 +379,7 @@ export function newInvoice(
 export function newWorkspace(): Workspace {
   return {
     version: 4,
-    theme: 'system',
+    theme: 'light',
     companies: [],
     invoices: [],
     products: [],

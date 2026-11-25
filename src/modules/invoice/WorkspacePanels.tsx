@@ -12,16 +12,25 @@ import {
   newCompany,
   type Company,
   type Invoice,
-  type Theme,
   type Workspace,
 } from './domain/invoice'
 import {
+  actionsClass,
+  buttonClass,
   CurrencySelect,
+  dangerButtonClass,
   DecimalField,
+  fieldClass,
+  fieldsGridClass,
   Icon,
+  panelClass,
+  primaryButtonClass,
+  recordRowBaseClass,
+  recordTriggerClass,
   SelectField,
   SenderFields,
   shouldOpenRecordRow,
+  textButtonClass,
   WorkspaceDialog,
   type ConfirmState,
 } from './invoice-ui'
@@ -67,9 +76,9 @@ export function InvoiceHistory({
   const first = (currentPage - 1) * pageSize
   const visible = filtered.slice(first, first + pageSize)
   return (
-    <section className="ic-editor" aria-label="Invoice history">
-      <div className="ic-filter">
-        <label className="ic-field">
+    <section className={panelClass} aria-label="Invoice history">
+      <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-3.5 px-[22px] py-5 max-[720px]:grid-cols-1 max-[720px]:gap-2 max-[480px]:px-3.5">
+        <label className={fieldClass}>
           Search invoices
           <input
             type="search"
@@ -95,25 +104,27 @@ export function InvoiceHistory({
         />
       </div>
       {filtered.length > 0 && (
-        <p className="ic-history-meta">
+        <p className="px-[22px] pb-3 text-xs text-ic-muted max-[480px]:px-3.5">
           Showing {first + 1}–{first + visible.length} of {filtered.length} invoices · Newest issue
           date first
         </p>
       )}
       {workspace.invoices.length === 0 ? (
-        <div className="ic-empty">
+        <div className="px-[22px] py-[21px] max-[480px]:px-3.5">
           <h2>No saved invoices yet</h2>
-          <p>Save your first invoice to keep it in your local history.</p>
+          <p className="mt-2 mb-3.5 text-ic-muted">
+            Save your first invoice to keep it in your local history.
+          </p>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="ic-empty">No invoices match these filters.</p>
+        <p className="px-[22px] py-[21px] max-[480px]:px-3.5">No invoices match these filters.</p>
       ) : (
-        <ul className="ic-records">
+        <ul className="list-none">
           {visible.map((invoice) => {
             const totals = invoiceTotals(invoice)
             return (
               <li
-                className="ic-record ic-record-clickable"
+                className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_minmax(0,0.5fr)_auto] max-[620px]:grid-cols-[minmax(0,1fr)_minmax(0,0.6fr)]`}
                 key={invoice.id}
                 onClick={(event) => {
                   if (shouldOpenRecordRow(event)) open(invoice)
@@ -121,23 +132,23 @@ export function InvoiceHistory({
               >
                 <div>
                   <button
-                    className="ic-text-button ic-mono ic-record-trigger"
+                    className={`${recordTriggerClass} font-mono text-[13px]/[1.4]`}
                     type="button"
                     onClick={() => open(invoice)}
                   >
                     {invoice.number}
                   </button>
                   <h2>{invoice.client.name}</h2>
-                  <p>
+                  <p className="mt-[5px] text-xs text-ic-muted">
                     {invoice.sender.name} · {formatDate(invoice.issueDate)}
                   </p>
                 </div>
-                <div className="ic-record-total">
+                <div className="ic-record-total flex flex-col items-start gap-1.5 tabular-nums">
                   <strong>{totals && formatMoney(totals.total, invoice.currency)}</strong>
                 </div>
-                <div className="ic-actions">
+                <div className={`${actionsClass} cursor-default max-[620px]:col-span-full`}>
                   <button
-                    className="ic-button"
+                    className={buttonClass}
                     type="button"
                     aria-label={`Download PDF for ${invoice.number}`}
                     disabled={pdfBusyId !== null}
@@ -146,7 +157,7 @@ export function InvoiceHistory({
                     <Icon name="download" /> {pdfBusyId === invoice.id ? 'Preparing…' : 'PDF'}
                   </button>
                   <button
-                    className="ic-button"
+                    className={buttonClass}
                     type="button"
                     aria-label={`Duplicate ${invoice.number}`}
                     onClick={() => duplicate(invoice)}
@@ -154,7 +165,7 @@ export function InvoiceHistory({
                     Duplicate
                   </button>
                   <button
-                    className="ic-text-button"
+                    className={textButtonClass}
                     type="button"
                     aria-label={`Delete ${invoice.number}`}
                     onClick={() => remove(invoice)}
@@ -168,9 +179,12 @@ export function InvoiceHistory({
         </ul>
       )}
       {pageCount > 1 && (
-        <nav className="ic-pagination" aria-label="Invoice history pages">
+        <nav
+          className="flex items-center justify-between gap-2.5 border-t border-ic-line px-[18px] py-3"
+          aria-label="Invoice history pages"
+        >
           <button
-            className="ic-button"
+            className={buttonClass}
             type="button"
             disabled={currentPage === 1}
             onClick={() => setPage(currentPage - 1)}
@@ -181,7 +195,7 @@ export function InvoiceHistory({
             Page {currentPage} of {pageCount}
           </span>
           <button
-            className="ic-button"
+            className={buttonClass}
             type="button"
             disabled={currentPage === pageCount}
             onClick={() => setPage(currentPage + 1)}
@@ -198,12 +212,10 @@ export function Companies({
   companies,
   save,
   remove,
-  theme,
 }: {
   companies: Company[]
   save: (company: Company) => { ok: true } | { ok: false; message?: string }
   remove: (company: Company) => void
-  theme: Theme
 }) {
   const [selected, setSelected] = useState<Company | null>(null)
   const [error, setError] = useState('')
@@ -233,12 +245,12 @@ export function Companies({
     }
   }
   return (
-    <section className="ic-editor ic-master-panel" aria-labelledby="companies-title">
+    <section className={panelClass} aria-labelledby="companies-title">
       <h2 id="companies-title" className="sr-only">
         Companies
       </h2>
-      <div className="ic-master-toolbar ic-panel-pad">
-        <label className="ic-field">
+      <div className="flex flex-wrap items-end justify-between gap-3 px-[22px] py-[21px] max-[480px]:px-3.5">
+        <label className={`${fieldClass} flex-[0_1_300px]`}>
           Search companies
           <input
             type="search"
@@ -249,37 +261,33 @@ export function Companies({
         </label>
         <button
           type="button"
-          className="ic-button ic-primary"
+          className={primaryButtonClass}
           disabled={companies.length >= maxCompanies}
           onClick={() => edit(newCompany())}
         >
           <Icon name="plus" /> Add company
         </button>
       </div>
-      <ul className="ic-records">
+      <ul className="list-none">
         {matches.map((company) => (
           <li
             key={company.id}
-            className="ic-record ic-record-clickable"
+            className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_auto]`}
             onClick={(event) => {
               if (shouldOpenRecordRow(event)) edit(company)
             }}
           >
             <div>
               <h3>
-                <button
-                  className="ic-text-button ic-record-trigger"
-                  type="button"
-                  onClick={() => edit(company)}
-                >
+                <button className={recordTriggerClass} type="button" onClick={() => edit(company)}>
                   {company.sender.name}
                 </button>
               </h3>
-              <p>{company.currency}</p>
+              <p className="mt-[5px] text-xs text-ic-muted">{company.currency}</p>
             </div>
-            <div className="ic-actions">
+            <div className={`${actionsClass} cursor-default max-[620px]:col-span-full`}>
               <button
-                className="ic-text-button"
+                className={textButtonClass}
                 type="button"
                 aria-label={`Delete ${company.sender.name}`}
                 onClick={() => remove(company)}
@@ -291,7 +299,7 @@ export function Companies({
         ))}
       </ul>
       {matches.length === 0 && (
-        <p className="ic-empty">
+        <p className="px-[22px] py-[21px] max-[480px]:px-3.5">
           {companies.length
             ? 'No companies match this search.'
             : 'No companies yet. Add one to reuse its sender details.'}
@@ -301,16 +309,14 @@ export function Companies({
         open={selected !== null}
         title={companies.some(({ id }) => id === selected?.id) ? 'Edit company' : 'New company'}
         description="Set sender details, numbering, and defaults for new invoices."
-        theme={theme}
         onClose={() => edit(null)}
       >
         {selected && (
-          <form className="ic-dialog-body" noValidate onSubmit={submit}>
-            <div className="ic-fields">
+          <form className="mt-4" noValidate onSubmit={submit}>
+            <div className={fieldsGridClass}>
               <SenderFields
                 key={selected.id}
                 sender={selected.sender}
-                theme={theme}
                 invalidName={saveAttempted && !selected.sender.name.trim()}
                 onChange={(patch) => {
                   setSelected((current) =>
@@ -326,7 +332,7 @@ export function Companies({
                 value={selected.currency}
                 onChange={(currency) => updateCompany({ currency })}
               />
-              <label className="ic-field">
+              <label className={fieldClass}>
                 Invoice prefix
                 <input
                   maxLength={24}
@@ -334,7 +340,7 @@ export function Companies({
                   onChange={(event) => updateCompany({ prefix: event.target.value })}
                 />
               </label>
-              <label className="ic-field">
+              <label className={fieldClass}>
                 Next number
                 <input
                   type="number"
@@ -353,7 +359,7 @@ export function Companies({
                   onChange={(event) => updateCompany({ nextNumber: Number(event.target.value) })}
                 />
               </label>
-              <label className="ic-field">
+              <label className={fieldClass}>
                 Number padding
                 <input
                   type="number"
@@ -372,7 +378,7 @@ export function Companies({
                   onChange={(event) => updateCompany({ padding: Number(event.target.value) })}
                 />
               </label>
-              <label className="ic-field">
+              <label className={fieldClass}>
                 Default tax label
                 <input
                   maxLength={120}
@@ -387,7 +393,7 @@ export function Companies({
                 onChange={(taxRate) => updateCompany({ taxRate })}
               />
               {(['notes', 'terms'] as const).map((key) => (
-                <label key={key} className="ic-field ic-span">
+                <label key={key} className={`${fieldClass} col-span-full`}>
                   {key === 'notes' ? 'Default notes' : 'Default terms'}
                   <textarea
                     maxLength={1500}
@@ -399,15 +405,15 @@ export function Companies({
               ))}
             </div>
             {error && (
-              <p className="ic-error ic-note" role="alert">
+              <p className="ic-error mt-2 text-ic-error" role="alert">
                 {error}
               </p>
             )}
-            <div className="ic-modal-actions">
-              <button className="ic-button" type="button" onClick={() => edit(null)}>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button className={buttonClass} type="button" onClick={() => edit(null)}>
                 Cancel
               </button>
-              <button className="ic-button ic-primary" type="submit">
+              <button className={primaryButtonClass} type="submit">
                 Save company
               </button>
             </div>
@@ -417,6 +423,10 @@ export function Companies({
     </section>
   )
 }
+
+const statCapClass = 'text-[13px] font-medium text-ic-muted'
+const statValueClass = 'mt-1 font-mono text-[17px]/[1.4] font-[740] tabular-nums'
+const statLabelClass = 'text-xs font-semibold text-ic-muted'
 
 export function Backup({
   workspace,
@@ -442,52 +452,59 @@ export function Backup({
     [],
   )
   return (
-    <div className="ic-backup-layout ic-dialog-body">
+    <div className="mt-4 grid gap-4">
       <section aria-label="Local storage">
-        <h2 className="ic-backup-section-title">Local storage</h2>
-        <dl className="ic-stats">
-          <div>
-            <dt>Saved invoices</dt>
-            <dd className="ic-mono">
+        <h2 className="mt-0 mb-2 text-[11px] font-bold tracking-[0.06em] text-ic-muted uppercase">
+          Local storage
+        </h2>
+        <dl className="grid grid-cols-4 overflow-hidden rounded-[10px] border border-ic-line bg-ic-field max-[620px]:grid-cols-2">
+          <div className="min-w-0 px-3.5 py-3">
+            <dt className={statLabelClass}>Saved invoices</dt>
+            <dd className={statValueClass}>
               {workspace.invoices.length}
-              <span className="ic-stat-cap"> / {maxInvoices}</span>
+              <span className={statCapClass}> / {maxInvoices}</span>
             </dd>
           </div>
-          <div>
-            <dt>Sender profiles</dt>
-            <dd className="ic-mono">
+          <div className="min-w-0 border-l border-ic-line px-3.5 py-3">
+            <dt className={statLabelClass}>Sender profiles</dt>
+            <dd className={statValueClass}>
               {workspace.companies.length}
-              <span className="ic-stat-cap"> / {maxCompanies}</span>
+              <span className={statCapClass}> / {maxCompanies}</span>
             </dd>
           </div>
-          <div>
-            <dt>Products</dt>
-            <dd className="ic-mono">
+          <div className="min-w-0 border-l border-ic-line px-3.5 py-3 max-[620px]:border-t max-[620px]:border-l-0">
+            <dt className={statLabelClass}>Products</dt>
+            <dd className={statValueClass}>
               {workspace.products.length}
-              <span className="ic-stat-cap"> / {maxProducts}</span>
+              <span className={statCapClass}> / {maxProducts}</span>
             </dd>
           </div>
-          <div>
-            <dt>Storage used</dt>
-            <dd className="ic-mono">{formatBytes(storageBytes)}</dd>
+          <div className="min-w-0 border-l border-ic-line px-3.5 py-3 max-[620px]:border-t">
+            <dt className={statLabelClass}>Storage used</dt>
+            <dd className={statValueClass}>{formatBytes(storageBytes)}</dd>
           </div>
         </dl>
       </section>
-      <div className="ic-backup-grid">
-        <section className="ic-backup-card">
-          <div className="ic-backup-card-head">
-            <span className="ic-backup-badge" aria-hidden="true">
+      <div className="grid grid-cols-2 items-stretch gap-3.5 max-[620px]:grid-cols-1">
+        <section className="flex flex-col rounded-[10px] border border-ic-line bg-ic-surface p-[18px]">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-ic-soft text-ic-accent"
+              aria-hidden="true"
+            >
               <Icon name="download" />
             </span>
-            <h2>Export a backup</h2>
+            <h2 className="m-0 font-display text-[15px]/tight font-[720] text-ic-ink">
+              Export a backup
+            </h2>
           </div>
-          <p className="ic-muted ic-backup-copy">
+          <p className="mt-2 text-[13px]/normal text-ic-muted">
             Download a JSON copy of saved invoices, company profiles, products, and settings. Store
             it somewhere private.
           </p>
-          <div className="ic-actions ic-backup-action">
+          <div className={`${actionsClass} mt-auto pt-3.5`}>
             <button
-              className="ic-button ic-primary"
+              className={primaryButtonClass}
               type="button"
               onClick={() =>
                 downloadFile(
@@ -500,7 +517,7 @@ export function Backup({
             </button>
             {damaged !== null && (
               <button
-                className="ic-button"
+                className={buttonClass}
                 type="button"
                 onClick={() =>
                   downloadFile(
@@ -514,26 +531,33 @@ export function Backup({
             )}
           </div>
         </section>
-        <section className="ic-backup-card">
-          <div className="ic-backup-card-head">
-            <span className="ic-backup-badge" aria-hidden="true">
+        <section className="flex flex-col rounded-[10px] border border-ic-line bg-ic-surface p-[18px]">
+          <div className="flex items-center gap-2.5">
+            <span
+              className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-ic-soft text-ic-accent"
+              aria-hidden="true"
+            >
               <Icon name="upload" />
             </span>
-            <h2>Restore a backup</h2>
+            <h2 className="m-0 font-display text-[15px]/tight font-[720] text-ic-ink">
+              Restore a backup
+            </h2>
           </div>
-          <p className="ic-muted ic-backup-copy">
+          <p className="mt-2 text-[13px]/normal text-ic-muted">
             Restore replaces the local workspace. Download a backup of what you have first.
           </p>
-          <div className="ic-backup-action">
-            <label className="ic-backup-dropzone">
+          <div className="mt-auto pt-3.5">
+            <label className="relative flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-ic-accent/45 bg-ic-field px-3 py-2 text-ic-accent transition-[border-color,background-color] duration-140 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:bg-ic-soft">
               <Icon name="upload" />
-              <span className="ic-backup-dropzone-text" aria-hidden="true">
-                <strong>Choose backup file</strong>
-                <span>.json up to 8 MB</span>
+              <span className="grid min-w-0 gap-px" aria-hidden="true">
+                <strong className="text-[13px]/[1.25] font-bold text-ic-ink">
+                  Choose backup file
+                </strong>
+                <span className="text-xs/[1.25] text-ic-muted">.json up to 8 MB</span>
               </span>
               <input
                 type="file"
-                className="ic-backup-file-input"
+                className="absolute inset-0 size-full min-h-0 cursor-pointer border-0 p-0 opacity-0"
                 aria-label="Invoice Core backup file"
                 accept="application/json,.json"
                 onChange={async (event) => {
@@ -571,22 +595,27 @@ export function Backup({
             </label>
           </div>
           {error && (
-            <p className="ic-error ic-note" role="alert">
+            <p className="ic-error mt-2 text-ic-error" role="alert">
               {error}
             </p>
           )}
         </section>
       </div>
-      <section className="ic-backup-danger" aria-label="Reset local data">
-        <div>
-          <h2>Reset local data</h2>
-          <p className="ic-muted ic-backup-copy">
+      <section
+        className="flex flex-wrap items-center justify-between gap-4 rounded-[10px] border border-l-[3px] border-ic-error/28 border-l-ic-error bg-ic-surface px-[18px] py-4"
+        aria-label="Reset local data"
+      >
+        <div className="min-w-0 flex-[1_1_280px]">
+          <h2 className="m-0 font-display text-[15px]/tight font-[720] text-ic-ink">
+            Reset local data
+          </h2>
+          <p className="mt-2 text-[13px]/normal text-ic-muted">
             Remove all saved invoices, sender profiles, and products from this browser. Export a
             JSON backup first.
           </p>
         </div>
         <button
-          className="ic-button ic-danger"
+          className={`${dangerButtonClass} shrink-0`}
           type="button"
           onClick={() =>
             requestConfirm({

@@ -1,9 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
-test('omits theme selector while respecting system color scheme and accessibility', async ({
-  page,
-}) => {
+test('enforces light-only color scheme without a theme selector', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('/')
 
@@ -20,10 +18,37 @@ test('omits theme selector while respecting system color scheme and accessibilit
 
   await backup.click()
   await expect(dialog).toHaveCSS('opacity', '1')
+  await expect(dialog).toHaveCSS('color-scheme', 'light')
   await expect(dialog.getByRole('combobox', { name: 'Theme', exact: true })).toHaveCount(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await dialog.getByRole('button', { name: 'Close dialog' }).click()
 
   await page.emulateMedia({ colorScheme: 'dark' })
-  await expect(workspace).toHaveCSS('color-scheme', 'dark')
+  await expect(workspace).toHaveCSS('color-scheme', 'light')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
+test('keeps light color scheme when a restored workspace carries legacy dark theme', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'invoice-core:workspace:v1',
+      JSON.stringify({
+        version: 4,
+        theme: 'dark',
+        companies: [],
+        products: [],
+        invoices: [],
+      }),
+    )
+  })
+  await page.goto('/')
+
+  const workspace = page.locator('.ic-workspace')
+  await expect(workspace).toHaveCSS('color-scheme', 'light')
+  await page.getByRole('button', { name: 'Backup', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Backup' })).toHaveCSS('color-scheme', 'light')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })

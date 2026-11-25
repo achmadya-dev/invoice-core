@@ -1,16 +1,28 @@
 import { useState } from 'react'
-import { matchesProduct, maxProducts, newProduct, type Product, type Theme } from './domain/invoice'
-import { CurrencySelect, Icon, shouldOpenRecordRow, WorkspaceDialog } from './invoice-ui'
+import { matchesProduct, maxProducts, newProduct, type Product } from './domain/invoice'
+import {
+  actionsClass,
+  buttonClass,
+  CurrencySelect,
+  fieldClass,
+  fieldsGridClass,
+  Icon,
+  panelClass,
+  primaryButtonClass,
+  recordRowBaseClass,
+  recordTriggerClass,
+  shouldOpenRecordRow,
+  textButtonClass,
+  WorkspaceDialog,
+} from './invoice-ui'
 import { LineItems } from './LineItems'
 
 export function ProductsPanel({
   products,
-  theme,
   save,
   remove,
 }: {
   products: Product[]
-  theme: Theme
   save: (product: Product) => { ok: true } | { ok: false; message?: string }
   remove: (product: Product) => void
 }) {
@@ -31,12 +43,12 @@ export function ProductsPanel({
     setError('')
   }
   return (
-    <section className="ic-editor ic-master-panel" aria-labelledby="products-title">
+    <section className={panelClass} aria-labelledby="products-title">
       <h2 id="products-title" className="sr-only">
         Products
       </h2>
-      <div className="ic-master-toolbar ic-panel-pad">
-        <label className="ic-field">
+      <div className="flex flex-wrap items-end justify-between gap-3 px-[22px] py-[21px] max-[480px]:px-3.5">
+        <label className={`${fieldClass} flex-[0_1_300px]`}>
           Search products
           <input
             type="search"
@@ -46,7 +58,7 @@ export function ProductsPanel({
           />
         </label>
         <button
-          className="ic-button ic-primary"
+          className={primaryButtonClass}
           type="button"
           disabled={products.length >= maxProducts}
           onClick={() => openDialog(newProduct('USD'))}
@@ -55,16 +67,16 @@ export function ProductsPanel({
         </button>
       </div>
       {matches.length === 0 ? (
-        <p className="ic-empty">
+        <p className="px-[22px] py-[21px] max-[480px]:px-3.5">
           {products.length
             ? 'No products match this search.'
             : 'No products yet. Add a product or service to reuse it on invoices.'}
         </p>
       ) : (
-        <ul className="ic-records">
+        <ul className="list-none">
           {matches.map((product) => (
             <li
-              className="ic-record ic-record-clickable"
+              className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_auto]`}
               key={product.id}
               onClick={(event) => {
                 if (shouldOpenRecordRow(event)) openDialog(product)
@@ -73,21 +85,21 @@ export function ProductsPanel({
               <div>
                 <h3>
                   <button
-                    className="ic-text-button ic-record-trigger"
+                    className={recordTriggerClass}
                     type="button"
                     onClick={() => openDialog(product)}
                   >
                     {product.name}
                   </button>
                 </h3>
-                <p>
+                <p className="mt-[5px] text-xs text-ic-muted">
                   {product.items.length} {product.items.length === 1 ? 'item' : 'items'} ·{' '}
                   {product.currency}
                 </p>
               </div>
-              <div className="ic-actions">
+              <div className={`${actionsClass} cursor-default max-[620px]:col-span-full`}>
                 <button
-                  className="ic-text-button"
+                  className={textButtonClass}
                   type="button"
                   aria-label={`Delete ${product.name}`}
                   onClick={() => remove(product)}
@@ -103,12 +115,11 @@ export function ProductsPanel({
         open={selected !== null}
         title={existing ? 'Edit product' : 'New product'}
         description="Group the items you sell together. Selecting this product on an invoice adds every item below."
-        theme={theme}
         onClose={() => openDialog(null)}
       >
         {selected && (
           <form
-            className="ic-dialog-body"
+            className="mt-4"
             noValidate
             onSubmit={(event) => {
               event.preventDefault()
@@ -123,49 +134,43 @@ export function ProductsPanel({
               }
             }}
           >
-            <div className="ic-fields">
-              <label className="ic-field">
+            <div className={fieldsGridClass}>
+              <label className={fieldClass}>
                 Product name
                 <input
                   maxLength={120}
                   aria-invalid={saveAttempted && !selected.name.trim() ? true : undefined}
+                  placeholder="e.g. Monthly maintenance"
                   value={selected.name}
                   onChange={(event) => updateProduct({ ...selected, name: event.target.value })}
-                  required
                 />
               </label>
               <CurrencySelect
-                label="Product currency"
                 value={selected.currency}
                 onChange={(currency) => updateProduct({ ...selected, currency })}
               />
             </div>
-            <fieldset className="ic-bundle-items">
-              <legend>Included items</legend>
+            <fieldset className="mt-4 min-w-0 border-t border-ic-line px-0 pt-2.5 pb-0">
+              <legend className="pr-2 font-bold">Items</legend>
               <LineItems
                 items={selected.items}
-                edit={(update) => {
-                  setSelected((current) =>
-                    current ? { ...current, items: update(current.items) } : current,
-                  )
-                  setError('')
-                }}
+                edit={(update) => updateProduct({ ...selected, items: update(selected.items) })}
                 currency={selected.currency}
                 caption="Product line items"
-                empty="Add at least one item to this product."
+                empty="Add at least one item to save this product."
                 showErrors={saveAttempted}
               />
             </fieldset>
             {error && (
-              <p className="ic-error ic-note" role="alert">
+              <p className="ic-error mt-2 text-ic-error" role="alert">
                 {error}
               </p>
             )}
-            <div className="ic-modal-actions">
-              <button className="ic-button" type="button" onClick={() => openDialog(null)}>
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
+              <button className={buttonClass} type="button" onClick={() => openDialog(null)}>
                 Cancel
               </button>
-              <button className="ic-button ic-primary" type="submit">
+              <button className={primaryButtonClass} type="submit">
                 Save product
               </button>
             </div>

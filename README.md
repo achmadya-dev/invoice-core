@@ -35,9 +35,9 @@ All screenshots below are captured from a built production instance populated wi
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <strong>Reusable product groups &amp; automatic dark mode</strong><br>
-      Define multi-line service bundles across currencies; the interface automatically adapts to your system color scheme.<br><br>
-      <img src="docs/images/catalog-products-dark.png" alt="Products catalog tab in dark mode showing multi-line product groups in USD and GBP">
+      <strong>Reusable product groups</strong><br>
+      Define multi-line service bundles across currencies and insert all items into matching invoices in one click.<br><br>
+      <img src="docs/images/catalog-products.png" alt="Products catalog tab showing multi-line product groups in USD and GBP">
     </td>
     <td width="50%" valign="top">
       <strong>Responsive mobile workspace</strong><br>
@@ -73,7 +73,7 @@ Want to try the workspace with realistic synthetic data right away (matching the
 ```json
 {
   "version": 4,
-  "theme": "system",
+  "theme": "light",
   "companies": [
     {
       "id": "11111111-1111-4111-8111-111111111101",

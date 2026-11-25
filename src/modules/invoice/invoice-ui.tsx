@@ -3,15 +3,39 @@ import { Combobox } from '@base-ui/react/combobox'
 import { Dialog } from '@base-ui/react/dialog'
 import { Select } from '@base-ui/react/select'
 import { countryCodes, countryName, currencies, currencyName } from './domain/catalog'
-import {
-  decimalValid,
-  type Contact,
-  type Currency,
-  type Sender,
-  type Theme,
-} from './domain/invoice'
+import { decimalValid, type Contact, type Currency, type Sender } from './domain/invoice'
 import { readLogo } from './workspace.browser'
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+
+export const shellClass =
+  'ic-shell mx-auto w-[min(100%-72px,1320px)] max-[900px]:w-[calc(100%-36px)] print:block print:w-full print:max-w-none print:min-h-0 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none'
+export const actionsClass = 'ic-actions flex flex-wrap items-center gap-2'
+export const fieldClass = 'relative grid min-w-0 content-start gap-[5px] text-xs font-[680]'
+export const fieldsGridClass = 'grid grid-cols-2 gap-x-3 gap-y-2.5 max-[480px]:gap-[9px]'
+export const buttonClass =
+  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-line bg-ic-surface px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-accent enabled:hover:bg-ic-soft'
+export const primaryButtonClass =
+  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-accent bg-ic-accent px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-white enabled:hover:brightness-[0.92]'
+export const dangerButtonClass =
+  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-error bg-ic-error-bg px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-error enabled:hover:brightness-95'
+export const textButtonClass =
+  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg px-[7px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-accent underline decoration-transparent underline-offset-4 hover:bg-ic-soft hover:decoration-current'
+export const iconButtonClass =
+  'grid size-9 flex-none place-items-center rounded-lg border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-accent motion-reduce:transition-none'
+export const panelClass = 'min-w-0 rounded-[14px] border border-ic-line bg-ic-surface'
+export const bannerClass = 'mb-3 rounded-lg bg-ic-soft px-3.5 py-[11px] print:hidden'
+export const errorBannerClass =
+  'ic-error mb-3 rounded-lg bg-ic-error-bg px-3.5 py-[11px] text-ic-error print:hidden'
+export const docLabelClass = 'text-[10px] font-[740] tracking-[0.07em] text-ic-muted uppercase'
+export const recordRowBaseClass =
+  'ic-record grid cursor-pointer items-center gap-3.5 border-t border-ic-line px-[22px] py-[11px] wrap-anywhere transition-colors duration-120 last:rounded-b-[13px] [&:hover:not(:has(.ic-actions:hover))]:bg-ic-soft/55 [&:has(.ic-record-trigger:focus-visible)]:bg-ic-soft/55 [&:hover:not(:has(.ic-actions:hover))_.ic-record-trigger]:decoration-current max-[480px]:px-3.5 motion-reduce:transition-none'
+export const sheetFieldLabelClass = 'relative grid min-w-0 content-start gap-0 text-xs font-normal'
+export const sheetNameLabelClass =
+  'relative mb-0.5 grid min-w-0 content-start gap-0 font-display text-[clamp(14px,1.7vw,19px)]/[1.15] font-[750]'
+export const recordTriggerClass =
+  'ic-record-trigger block min-h-0 cursor-pointer rounded-lg p-0 text-left font-bold whitespace-normal text-ic-accent underline decoration-transparent underline-offset-4 hover:bg-transparent hover:decoration-current'
+export const sheetChipClass =
+  'inline-flex min-h-6 items-center gap-1 rounded-md border border-ic-line bg-ic-soft px-2 py-0.5 font-sans text-[11px]/[1.2] font-[650] tracking-normal whitespace-nowrap text-ic-accent normal-case transition-[background-color,border-color] duration-120 hover:border-ic-accent hover:bg-ic-desk motion-reduce:transition-none'
 
 const countryOptions = countryCodes
   .map((code) => ({ code, name: countryName(code) }))
@@ -33,16 +57,16 @@ const icons = {
 export function shouldOpenRecordRow(event: MouseEvent<HTMLLIElement>) {
   if (
     event.target instanceof Element &&
-    event.target.closest('button, a, input, select, textarea, .ic-actions')
+    event.target.closest('button, a, input, select, textarea, summary, [role="button"]')
   ) {
     return false
   }
-  return !window.getSelection()?.toString()
+  return (window.getSelection()?.toString() ?? '') === ''
 }
 
-export function Icon({ name }: { name: keyof typeof icons }) {
+export function Icon({ name, className }: { name: keyof typeof icons; className?: string }) {
   return (
-    <svg className="ic-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className={className ?? 'size-[17px] flex-none'} viewBox="0 0 24 24" aria-hidden="true">
       <path
         d={icons[name]}
         fill={name === 'mark' ? 'currentColor' : 'none'}
@@ -94,7 +118,7 @@ export function DecimalField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="ic-field">
+    <label className={fieldClass}>
       {label}
       <input
         inputMode="decimal"
@@ -121,7 +145,6 @@ export function PickerModal({
   query,
   options,
   error,
-  theme,
   onQuery,
   onSelect,
   onClose,
@@ -136,7 +159,6 @@ export function PickerModal({
   query: string
   options: PickerOption[]
   error?: string
-  theme: Theme
   onQuery: (query: string) => void
   onSelect: (value: string) => void
   onClose: () => void
@@ -146,13 +168,12 @@ export function PickerModal({
       open={open}
       title={title}
       description={description}
-      theme={theme}
       size="compact"
       nested
       onClose={onClose}
     >
-      <div className="ic-dialog-body ic-picker-body">
-        <label className="ic-field">
+      <div className="mt-4 grid gap-3">
+        <label className={fieldClass}>
           {searchLabel}
           <input
             type="search"
@@ -163,26 +184,33 @@ export function PickerModal({
           />
         </label>
         {error && (
-          <p className="ic-banner ic-error" role="alert">
+          <p
+            className="ic-error rounded-lg bg-ic-error-bg px-3.5 py-[11px] text-ic-error"
+            role="alert"
+          >
             {error}
           </p>
         )}
         {options.length === 0 ? (
-          <p className="ic-picker-empty">{empty}</p>
+          <p className="rounded-lg border border-dashed border-ic-line px-3 py-[18px] text-center text-[13px] text-ic-muted">
+            {empty}
+          </p>
         ) : (
-          <ul className="ic-picker-list">
+          <ul className="grid max-h-[min(320px,50vh)] list-none gap-1.5 overflow-y-auto overscroll-contain p-0.5">
             {options.map((option) => (
               <li key={option.value}>
                 <button
                   type="button"
-                  className="ic-picker-option"
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-ic-line bg-ic-field px-3 py-2.5 text-start text-ic-ink transition-[background-color,border-color] duration-120 hover:border-ic-accent hover:bg-ic-soft motion-reduce:transition-none"
                   onClick={() => onSelect(option.value)}
                 >
-                  <span className="ic-picker-text">
-                    <strong>{option.label}</strong>
-                    {option.detail && <small>{option.detail}</small>}
+                  <span className="grid min-w-0 gap-0.5 wrap-anywhere">
+                    <strong className="text-[13.5px] font-[680]">{option.label}</strong>
+                    {option.detail && (
+                      <small className="text-xs text-ic-muted">{option.detail}</small>
+                    )}
                   </span>
-                  <span className="ic-picker-action">{actionLabel}</span>
+                  <span className="flex-none text-xs font-bold text-ic-accent">{actionLabel}</span>
                 </button>
               </li>
             ))}
@@ -197,7 +225,6 @@ export function WorkspaceDialog({
   open,
   title,
   description,
-  theme,
   size = 'default',
   nested = false,
   headerExtra,
@@ -207,7 +234,6 @@ export function WorkspaceDialog({
   open: boolean
   title: string
   description: string
-  theme: Theme
   size?: 'default' | 'compact' | 'wide'
   nested?: boolean
   headerExtra?: ReactNode
@@ -223,42 +249,41 @@ export function WorkspaceDialog({
     >
       <Dialog.Portal>
         <Dialog.Backdrop
-          className={nested ? 'ic-modal-backdrop ic-nested-backdrop' : 'ic-modal-backdrop'}
+          className={`fixed inset-0 bg-[rgb(17_12_28/54%)] backdrop-blur-[2px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden ${nested ? 'z-70' : 'z-60'}`}
         />
         <Dialog.Viewport
           className={
             size === 'wide'
-              ? 'ic-modal-viewport ic-invoice-modal-viewport'
-              : nested
-                ? 'ic-modal-viewport ic-nested-viewport'
-                : 'ic-modal-viewport'
+              ? 'fixed inset-0 z-61 grid place-items-center items-start overflow-y-auto p-5 max-[620px]:p-2 max-[480px]:p-1 print:static print:block print:overflow-visible print:p-0'
+              : `fixed inset-0 grid place-items-center overflow-y-auto p-5 ${nested ? 'z-71' : 'z-61'}`
           }
         >
           <Dialog.Popup
             className={
               size === 'wide'
-                ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-wide'
+                ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-wide w-[min(100%,988px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-opacity duration-120 ease-out outline-none data-starting-style:opacity-0 motion-reduce:transition-none max-[620px]:p-3.5 max-[480px]:rounded-xl max-[480px]:px-2 max-[480px]:py-3 print:block print:min-h-0 print:w-full print:max-w-none print:rounded-none print:border-0 print:bg-white print:p-0 print:text-ic-ink print:shadow-none'
                 : size === 'compact'
-                  ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-compact'
-                  : 'ic-modal-popup ic-workspace-dialog'
+                  ? 'ic-modal-popup ic-workspace-dialog w-[min(100%,520px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none'
+                  : 'ic-modal-popup ic-workspace-dialog w-[min(100%,760px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none'
             }
-            data-theme={theme}
           >
-            <div className="ic-dialog-heading">
-              <Dialog.Title className="ic-modal-title">{title}</Dialog.Title>
-              <Dialog.Close className="ic-icon-button" aria-label="Close dialog">
+            <div className="ic-dialog-heading flex items-center justify-between gap-3 print:hidden">
+              <Dialog.Title className="m-0 font-display text-lg/tight font-[730]">
+                {title}
+              </Dialog.Title>
+              <Dialog.Close className={iconButtonClass} aria-label="Close dialog">
                 <Icon name="close" />
               </Dialog.Close>
             </div>
             {headerExtra ? (
-              <div className="ic-dialog-intro">
-                <Dialog.Description className="ic-modal-description">
+              <div className="ic-dialog-intro mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 max-[620px]:flex-col max-[620px]:items-stretch print:hidden">
+                <Dialog.Description className="m-0 text-sm/normal text-ic-muted">
                   {description}
                 </Dialog.Description>
                 {headerExtra}
               </div>
             ) : (
-              <Dialog.Description className="ic-modal-description">
+              <Dialog.Description className="mt-2.5 text-sm/normal text-ic-muted print:hidden">
                 {description}
               </Dialog.Description>
             )}
@@ -290,34 +315,34 @@ export function SelectField({
         if (typeof nextValue === 'string') onChange(nextValue)
       }}
     >
-      <div className="ic-field">
+      <div className={fieldClass}>
         <Select.Label>{label}</Select.Label>
-        <Select.Trigger className="ic-select-trigger">
+        <Select.Trigger className="ic-select-trigger flex min-h-10 w-full min-w-0 items-center justify-between gap-2.5 rounded-[7px] border border-ic-line bg-ic-field px-[9px] py-[7px] text-start font-sans text-sm/[1.4] font-normal text-ic-ink data-disabled:cursor-not-allowed data-disabled:opacity-55 data-popup-open:border-ic-accent [&>:first-child]:min-w-0 [&>:first-child]:truncate">
           <Select.Value />
-          <Select.Icon className="ic-select-icon">
-            <Icon name="chevron" />
+          <Select.Icon className="grid flex-none place-items-center text-ic-muted">
+            <Icon name="chevron" className="size-[15px] flex-none" />
           </Select.Icon>
         </Select.Trigger>
         <Select.Positioner
-          className="ic-select-positioner"
+          className="z-50 outline-none"
           align="start"
           sideOffset={4}
           collisionPadding={12}
           alignItemWithTrigger={false}
           positionMethod="fixed"
         >
-          <Select.Popup className="ic-select-popup">
-            <Select.List className="ic-select-list">
+          <Select.Popup className="ic-select-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-lg border border-ic-line bg-ic-surface p-1 text-ic-ink shadow-[0_10px_28px_rgb(25_20_38/18%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
+            <Select.List className="grid gap-0.5 outline-none">
               {options.map((option) => (
                 <Select.Item
                   key={option.value}
                   value={option.value}
                   label={option.label}
-                  className="ic-select-option"
+                  className="ic-select-option relative flex min-h-9 cursor-default items-center rounded-[5px] py-[7px] pr-[34px] pl-[9px] text-[13px]/[1.35] wrap-anywhere text-ic-ink select-none focus-visible:-outline-offset-2 data-highlighted:bg-ic-soft data-highlighted:text-ic-accent data-selected:font-[680]"
                 >
                   <Select.ItemText>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator className="ic-select-indicator">
-                    <Icon name="check" />
+                  <Select.ItemIndicator className="absolute inset-e-[9px] grid place-items-center text-ic-accent">
+                    <Icon name="check" className="size-[15px] flex-none" />
                   </Select.ItemIndicator>
                 </Select.Item>
               ))}
@@ -338,13 +363,11 @@ export function CountrySelect({
   label,
   value,
   onChange,
-  theme,
   span = false,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
-  theme: Theme
   span?: boolean
 }) {
   const id = useId()
@@ -354,40 +377,44 @@ export function CountrySelect({
       value={value || null}
       onValueChange={(nextValue) => onChange(typeof nextValue === 'string' ? nextValue : '')}
     >
-      <div className={span ? 'ic-field ic-span' : 'ic-field'}>
+      <div className={span ? `${fieldClass} col-span-full` : fieldClass}>
         <label htmlFor={id}>{label}</label>
-        <Combobox.InputGroup className="ic-country-group">
-          <Combobox.Input id={id} className="ic-country-input" placeholder="Search countries" />
+        <Combobox.InputGroup className="ic-country-group relative flex min-h-10 w-full min-w-0 items-center rounded-[7px] border border-ic-line bg-ic-field focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent">
+          <Combobox.Input
+            id={id}
+            className="min-h-[38px] w-full min-w-0 rounded-[inherit] border-0 bg-transparent py-[7px] pr-[70px] pl-[9px] font-sans text-sm/[1.4] font-normal text-ic-ink outline-none placeholder:text-ic-muted placeholder:opacity-100"
+            placeholder="Search countries"
+          />
           <Combobox.Trigger
-            className="ic-country-trigger"
+            className="absolute inset-y-0 inset-e-0 grid w-[34px] place-items-center rounded-[5px] border-0 bg-transparent p-0 text-ic-muted hover:bg-ic-soft hover:text-ic-accent"
             aria-label={`Show ${label.toLowerCase()} options`}
           >
-            <Icon name="chevron" />
+            <Icon name="chevron" className="size-[15px] flex-none" />
           </Combobox.Trigger>
           {value && (
             <Combobox.Clear
-              className="ic-country-clear"
+              className="absolute inset-y-0 inset-e-[34px] grid w-[34px] place-items-center rounded-[5px] border-0 bg-transparent p-0 text-ic-muted hover:bg-ic-soft hover:text-ic-accent"
               aria-label={`Clear ${label.toLowerCase()}`}
             >
-              <Icon name="close" />
+              <Icon name="close" className="size-[15px] flex-none" />
             </Combobox.Clear>
           )}
         </Combobox.InputGroup>
         <Combobox.Portal>
-          <Combobox.Positioner className="ic-country-positioner" sideOffset={4}>
-            <Combobox.Popup className="ic-country-popup" data-theme={theme}>
+          <Combobox.Positioner className="z-63 outline-none" sideOffset={4}>
+            <Combobox.Popup className="ic-country-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-lg border border-ic-line bg-ic-surface p-1 text-ic-ink scheme-light shadow-[0_10px_28px_rgb(25_20_38/18%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
               <Combobox.Empty>
-                <div className="ic-country-empty">No countries match.</div>
+                <div className="p-[9px] text-[13px] text-ic-muted">No countries match.</div>
               </Combobox.Empty>
-              <Combobox.List className="ic-country-list">
+              <Combobox.List className="grid gap-0.5 outline-none">
                 {(country) => (
                   <Combobox.Item
                     key={country.code}
                     value={country.code}
-                    className="ic-country-option"
+                    className="ic-country-option relative flex min-h-9 cursor-default items-center rounded-[5px] py-[7px] pr-[34px] pl-[9px] text-[13px]/[1.35] wrap-anywhere text-ic-ink select-none focus-visible:-outline-offset-2 data-highlighted:bg-ic-soft data-highlighted:text-ic-accent data-selected:font-[680]"
                   >
-                    <Combobox.ItemIndicator className="ic-country-indicator">
-                      <Icon name="check" />
+                    <Combobox.ItemIndicator className="absolute inset-e-[9px] grid place-items-center text-ic-accent">
+                      <Icon name="check" className="size-[15px] flex-none" />
                     </Combobox.ItemIndicator>
                     <span>{country.name}</span>
                   </Combobox.Item>
@@ -430,7 +457,13 @@ export function ContactFields({
     <>
       {contactFields.map((field) => (
         <label
-          className={sheet && field.key === 'name' ? 'ic-field ic-sheet-name' : 'ic-field'}
+          className={
+            sheet && field.key === 'name'
+              ? sheetNameLabelClass
+              : sheet
+                ? sheetFieldLabelClass
+                : fieldClass
+          }
           key={field.key}
         >
           <span className={sheet ? 'sr-only' : undefined}>
@@ -439,6 +472,13 @@ export function ContactFields({
           <input
             type={field.type}
             maxLength={120}
+            className={
+              sheet && field.key === 'name'
+                ? 'min-h-[26px] py-px leading-[1.45]'
+                : sheet
+                  ? 'min-h-[22px] py-px leading-[1.45]'
+                  : undefined
+            }
             aria-invalid={field.key === 'name' && invalidName ? true : undefined}
             placeholder={sheet ? field[party] : undefined}
             value={contact[field.key]}
@@ -446,11 +486,12 @@ export function ContactFields({
           />
         </label>
       ))}
-      <label className={sheet ? 'ic-field' : 'ic-field ic-span'}>
+      <label className={sheet ? sheetFieldLabelClass : `${fieldClass} col-span-full`}>
         <span className={sheet ? 'sr-only' : undefined}>{partyLabel} address</span>
         <textarea
           maxLength={1500}
           rows={sheet ? 1 : 2}
+          className={sheet ? 'min-h-[22px] py-px leading-[1.45]' : undefined}
           placeholder={sheet ? 'e.g. 10 Market Street, Suite 2' : undefined}
           value={contact.address}
           onChange={(event) => onChange({ address: event.target.value })}
@@ -463,12 +504,10 @@ export function ContactFields({
 export function SenderFields({
   sender,
   onChange,
-  theme,
   invalidName = false,
 }: {
   sender: Sender
   onChange: (patch: Partial<Sender>) => void
-  theme: Theme
   invalidName?: boolean
 }) {
   return (
@@ -483,9 +522,8 @@ export function SenderFields({
         label="Sender country"
         value={sender.country}
         onChange={(country) => onChange({ country })}
-        theme={theme}
       />
-      <label className="ic-field">
+      <label className={fieldClass}>
         Website
         <input
           maxLength={120}
@@ -493,7 +531,7 @@ export function SenderFields({
           onChange={(event) => onChange({ website: event.target.value })}
         />
       </label>
-      <label className="ic-field">
+      <label className={fieldClass}>
         Tax ID
         <input
           maxLength={120}
@@ -501,7 +539,7 @@ export function SenderFields({
           onChange={(event) => onChange({ taxId: event.target.value })}
         />
       </label>
-      <label className="ic-field ic-span">
+      <label className={`${fieldClass} col-span-full`}>
         Payment details
         <textarea
           maxLength={1500}
@@ -534,12 +572,30 @@ export function LogoField({
     [],
   )
   return (
-    <div className={inline ? 'ic-sheet-logo' : 'ic-span ic-logo-field'}>
-      <label className={inline ? 'ic-logo-upload' : 'ic-field'}>
+    <div
+      className={
+        inline
+          ? 'grid min-w-0 justify-items-start gap-2'
+          : 'col-span-full grid min-w-0 justify-items-stretch gap-2'
+      }
+    >
+      <label
+        className={
+          inline
+            ? 'relative inline-grid justify-items-start gap-[5px] rounded-md border border-dashed border-ic-muted p-3 text-xs font-bold text-ic-accent focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent'
+            : fieldClass
+        }
+      >
         {inline ? (
           <>
-            {logo && <img className="ic-logo" src={logo} alt="Invoice logo" />}
-            <span>
+            {logo && (
+              <img
+                className="max-h-[60px] max-w-[132px] object-contain object-left"
+                src={logo}
+                alt="Invoice logo"
+              />
+            )}
+            <span className="flex items-center gap-1">
               <Icon name={logo ? 'edit' : 'plus'} /> {logo ? 'Change logo' : 'Upload logo'}
             </span>
           </>
@@ -549,6 +605,11 @@ export function LogoField({
         <input
           ref={fileInput}
           type="file"
+          className={
+            inline
+              ? 'absolute inset-0 size-full min-h-0 cursor-pointer border-0 p-0 opacity-0'
+              : undefined
+          }
           aria-label={inline ? (logo ? 'Change logo' : 'Upload logo') : undefined}
           accept="image/png,image/jpeg"
           onChange={async (event) => {
@@ -574,16 +635,22 @@ export function LogoField({
         />
       </label>
       {logoError && (
-        <p className="ic-span ic-error" role="alert">
+        <p className="ic-error col-span-full text-ic-error" role="alert">
           {logoError}
         </p>
       )}
       {logo && (
-        <div className="ic-span ic-actions">
-          {!inline && <img className="ic-logo" src={logo} alt="" />}
+        <div className={`${actionsClass} col-span-full`}>
+          {!inline && (
+            <img
+              className="max-h-[60px] max-w-[132px] object-contain object-left"
+              src={logo}
+              alt=""
+            />
+          )}
           <button
             type="button"
-            className={inline ? 'ic-text-button' : 'ic-button'}
+            className={inline ? textButtonClass : buttonClass}
             onClick={() => {
               readAttempt.current += 1
               setLogoError('')
@@ -610,11 +677,9 @@ export type ConfirmState = {
 
 export function ConfirmModal({
   confirm,
-  theme,
   onClose,
 }: {
   confirm: ConfirmState | null
-  theme: Theme
   onClose: () => void
 }) {
   return (
@@ -625,22 +690,24 @@ export function ConfirmModal({
       }}
     >
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="ic-modal-backdrop ic-confirm-backdrop" />
-        <AlertDialog.Viewport className="ic-modal-viewport ic-confirm-viewport">
-          <AlertDialog.Popup className="ic-modal-popup" data-theme={theme}>
+        <AlertDialog.Backdrop className="fixed inset-0 z-70 bg-[rgb(17_12_28/54%)] backdrop-blur-[2px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden" />
+        <AlertDialog.Viewport className="fixed inset-0 z-71 grid place-items-center overflow-y-auto p-5">
+          <AlertDialog.Popup className="ic-modal-popup w-[min(100%,440px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none">
             {confirm && (
               <>
-                <AlertDialog.Title className="ic-modal-title">{confirm.title}</AlertDialog.Title>
-                <AlertDialog.Description className="ic-modal-description">
+                <AlertDialog.Title className="m-0 font-display text-lg/tight font-[730]">
+                  {confirm.title}
+                </AlertDialog.Title>
+                <AlertDialog.Description className="mt-2.5 text-sm/normal text-ic-muted">
                   {confirm.description}
                 </AlertDialog.Description>
-                <div className="ic-modal-actions">
-                  <AlertDialog.Close className="ic-button">
+                <div className="mt-5 flex flex-wrap justify-end gap-2">
+                  <AlertDialog.Close className={buttonClass}>
                     {confirm.cancelLabel ?? 'Cancel'}
                   </AlertDialog.Close>
                   <button
                     type="button"
-                    className={`ic-button ${confirm.danger ? 'ic-danger' : 'ic-primary'}`}
+                    className={confirm.danger ? dangerButtonClass : primaryButtonClass}
                     onClick={() => {
                       const action = confirm.onConfirm
                       onClose()
@@ -670,15 +737,22 @@ export function ColorPicker({
 }) {
   const inputId = useId()
   return (
-    <div className="ic-field ic-color-field">
+    <div className={fieldClass}>
       <label htmlFor={inputId}>{label}</label>
-      <span className="ic-color-control" title={value.toUpperCase()}>
-        <span className="ic-color-swatch" style={{ backgroundColor: value }} aria-hidden="true" />
+      <span
+        className="ic-color-control relative inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[7px] border border-ic-line bg-ic-field px-2.5 text-ic-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:text-ic-ink"
+        title={value.toUpperCase()}
+      >
+        <span
+          className="size-[18px] shrink-0 rounded-full border border-[#0000001f]"
+          style={{ backgroundColor: value }}
+          aria-hidden="true"
+        />
         <Icon name="pipette" />
         <input
           id={inputId}
           type="color"
-          className="ic-color-native"
+          className="absolute inset-0 size-full min-h-0 cursor-pointer border-0 p-0 opacity-0"
           value={value}
           onChange={(event) => onChange(event.target.value.toLowerCase())}
         />
