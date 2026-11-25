@@ -21,6 +21,7 @@ import {
   Icon,
   SelectField,
   SenderFields,
+  shouldOpenRecordRow,
   WorkspaceDialog,
   type ConfirmState,
 } from './invoice-ui'
@@ -115,14 +116,7 @@ export function InvoiceHistory({
                 className="ic-record ic-record-clickable"
                 key={invoice.id}
                 onClick={(event) => {
-                  if (
-                    event.target instanceof Element &&
-                    event.target.closest('button, a, input, select, textarea, .ic-actions')
-                  ) {
-                    return
-                  }
-                  if (window.getSelection()?.toString()) return
-                  open(invoice)
+                  if (shouldOpenRecordRow(event)) open(invoice)
                 }}
               >
                 <div>
@@ -150,14 +144,6 @@ export function InvoiceHistory({
                     onClick={() => downloadPdf(invoice)}
                   >
                     <Icon name="download" /> {pdfBusyId === invoice.id ? 'Preparing…' : 'PDF'}
-                  </button>
-                  <button
-                    className="ic-button"
-                    type="button"
-                    aria-label={`Edit ${invoice.number}`}
-                    onClick={() => open(invoice)}
-                  >
-                    Edit
                   </button>
                   <button
                     className="ic-button"
@@ -272,20 +258,26 @@ export function Companies({
       </div>
       <ul className="ic-records">
         {matches.map((company) => (
-          <li key={company.id} className="ic-record">
+          <li
+            key={company.id}
+            className="ic-record ic-record-clickable"
+            onClick={(event) => {
+              if (shouldOpenRecordRow(event)) edit(company)
+            }}
+          >
             <div>
-              <h3>{company.sender.name}</h3>
+              <h3>
+                <button
+                  className="ic-text-button ic-record-trigger"
+                  type="button"
+                  onClick={() => edit(company)}
+                >
+                  {company.sender.name}
+                </button>
+              </h3>
               <p>{company.currency}</p>
             </div>
             <div className="ic-actions">
-              <button
-                className="ic-button"
-                type="button"
-                aria-label={`Edit ${company.sender.name}`}
-                onClick={() => edit(company)}
-              >
-                Edit
-              </button>
               <button
                 className="ic-text-button"
                 type="button"

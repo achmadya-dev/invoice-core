@@ -11,7 +11,7 @@ import {
   type Theme,
 } from './domain/invoice'
 import { readLogo } from './workspace.browser'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 
 const countryOptions = countryCodes
   .map((code) => ({ code, name: countryName(code) }))
@@ -29,6 +29,16 @@ const icons = {
   pipette:
     'm14 4 6 6m-2-2-9.5 9.5a2 2 0 0 1-1.1.55L4 19l.95-3.4a2 2 0 0 1 .55-1.1L15 5l3 3Zm-5 1 6 6',
 } as const
+
+export function shouldOpenRecordRow(event: MouseEvent<HTMLLIElement>) {
+  if (
+    event.target instanceof Element &&
+    event.target.closest('button, a, input, select, textarea, .ic-actions')
+  ) {
+    return false
+  }
+  return !window.getSelection()?.toString()
+}
 
 export function Icon({ name }: { name: keyof typeof icons }) {
   return (

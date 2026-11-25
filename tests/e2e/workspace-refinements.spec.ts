@@ -420,7 +420,7 @@ test('aligns invoice sheet action buttons cleanly across mobile states', async (
   })
 })
 
-test('opens invoices in a modal from Create, row click, Edit, and Duplicate without triggering row actions', async ({
+test('opens invoices in a modal from Create, row click, and Duplicate without triggering row actions', async ({
   page,
 }, info) => {
   const company = { ...newCompany('Northline Studio'), padding: 8 }
@@ -459,10 +459,10 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   await expect(rows).toHaveCount(2)
   await expect(rows.first().locator('.ic-actions button')).toHaveText([
     'PDF',
-    'Edit',
     'Duplicate',
     'Delete',
   ])
+  await expect(page.getByRole('button', { name: 'Edit INV-00000001' })).toHaveCount(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.screenshot({ path: info.outputPath('invoices-list-desktop.png') })
 
@@ -528,8 +528,8 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   await detailsDialog.getByRole('button', { name: 'Close dialog' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
-  // 4. Clicking Edit button beside Duplicate opens Invoice details modal; Duplicate inside switches to New invoice
-  await page.getByRole('button', { name: 'Edit INV-00000001', exact: true }).click()
+  // 4. Clicking invoice number trigger opens Invoice details modal; Duplicate inside switches to New invoice
+  await page.getByRole('button', { name: 'INV-00000001', exact: true }).click()
   await expect(detailsDialog).toBeVisible()
   await expect(detailsDialog.getByLabel('Invoice number')).toHaveValue('INV-00000001')
   await detailsDialog.getByRole('button', { name: 'Duplicate', exact: true }).click()
@@ -567,7 +567,7 @@ test('opens invoices in a modal from Create, row click, Edit, and Duplicate with
   await expect(rows).toHaveCount(2)
 
   // 8. Delete inside Invoice details modal uses nested confirmation; Cancel keeps modal, Confirm deletes & closes
-  await page.getByRole('button', { name: 'Edit INV-00000002', exact: true }).click()
+  await page.getByRole('button', { name: 'INV-00000002', exact: true }).click()
   await expect(detailsDialog).toBeVisible()
   await detailsDialog.getByRole('button', { name: 'Delete', exact: true }).click()
   await expect(confirm).toBeVisible()

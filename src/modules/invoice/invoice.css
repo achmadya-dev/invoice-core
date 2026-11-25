@@ -1482,11 +1482,17 @@
   color: var(--ic-muted);
   font-size: 12px;
 }
-.ic-record .ic-text-button.ic-mono {
+.ic-record .ic-record-trigger {
   display: block;
   padding: 0;
   white-space: normal;
   text-align: left;
+}
+.ic-record h3 .ic-record-trigger {
+  min-height: 0;
+  color: var(--ic-ink);
+  font: inherit;
+  letter-spacing: inherit;
 }
 .ic-record-total {
   display: flex;
