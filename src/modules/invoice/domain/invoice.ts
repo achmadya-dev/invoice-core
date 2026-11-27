@@ -114,15 +114,36 @@ const currencySchema = z.enum(currencies)
 export type Currency = z.infer<typeof currencySchema>
 
 const id = z.uuid()
-const label = z.string().max(120)
-const memo = z.string().max(1500)
+
+function hasUnsafeChars(value: string, allowNewlines: boolean) {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index)
+    if (allowNewlines && (code === 0x0a || code === 0x0d || code === 0x09)) continue
+    if (code < 0x20 || code === 0x7f) return true
+    if ((code >= 0x202a && code <= 0x202e) || (code >= 0x2066 && code <= 0x2069)) return true
+  }
+  return false
+}
+
+const singleLineText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .refine((value) => !hasUnsafeChars(value, false))
+const label = singleLineText(120)
+const memo = z
+  .string()
+  .max(1500)
+  .refine((value) => !hasUnsafeChars(value, true))
 const decimalInput = z.string().max(16)
 const dateInput = z.union([z.iso.date(), z.literal('')])
 const country = z.string().refine((code) => code === '' || countryCodes.includes(code))
 const logo = z
   .string()
   .max(Math.ceil(maxLogoBytes / 3) * 4 + 32)
-  .regex(/^data:image\/(?:png|jpeg);base64,[a-z0-9+/]+={0,2}$/i)
+  .regex(
+    /^(?:data:image\/png;base64,iVBORw0KGgo|data:image\/jpeg;base64,\/9j\/)[A-Za-z0-9+/]+={0,2}$/,
+  )
   .or(z.literal(''))
 
 const contactSchema = z.strictObject({
@@ -141,7 +162,7 @@ const senderSchema = contactSchema.extend({
 const companySchema = z.strictObject({
   id,
   sender: senderSchema,
-  prefix: z.string().max(24),
+  prefix: singleLineText(24),
   nextNumber: z.number().int().min(1).max(1_000_001),
   padding: z.number().int().min(1).max(8),
   currency: currencySchema,
@@ -152,7 +173,7 @@ const companySchema = z.strictObject({
 })
 const itemSchema = z.strictObject({
   id,
-  description: z.string().max(240),
+  description: singleLineText(240),
   quantity: decimalInput,
   rate: decimalInput,
 })
@@ -455,6 +476,25 @@ export function decimalValid(value: string, kind: 'quantity' | 'amount' | 'perce
     (kind === 'quantity' || parsed >= 0n) &&
     (kind !== 'percent' || parsed <= percentBase)
   )
+}
+
+export function hasPositiveDecimal(value: string): boolean {
+  const parsed = scaled(value)
+  return parsed !== null && parsed > 0n
+}
+
+export function sanitizeFilename(value: string, fallback = 'invoice'): string {
+  const cleaned = value
+    .trim()
+    .replace(/[^\p{L}\p{N}._-]+/gu, '-')
+    .replace(/^[.-]+|[.-]+$/g, '')
+    .slice(0, 100)
+    .replace(/^[.-]+|[.-]+$/g, '')
+  return cleaned || fallback
+}
+
+export function backupFilename(now = new Date()): string {
+  return `invoice-core-backup-${localDate(now)}.json`
 }
 
 function productError(product: Product) {

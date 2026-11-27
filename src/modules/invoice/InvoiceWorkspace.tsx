@@ -404,7 +404,7 @@ export function InvoiceWorkspace() {
           </p>
         )}
         {!data && (
-          <p className={bannerClass} role="status">
+          <p className={bannerClass} role="status" data-invoice-shell="loading">
             Opening the local workspace…
           </p>
         )}

@@ -9,7 +9,7 @@ const contentSecurityPolicy = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "frame-src 'self'",
+  "frame-src 'none'",
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
@@ -33,6 +33,8 @@ export default defineConfig({
             'x-frame-options': 'DENY',
             'referrer-policy': 'no-referrer',
             'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+            'cross-origin-opener-policy': 'same-origin',
+            'cross-origin-resource-policy': 'same-origin',
           },
         },
         '/invoice-sw.js': {

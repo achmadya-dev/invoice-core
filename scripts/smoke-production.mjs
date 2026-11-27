@@ -40,12 +40,23 @@ function assertSecurityHeaders(headers, target) {
     headers.get('permissions-policy')?.includes('camera=()'),
     `${target} must restrict Permissions-Policy`,
   )
+  assert.equal(
+    headers.get('cross-origin-opener-policy'),
+    'same-origin',
+    `${target} must set Cross-Origin-Opener-Policy: same-origin`,
+  )
+  assert.equal(
+    headers.get('cross-origin-resource-policy'),
+    'same-origin',
+    `${target} must set Cross-Origin-Resource-Policy: same-origin`,
+  )
   const csp = headers.get('content-security-policy') ?? ''
   assert.ok(csp.includes("default-src 'self'"), `${target} CSP must include default-src 'self'`)
   assert.ok(
     csp.includes("frame-ancestors 'none'"),
     `${target} CSP must include frame-ancestors 'none'`,
   )
+  assert.ok(csp.includes("frame-src 'none'"), `${target} CSP must include frame-src 'none'`)
   assert.ok(csp.includes("object-src 'none'"), `${target} CSP must include object-src 'none'`)
   assert.ok(
     csp.includes('wasm-unsafe-eval'),

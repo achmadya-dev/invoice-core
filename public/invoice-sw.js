@@ -53,8 +53,12 @@ self.addEventListener('message', (event) => {
         const paths = new Set(publicFiles)
         for (const candidate of event.data.paths.slice(0, 128)) {
           if (typeof candidate !== 'string') continue
-          const url = new URL(candidate, self.location.origin)
-          if (staticPath(url)) paths.add(url.pathname)
+          try {
+            const url = new URL(candidate, self.location.origin)
+            if (staticPath(url)) paths.add(url.pathname)
+          } catch {
+            continue
+          }
         }
         const requests = Array.from(
           paths,
@@ -68,10 +72,13 @@ self.addEventListener('message', (event) => {
         if (missing.length) await cache.addAll(missing)
         // Store only the public invoice shell; never cache user data or mutations.
         const shell = await fetch(shellPath, { credentials: 'omit', cache: 'reload' })
+        const shellHtml = shell.ok && !shell.redirected ? await shell.clone().text() : ''
         if (
-          !shell.ok ||
-          shell.redirected ||
-          !(await shell.clone().text()).includes('Opening the local workspace')
+          !shellHtml ||
+          !(
+            shellHtml.includes('data-invoice-shell="loading"') ||
+            shellHtml.includes('Opening the local workspace')
+          )
         ) {
           reply.postMessage(false)
           return
@@ -99,7 +106,13 @@ self.addEventListener('fetch', (event) => {
     )
   } else if (staticPath(url)) {
     event.respondWith(
-      caches.open(CACHE).then(async (cache) => (await cache.match(url.pathname)) ?? fetch(request)),
+      caches
+        .open(CACHE)
+        .then(
+          async (cache) =>
+            (await cache.match(url.pathname)) ??
+            fetch(new Request(url.pathname, { credentials: 'omit' })),
+        ),
     )
   }
 })
