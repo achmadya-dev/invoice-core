@@ -2,14 +2,20 @@ import { Document, Font, Image, Page, StyleSheet, Text, View, pdf } from '@react
 import { resolveInvoiceLayout, resolveInvoicePalette, type Invoice } from './domain/invoice'
 import { invoiceDocument } from './document'
 import fontUrl from './assets/noto-sans-regular.ttf?url'
+import boldFontUrl from './assets/noto-sans-bold.ttf?url'
 
-Font.register({ family: 'Invoice Sans', src: fontUrl })
+Font.register({
+  family: 'Invoice Sans',
+  fonts: [
+    { src: fontUrl, fontWeight: 400 },
+    { src: boldFontUrl, fontWeight: 700 },
+  ],
+})
 Font.registerHyphenationCallback((word) =>
   word.length > 32 ? (word.match(/.{1,24}/gu) ?? [word]) : [word],
 )
 
-const ascii = /^[\x20-\x7e]*$/
-const boldFont = (text: string) => (ascii.test(text) ? 'Helvetica-Bold' : 'Invoice Sans')
+const boldTextStyle = { fontFamily: 'Invoice Sans', fontWeight: 700 } as const
 
 const style = StyleSheet.create({
   page: {
@@ -173,14 +179,14 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
         <View style={style.meta}>
           <View style={style.party}>
             <Text style={style.caption}>From</Text>
-            <Text style={[style.name, { fontFamily: boldFont(proof.sender) }]}>{proof.sender}</Text>
+            <Text style={[style.name, boldTextStyle]}>{proof.sender}</Text>
             {proof.senderDetails.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
           </View>
           <View style={style.party}>
             <Text style={style.caption}>Bill to</Text>
-            <Text style={[style.name, { fontFamily: boldFont(proof.client) }]}>{proof.client}</Text>
+            <Text style={[style.name, boldTextStyle]}>{proof.client}</Text>
             {proof.clientDetails.map((line, index) => (
               <Text key={index}>{line}</Text>
             ))}
@@ -261,7 +267,8 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
               <Text
                 style={[
                   style.amountValue,
-                  { color: amountInk, fontFamily: boldFont(proof.total), fontSize: amountFontSize },
+                  boldTextStyle,
+                  { color: amountInk, fontSize: amountFontSize },
                 ]}
               >
                 {proof.total}

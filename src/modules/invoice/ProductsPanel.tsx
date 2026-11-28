@@ -27,12 +27,18 @@ export function ProductsPanel({
   remove: (product: Product) => void
 }) {
   const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Product | null>(null)
   const [error, setError] = useState('')
   const [saveAttempted, setSaveAttempted] = useState(false)
   const existing = products.some(({ id }) => id === selected?.id)
   const search = query.trim().toLowerCase()
   const matches = products.filter((product) => matchesProduct(product, search))
+  const pageSize = 10
+  const pageCount = Math.max(1, Math.ceil(matches.length / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const first = (currentPage - 1) * pageSize
+  const visible = matches.slice(first, first + pageSize)
   function openDialog(product: Product | null) {
     setSelected(product)
     setError('')
@@ -54,7 +60,10 @@ export function ProductsPanel({
             type="search"
             value={query}
             placeholder="Name, description, or currency"
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setPage(1)
+            }}
           />
         </label>
         <button
@@ -66,6 +75,11 @@ export function ProductsPanel({
           <Icon name="plus" /> Add product
         </button>
       </div>
+      {matches.length > 0 && (
+        <p className="px-[22px] pb-3 text-xs text-ic-muted max-[480px]:px-3.5">
+          Showing {first + 1}–{first + visible.length} of {matches.length} products
+        </p>
+      )}
       {matches.length === 0 ? (
         <p className="px-[22px] py-[21px] max-[480px]:px-3.5">
           {products.length
@@ -74,7 +88,7 @@ export function ProductsPanel({
         </p>
       ) : (
         <ul className="list-none">
-          {matches.map((product) => (
+          {visible.map((product) => (
             <li
               className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_auto]`}
               key={product.id}
@@ -110,6 +124,32 @@ export function ProductsPanel({
             </li>
           ))}
         </ul>
+      )}
+      {pageCount > 1 && (
+        <nav
+          className="flex items-center justify-between gap-2.5 border-t border-ic-line px-[18px] py-3"
+          aria-label="Product catalog pages"
+        >
+          <button
+            className={buttonClass}
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            Previous
+          </button>
+          <span role="status">
+            Page {currentPage} of {pageCount}
+          </span>
+          <button
+            className={buttonClass}
+            type="button"
+            disabled={currentPage === pageCount}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Next
+          </button>
+        </nav>
       )}
       <WorkspaceDialog
         open={selected !== null}

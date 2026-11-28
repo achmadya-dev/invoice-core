@@ -3,6 +3,8 @@ import { decimalValid, maxItems, newItem, type Currency, type LineItem } from '.
 import { actionsClass, buttonClass, Icon, iconButtonClass } from './invoice-ui'
 
 const mobileLabelClass = 'hidden pb-[3px] text-[11px] font-[680] text-ic-muted max-[480px]:block'
+const compactActionClass =
+  'grid size-8 flex-none place-items-center rounded-lg border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-accent motion-reduce:transition-none'
 
 export function LineItems({
   items,
@@ -27,11 +29,26 @@ export function LineItems({
   const descriptionId = (itemId: string) => `${id}-description-${itemId}`
   const focus = (target: string) =>
     requestAnimationFrame(() => document.getElementById(target)?.focus())
+  const reorderable = items.length > 1
 
   function update(itemId: string, key: 'description' | 'quantity' | 'rate', value: string) {
     edit((current) =>
       current.map((item) => (item.id === itemId ? { ...item, [key]: value } : item)),
     )
+  }
+
+  function move(index: number, delta: -1 | 1) {
+    const target = index + delta
+    if (target < 0 || target >= items.length) return
+    edit((current) => {
+      const next = [...current]
+      const currentItem = next[index]
+      const targetItem = next[target]
+      if (!currentItem || !targetItem) return current
+      next[index] = targetItem
+      next[target] = currentItem
+      return next
+    })
   }
 
   return (
@@ -101,8 +118,8 @@ export function LineItems({
                   role="columnheader"
                   className={
                     amounts
-                      ? 'w-10 px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink max-[480px]:w-9'
-                      : 'w-10 px-1 pt-0 pb-0.5 text-start text-xs font-bold text-ic-muted max-[480px]:w-9'
+                      ? `${reorderable ? 'w-[104px]' : 'w-10'} px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink max-[480px]:w-9`
+                      : `${reorderable ? 'w-[104px] max-[480px]:w-[68px]' : 'w-10 max-[480px]:w-9'} px-1 pt-0 pb-0.5 text-start text-xs font-bold text-ic-muted`
                   }
                 >
                   <span className="sr-only">Actions</span>
@@ -116,7 +133,7 @@ export function LineItems({
                   role="row"
                   className={
                     amounts
-                      ? 'max-[480px]:grid max-[480px]:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)_36px] max-[480px]:items-end max-[480px]:gap-[5px] max-[480px]:border-b max-[480px]:border-ic-line max-[480px]:py-2 [&_input]:px-[7px] max-[480px]:[&_input]:px-[5px] [&+tr>td]:border-t [&+tr>td]:border-ic-line [&+tr>td]:pt-[7px] max-[480px]:[&+tr>td]:border-0 max-[480px]:[&+tr>td]:p-0'
+                      ? `max-[480px]:grid ${reorderable ? 'max-[480px]:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)]' : 'max-[480px]:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)_36px]'} max-[480px]:items-end max-[480px]:gap-[5px] max-[480px]:border-b max-[480px]:border-ic-line max-[480px]:py-2 [&_input]:px-[7px] max-[480px]:[&_input]:px-[5px] [&+tr>td]:border-t [&+tr>td]:border-ic-line [&+tr>td]:pt-[7px] max-[480px]:[&+tr>td]:border-0 max-[480px]:[&+tr>td]:p-0`
                       : '[&_input]:px-[7px] max-[480px]:[&_input]:px-[5px] [&+tr>td]:border-t [&+tr>td]:border-ic-line [&+tr>td]:pt-[7px]'
                   }
                 >
@@ -182,23 +199,55 @@ export function LineItems({
                     role="cell"
                     className={
                       amounts
-                        ? 'px-0.5 max-[480px]:min-w-0 max-[480px]:border-0 max-[480px]:p-0'
+                        ? `px-0.5 ${reorderable ? 'max-[480px]:col-span-full max-[480px]:flex max-[480px]:justify-end' : ''} max-[480px]:min-w-0 max-[480px]:border-0 max-[480px]:p-0`
                         : 'px-0.5'
                     }
                   >
-                    <button
-                      className={iconButtonClass}
-                      type="button"
-                      aria-label={`Remove item ${index + 1}`}
-                      onClick={() => {
-                        const next = items[index + 1] ?? items[index - 1]
-                        const target = next ? descriptionId(next.id) : addButtonId
-                        document.getElementById(target)?.focus()
-                        edit((current) => current.filter((line) => line.id !== item.id))
-                      }}
+                    <div
+                      className={
+                        reorderable
+                          ? 'flex items-center justify-end gap-0.5 max-[480px]:flex-wrap'
+                          : 'flex items-center justify-end'
+                      }
                     >
-                      <Icon name="close" />
-                    </button>
+                      {reorderable && (
+                        <>
+                          <button
+                            className={compactActionClass}
+                            type="button"
+                            disabled={index === 0}
+                            aria-label={`Move item ${index + 1} up`}
+                            title="Move item up"
+                            onClick={() => move(index, -1)}
+                          >
+                            <Icon name="chevron" className="size-3.5 flex-none rotate-180" />
+                          </button>
+                          <button
+                            className={compactActionClass}
+                            type="button"
+                            disabled={index === items.length - 1}
+                            aria-label={`Move item ${index + 1} down`}
+                            title="Move item down"
+                            onClick={() => move(index, 1)}
+                          >
+                            <Icon name="chevron" className="size-3.5 flex-none" />
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className={reorderable ? compactActionClass : iconButtonClass}
+                        type="button"
+                        aria-label={`Remove item ${index + 1}`}
+                        onClick={() => {
+                          const next = items[index + 1] ?? items[index - 1]
+                          const target = next ? descriptionId(next.id) : addButtonId
+                          document.getElementById(target)?.focus()
+                          edit((current) => current.filter((line) => line.id !== item.id))
+                        }}
+                      >
+                        <Icon name="close" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

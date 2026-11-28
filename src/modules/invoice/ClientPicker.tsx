@@ -18,18 +18,22 @@ export function ClientPicker({
   onClose: () => void
 }) {
   const [query, setQuery] = useState('')
-  const search = normalized(query)
   const previous = new Map<string, Contact>()
-  for (const { client: contact } of invoices) {
-    const key = `${normalized(contact.name)}\n${normalized(contact.email)}`
-    if (!previous.has(key)) previous.set(key, contact)
+  let options: { value: string; label: string; detail?: string }[] = []
+  if (open) {
+    const search = normalized(query)
+    for (const { client: contact } of invoices) {
+      const key = `${normalized(contact.name)}\n${normalized(contact.email)}`
+      if (!previous.has(key)) previous.set(key, contact)
+    }
+    options = [...previous]
+      .filter(([key]) => key.includes(search))
+      .map(([value, contact]) => ({
+        value,
+        label: contact.name,
+        detail: contact.email,
+      }))
   }
-  const matches = [...previous].filter(([key]) => key.includes(search))
-  const options = matches.map(([value, contact]) => ({
-    value,
-    label: contact.name,
-    detail: contact.email,
-  }))
   return (
     <PickerModal
       open={open}

@@ -3,6 +3,7 @@ import {
   formatDate,
   formatMoney,
   formatRate,
+  hasPositiveDecimal,
   invoiceTotals,
   type Contact,
   type Invoice,
@@ -20,7 +21,7 @@ export function invoiceDocument(invoice: Invoice) {
   const summary = totals ? [{ label: 'Subtotal', amount: money(totals.subtotal) }] : []
   if (totals && totals.discount !== 0n)
     summary.push({ label: 'Discount', amount: money(-totals.discount) })
-  if (totals && (totals.tax !== 0n || Number(invoice.taxRate) > 0)) {
+  if (totals && (totals.tax !== 0n || hasPositiveDecimal(invoice.taxRate))) {
     summary.push({
       label: `${invoice.taxLabel.trim() || 'Tax'} (${invoice.taxRate}%)`,
       amount: money(totals.tax),
@@ -49,6 +50,7 @@ export function invoiceDocument(invoice: Invoice) {
       rate: formatRate(item.rate, invoice.currency),
       amount: totals && totals.lines[index] !== undefined ? money(totals.lines[index]) : '—',
     })),
+    totals,
     summary,
     total: totals ? money(totals.total) : '—',
     warning: totals ? '' : 'Correct the highlighted amounts to see the total.',

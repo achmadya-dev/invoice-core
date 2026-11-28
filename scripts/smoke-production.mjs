@@ -40,12 +40,23 @@ function assertSecurityHeaders(headers, target) {
     headers.get('permissions-policy')?.includes('camera=()'),
     `${target} must restrict Permissions-Policy`,
   )
+  assert.equal(
+    headers.get('cross-origin-opener-policy'),
+    'same-origin',
+    `${target} must set Cross-Origin-Opener-Policy: same-origin`,
+  )
+  assert.equal(
+    headers.get('cross-origin-resource-policy'),
+    'same-origin',
+    `${target} must set Cross-Origin-Resource-Policy: same-origin`,
+  )
   const csp = headers.get('content-security-policy') ?? ''
   assert.ok(csp.includes("default-src 'self'"), `${target} CSP must include default-src 'self'`)
   assert.ok(
     csp.includes("frame-ancestors 'none'"),
     `${target} CSP must include frame-ancestors 'none'`,
   )
+  assert.ok(csp.includes("frame-src 'none'"), `${target} CSP must include frame-src 'none'`)
   assert.ok(csp.includes("object-src 'none'"), `${target} CSP must include object-src 'none'`)
   assert.ok(
     csp.includes('wasm-unsafe-eval'),
@@ -77,7 +88,16 @@ try {
   assert.equal(response.status, 200, output)
   assertSecurityHeaders(response.headers, 'Home page')
   const html = await response.text()
-  assert.ok(html.includes('<html lang="en">'), 'Home page must declare English as its language')
+  assert.match(
+    html,
+    /<html\b[^>]*\blang="en"[^>]*>/,
+    'Home page must declare English as its language',
+  )
+  assert.match(
+    html,
+    /<html\b[^>]*\bdata-theme="system"[^>]*>/,
+    'Home page must default data-theme to system during SSR',
+  )
   assert.match(html, /<h1>Invoices<\/h1>/, 'Home page should render the invoice list shell')
   assert.ok(html.includes('Opening the local workspace'), 'Browser data must load after hydration')
   assert.ok(html.includes('/invoice.webmanifest'), 'Home page should link the PWA manifest')

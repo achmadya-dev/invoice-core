@@ -60,19 +60,53 @@ const invoiceThemePalettes: Record<InvoiceTheme, InvoicePalette> = {
 
 const hexColorPattern = /^#[0-9a-fA-F]{6}$/
 
-function mixHex(baseHex: string, targetHex: string, targetWeight: number) {
-  const parse = (hex: string): readonly [number, number, number] => [
+function parseHex(hex: string): readonly [number, number, number] {
+  return [
     Number.parseInt(hex.slice(1, 3), 16),
     Number.parseInt(hex.slice(3, 5), 16),
     Number.parseInt(hex.slice(5, 7), 16),
   ]
-  const [r1, g1, b1] = parse(baseHex)
-  const [r2, g2, b2] = parse(targetHex)
+}
+
+function mixHex(baseHex: string, targetHex: string, targetWeight: number) {
+  const [r1, g1, b1] = parseHex(baseHex)
+  const [r2, g2, b2] = parseHex(targetHex)
   const channel = (a: number, b: number) =>
     Math.round(a * (1 - targetWeight) + b * targetWeight)
       .toString(16)
       .padStart(2, '0')
   return `#${channel(r1, r2)}${channel(g1, g2)}${channel(b1, b2)}`
+}
+
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = parseHex(hex).map((value) => {
+    const channel = value / 255
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  }) as [number, number, number]
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+export function contrastRatio(hexA: string, hexB: string): number {
+  const l1 = relativeLuminance(hexA)
+  const l2 = relativeLuminance(hexB)
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+}
+
+function ensureContrast(hex: string, backgroundHex: string, minRatio = 4.5): string {
+  if (contrastRatio(hex, backgroundHex) >= minRatio) return hex
+  const target = relativeLuminance(backgroundHex) > 0.5 ? '#0f172a' : '#ffffff'
+  let low = 0
+  let high = 1
+  for (let step = 0; step < 24; step += 1) {
+    const mid = (low + high) / 2
+    if (contrastRatio(mixHex(hex, target, mid), backgroundHex) >= minRatio) {
+      high = mid
+    } else {
+      low = mid
+    }
+  }
+  const candidate = mixHex(hex, target, high)
+  return contrastRatio(candidate, backgroundHex) >= minRatio ? candidate : target
 }
 
 export function resolveAccentColor(invoice: Pick<Invoice, 'accentColor' | 'theme'>): string {
@@ -89,11 +123,12 @@ export function resolveInvoiceLayout(invoice: Pick<Invoice, 'layout'>): InvoiceL
 export function deriveInvoicePalette(accentHex: string): InvoicePalette {
   const normalized = hexColorPattern.test(accentHex) ? accentHex.toLowerCase() : defaultAccentColor
   if (normalized === defaultAccentColor) return invoiceThemePalettes.indigo
+  const amountBg = mixHex(normalized, '#ffffff', 0.78)
   return {
-    accent: normalized,
+    accent: ensureContrast(normalized, '#ffffff', 4.5),
     soft: mixHex(normalized, '#ffffff', 0.92),
-    amountBg: mixHex(normalized, '#ffffff', 0.78),
-    amountInk: mixHex(normalized, '#0f172a', 0.76),
+    amountBg,
+    amountInk: ensureContrast(mixHex(normalized, '#0f172a', 0.76), amountBg, 4.5),
     line: mixHex(normalized, '#ffffff', 0.8),
   }
 }
@@ -114,15 +149,36 @@ const currencySchema = z.enum(currencies)
 export type Currency = z.infer<typeof currencySchema>
 
 const id = z.uuid()
-const label = z.string().max(120)
-const memo = z.string().max(1500)
+
+function hasUnsafeChars(value: string, allowNewlines: boolean) {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index)
+    if (allowNewlines && (code === 0x0a || code === 0x0d || code === 0x09)) continue
+    if (code < 0x20 || code === 0x7f) return true
+    if ((code >= 0x202a && code <= 0x202e) || (code >= 0x2066 && code <= 0x2069)) return true
+  }
+  return false
+}
+
+const singleLineText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .refine((value) => !hasUnsafeChars(value, false))
+const label = singleLineText(120)
+const memo = z
+  .string()
+  .max(1500)
+  .refine((value) => !hasUnsafeChars(value, true))
 const decimalInput = z.string().max(16)
 const dateInput = z.union([z.iso.date(), z.literal('')])
 const country = z.string().refine((code) => code === '' || countryCodes.includes(code))
 const logo = z
   .string()
   .max(Math.ceil(maxLogoBytes / 3) * 4 + 32)
-  .regex(/^data:image\/(?:png|jpeg);base64,[a-z0-9+/]+={0,2}$/i)
+  .regex(
+    /^(?:data:image\/png;base64,iVBORw0KGgo|data:image\/jpeg;base64,\/9j\/)[A-Za-z0-9+/]+={0,2}$/,
+  )
   .or(z.literal(''))
 
 const contactSchema = z.strictObject({
@@ -141,7 +197,7 @@ const senderSchema = contactSchema.extend({
 const companySchema = z.strictObject({
   id,
   sender: senderSchema,
-  prefix: z.string().max(24),
+  prefix: singleLineText(24),
   nextNumber: z.number().int().min(1).max(1_000_001),
   padding: z.number().int().min(1).max(8),
   currency: currencySchema,
@@ -152,7 +208,7 @@ const companySchema = z.strictObject({
 })
 const itemSchema = z.strictObject({
   id,
-  description: z.string().max(240),
+  description: singleLineText(240),
   quantity: decimalInput,
   rate: decimalInput,
 })
@@ -457,6 +513,25 @@ export function decimalValid(value: string, kind: 'quantity' | 'amount' | 'perce
   )
 }
 
+export function hasPositiveDecimal(value: string): boolean {
+  const parsed = scaled(value)
+  return parsed !== null && parsed > 0n
+}
+
+export function sanitizeFilename(value: string, fallback = 'invoice'): string {
+  const cleaned = value
+    .trim()
+    .replace(/[^\p{L}\p{N}._-]+/gu, '-')
+    .replace(/^[.-]+|[.-]+$/g, '')
+    .slice(0, 100)
+    .replace(/^[.-]+|[.-]+$/g, '')
+  return cleaned || fallback
+}
+
+export function backupFilename(now = new Date()): string {
+  return `invoice-core-backup-${localDate(now)}.json`
+}
+
 function productError(product: Product) {
   if (!product.name.trim()) return 'Enter a product name.'
   if (!product.items.length || product.items.some((item) => !item.description.trim()))
@@ -633,13 +708,44 @@ function rounded(numerator: bigint, denominator: bigint) {
   return numerator < 0n ? -result : result
 }
 
+const moneyFormatters = new Map<string, Intl.NumberFormat>()
+const rateFormatters = new Map<number, Intl.NumberFormat>()
+const scaleCache = new Map<Currency, { digits: number; factor: bigint }>()
+
 function formatFor(currency: Currency, display: 'symbol' | 'code' = 'symbol') {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, currencyDisplay: display })
+  const key = `${currency}:${display}`
+  let formatter = moneyFormatters.get(key)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      currencyDisplay: display,
+    })
+    moneyFormatters.set(key, formatter)
+  }
+  return formatter
 }
 
 function currencyScale(currency: Currency) {
-  const digits = formatFor(currency).resolvedOptions().maximumFractionDigits ?? 2
-  return { digits, factor: 10n ** BigInt(digits) }
+  let scale = scaleCache.get(currency)
+  if (!scale) {
+    const digits = formatFor(currency).resolvedOptions().maximumFractionDigits ?? 2
+    scale = { digits, factor: 10n ** BigInt(digits) }
+    scaleCache.set(currency, scale)
+  }
+  return scale
+}
+
+function rateFormatFor(digits: number) {
+  let formatter = rateFormatters.get(digits)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    })
+    rateFormatters.set(digits, formatter)
+  }
+  return formatter
 }
 
 export function formatMoney(
@@ -664,10 +770,7 @@ export function formatRate(value: string, currency: Currency) {
   // Show the input precision, even when a currency rounds line totals to fewer places.
   const fraction = value.split('.')[1]?.length ?? 0
   const digits = Math.max(fraction, currencyScale(currency).digits)
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })
+  return rateFormatFor(digits)
     .formatToParts(rate / thousands)
     .map((part) =>
       part.type === 'fraction'

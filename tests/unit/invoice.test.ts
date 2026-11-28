@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest'
+import { invoiceDocument } from '../../src/modules/invoice/document'
 import {
+  backupFilename,
+  contrastRatio,
+  deriveInvoicePalette,
   duplicateInvoice,
   formatBytes,
   formatMoney,
   formatRate,
+  hasPositiveDecimal,
   invoiceTotals,
   maxCompanies,
   newCompany,
   newInvoice,
   newItem,
   newWorkspace,
+  sanitizeFilename,
   saveCompany,
   saveInvoice,
   type Invoice,
@@ -192,5 +198,74 @@ describe('local invoice workspace', () => {
     const existing = atCapacity.companies[0]
     if (!existing) throw new Error('Expected a seeded company')
     expect(saveCompany(atCapacity, { ...existing, prefix: 'EDIT-' })).toMatchObject({ ok: true })
+  })
+
+  it('rejects forged logo signatures, control/BiDi characters, and oversized UTF-8 backups', () => {
+    const { workspace, draft } = filledDraft()
+    for (const badLogo of [
+      'data:image/png;base64,AAAA',
+      'data:image/jpeg;base64,AAAA',
+      'DATA:IMAGE/PNG;BASE64,iVBORw0KGgoAAAANSUhEUg==',
+    ]) {
+      const forged = { ...draft, sender: { ...draft.sender, logo: badLogo } }
+      expect(saveInvoice(workspace, forged, now)).toMatchObject({ ok: false })
+      expect(decodeWorkspace(JSON.stringify({ ...workspace, invoices: [forged] }))).toBeNull()
+    }
+
+    const validPrefix = {
+      ...draft,
+      sender: { ...draft.sender, logo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==' },
+    }
+    expect(
+      decodeWorkspace(JSON.stringify({ ...workspace, invoices: [validPrefix] })),
+    ).not.toBeNull()
+
+    for (const badClient of ['Evil\u202EClient', 'Null\u0000Byte', 'Tab\tName']) {
+      const badInvoice = { ...draft, client: { ...draft.client, name: badClient } }
+      expect(saveInvoice(workspace, badInvoice, now)).toMatchObject({ ok: false })
+      expect(decodeWorkspace(JSON.stringify({ ...workspace, invoices: [badInvoice] }))).toBeNull()
+    }
+
+    const badNotes = { ...draft, notes: 'Hidden\u2066override' }
+    expect(saveInvoice(workspace, badNotes, now)).toMatchObject({ ok: false })
+    expect(decodeWorkspace(JSON.stringify({ ...workspace, invoices: [badNotes] }))).toBeNull()
+
+    const multilineNotes = { ...draft, notes: 'Line 1\r\nLine 2\tNote' }
+    expect(saveInvoice(workspace, multilineNotes, now)).toMatchObject({ ok: true })
+
+    const multiByteRaw =
+      '{"version":4,"companies":[],"invoices":[],"products":[],"theme":"system","pad":"' +
+      '€'.repeat(3_000_000) +
+      '"}'
+    expect(decodeWorkspace(multiByteRaw)).toBeNull()
+  })
+
+  it('sanitizes filenames, checks positive decimals, enforces palette contrast, and exposes document totals', () => {
+    expect(sanitizeFilename('INV-001 / 2026')).toBe('INV-001-2026')
+    expect(sanitizeFilename('..')).toBe('invoice')
+    expect(sanitizeFilename('.')).toBe('invoice')
+    expect(sanitizeFilename('---..---')).toBe('invoice')
+    expect(sanitizeFilename('  Café #1.pdf  ')).toBe('Café-1.pdf')
+    expect(sanitizeFilename(`${'a'.repeat(99)}.-b`)).toBe('a'.repeat(99))
+    expect(backupFilename(new Date(2026, 10, 28, 12, 0))).toBe(
+      'invoice-core-backup-2026-11-28.json',
+    )
+
+    expect(hasPositiveDecimal('')).toBe(false)
+    expect(hasPositiveDecimal('0')).toBe(false)
+    expect(hasPositiveDecimal('-1')).toBe(false)
+    expect(hasPositiveDecimal('abc')).toBe(false)
+    expect(hasPositiveDecimal('0.001')).toBe(true)
+
+    expect(deriveInvoicePalette('#4837a6').accent).toBe('#4837a6')
+    expect(deriveInvoicePalette('#047857').accent).toBe('#047857')
+    for (const lightHex of ['#ffff00', '#ffffff', '#f9e080', '#a7f3d0']) {
+      const palette = deriveInvoicePalette(lightHex)
+      expect(contrastRatio(palette.accent, '#ffffff')).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(palette.amountInk, palette.amountBg)).toBeGreaterThanOrEqual(4.5)
+    }
+
+    const { draft } = filledDraft()
+    expect(invoiceDocument(draft).totals).toEqual(invoiceTotals(draft))
   })
 })

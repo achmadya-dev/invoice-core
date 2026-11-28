@@ -192,3 +192,32 @@ test('all layouts keep IDR Amount due on one line and produce matching PDFs', as
     await page.getByRole('button', { name: 'Edit', exact: true }).click()
   }
 })
+
+test('renders valid bold PDF output with non-ASCII currency symbols and accented names', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create invoice', exact: true }).click()
+  await page.getByLabel('Invoice number').fill('EUR-2026-01')
+  await page.getByLabel('Sender name').fill('Café Étude')
+  await page.getByRole('textbox', { name: 'Client', exact: true }).fill('Münchner Büro')
+  await page.getByRole('combobox', { name: 'Currency', exact: true }).click()
+  await page.getByRole('option', { name: /^EUR —/ }).click()
+  await page.getByLabel('Description, item 1').fill('Design — €uro rate')
+  await page.getByLabel('Rate, item 1').fill('1250')
+
+  await expect(page.locator('#invoice-editor .ic-amount dd')).toHaveText('€1,250.00')
+  const pendingPdf = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download PDF' }).click()
+  const pdfPath = await (await pendingPdf).path()
+  expect(pdfPath).toBeTruthy()
+  expect((await readFile(pdfPath!)).subarray(0, 5).toString()).toBe('%PDF-')
+
+  if (popplerAvailable) {
+    const text = execFileSync('pdftotext', ['-layout', pdfPath!, '-'], { encoding: 'utf8' })
+    expect(text).toContain('€1,250.00')
+    expect(text).toContain('Café Étude')
+    expect(text).toContain('Münchner Büro')
+    expect(text).toContain('EUR')
+  }
+})
