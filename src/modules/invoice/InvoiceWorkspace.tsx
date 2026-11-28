@@ -1,5 +1,7 @@
+import { Tabs } from '@base-ui/react/tabs'
 import { useEffect, useRef, useState } from 'react'
 import {
+  defaultAccentColor,
   duplicateInvoice,
   invoiceLayoutLabels,
   invoiceLayouts,
@@ -158,23 +160,28 @@ export function InvoiceWorkspace() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     return () => {
-      delete document.documentElement.dataset.theme
+      document.documentElement.dataset.theme = 'system'
     }
   }, [theme])
 
-  function commit(data: Workspace, options: { restore?: boolean } = {}) {
+  function commit(
+    data: Workspace,
+    options: { restore?: boolean } = {},
+  ): { ok: true } | { ok: false; message: string } {
     const before = current.current
-    if (!before) return false
+    if (!before) {
+      return { ok: false, message: 'The workspace is still loading. Try again.' }
+    }
     const result = writeWorkspace(before, data, Boolean(options.restore))
     if (!result.ok) {
       setStorageWarning(result.message)
-      return false
+      return { ok: false, message: result.message }
     }
     current.current = result.value
     setLocal(result.value)
     setDamagedTheme(null)
     setStorageWarning('')
-    return true
+    return { ok: true }
   }
 
   function editDraft(edit: (invoice: Invoice) => Invoice) {
@@ -233,10 +240,15 @@ export function InvoiceWorkspace() {
     if (!result.ok) {
       setSaveAttempted(true)
       setMessage({ text: result.message, error: true })
-    } else if (commit(result.data)) {
-      closeEditor()
-      setMessage({ text: 'Invoice saved.' })
+      return
     }
+    const committed = commit(result.data)
+    if (!committed.ok) {
+      setMessage({ text: committed.message, error: true })
+      return
+    }
+    closeEditor()
+    setMessage({ text: 'Invoice saved.' })
   }
 
   function duplicateSavedInvoice(invoice: Invoice) {
@@ -264,21 +276,24 @@ export function InvoiceWorkspace() {
         const data = current.current?.data
         if (!data) return
         const remaining = data.invoices.filter((entry) => entry.id !== invoice.id)
-        if (commit({ ...data, invoices: remaining })) {
+        const committed = commit({ ...data, invoices: remaining })
+        if (committed.ok) {
           if (insideEditor) closeEditor()
           setMessage({ text: 'Invoice deleted.' })
+        } else if (insideEditor) {
+          setMessage({ text: committed.message, error: true })
         }
       },
     })
   }
 
-  function clearWorkspace() {
-    const ok = commit(newWorkspace(), { restore: true })
-    if (ok) {
+  function clearWorkspace(): { ok: true } | { ok: false; message: string } {
+    const committed = commit(newWorkspace(), { restore: true })
+    if (committed.ok) {
       show('invoices')
       setMessage({ text: 'Local workspace cleared.' })
     }
-    return ok
+    return committed
   }
 
   async function downloadPdf(target: Invoice) {
@@ -409,106 +424,115 @@ export function InvoiceWorkspace() {
           </p>
         )}
         {data && (
-          <div className="grid gap-4 print:hidden">
-            <div
+          <Tabs.Root
+            className="grid gap-4 print:hidden"
+            value={tab}
+            onValueChange={(nextValue) => {
+              if (
+                nextValue === 'invoices' ||
+                nextValue === 'products' ||
+                nextValue === 'companies'
+              ) {
+                show(nextValue)
+              }
+            }}
+          >
+            <Tabs.List
               className="inline-grid grid-cols-3 gap-1 justify-self-start rounded-[10px] border border-ic-line bg-ic-soft p-1 max-[480px]:w-full max-[480px]:justify-self-stretch"
-              role="tablist"
               aria-label="Workspace sections"
+              activateOnFocus
             >
               {(Object.keys(tabs) as Tab[]).map((key) => (
-                <button
+                <Tabs.Tab
                   key={key}
-                  type="button"
-                  role="tab"
+                  value={key}
                   id={`tab-${key}`}
-                  aria-selected={tab === key}
-                  aria-controls={`panel-${key}`}
                   className="min-h-10 min-w-[112px] rounded-[7px] px-4 py-1.5 text-[13px] font-[730] text-ic-muted aria-selected:bg-ic-surface aria-selected:text-ic-ink aria-selected:shadow-[0_1px_3px_rgb(25_20_38/12%)] max-[480px]:min-w-0 max-[480px]:px-2 max-[480px]:py-1.5"
-                  onClick={() => show(key)}
                 >
                   {tabs[key]}
-                </button>
+                </Tabs.Tab>
               ))}
-            </div>
-            <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`}>
-              {tab === 'invoices' ? (
-                <InvoiceHistory
-                  workspace={data}
-                  pdfBusyId={pdfBusyId}
-                  open={openEditor}
-                  downloadPdf={(invoice) => void downloadPdf(invoice)}
-                  duplicate={duplicateSavedInvoice}
-                  remove={(invoice) => deleteInvoice(invoice)}
-                />
-              ) : tab === 'products' ? (
-                <ProductsPanel
-                  products={data.products}
-                  save={(product) => {
-                    const latest = current.current?.data
-                    if (!latest) return { ok: false }
-                    const result = saveProduct(latest, product)
-                    if (!result.ok) return result
-                    if (!commit(result.data)) return { ok: false }
-                    setMessage({ text: 'Product saved.' })
-                    return { ok: true }
-                  }}
-                  remove={(product) => {
-                    setConfirmModal({
-                      title: `Delete ${product.name}?`,
-                      description:
-                        'Existing invoice drafts and saved invoices keep their line items.',
-                      confirmLabel: 'Delete product',
-                      danger: true,
-                      onConfirm: () => {
-                        const latest = current.current?.data
-                        if (!latest) return
-                        if (
-                          commit({
-                            ...latest,
-                            products: latest.products.filter(({ id }) => id !== product.id),
-                          })
-                        ) {
-                          setMessage({ text: 'Product removed.' })
-                        }
-                      },
-                    })
-                  }}
-                />
-              ) : (
-                <Companies
-                  companies={data.companies}
-                  save={(company) => {
-                    const latest = current.current?.data
-                    if (!latest) return { ok: false }
-                    const result = saveCompany(latest, company)
-                    if (!result.ok) return result
-                    if (!commit(result.data)) return { ok: false }
-                    setMessage({ text: 'Sender profile saved.' })
-                    return { ok: true }
-                  }}
-                  remove={(company) => {
-                    setConfirmModal({
-                      title: `Delete ${company.sender.name}?`,
-                      description: 'Saved invoices keep their existing sender details.',
-                      confirmLabel: 'Delete company',
-                      danger: true,
-                      onConfirm: () => {
-                        const latest = current.current?.data
-                        if (!latest) return
-                        const ok = commit({
-                          ...latest,
-                          companies: latest.companies.filter((entry) => entry.id !== company.id),
-                        })
-                        if (ok) {
-                          setMessage({ text: 'Sender profile removed.' })
-                        }
-                      },
-                    })
-                  }}
-                />
-              )}
-            </div>
-          </div>
+            </Tabs.List>
+            <Tabs.Panel value="invoices">
+              <InvoiceHistory
+                workspace={data}
+                pdfBusyId={pdfBusyId}
+                open={openEditor}
+                downloadPdf={(invoice) => void downloadPdf(invoice)}
+                duplicate={duplicateSavedInvoice}
+                remove={(invoice) => deleteInvoice(invoice)}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="products">
+              <ProductsPanel
+                products={data.products}
+                save={(product) => {
+                  const latest = current.current?.data
+                  if (!latest) return { ok: false }
+                  const result = saveProduct(latest, product)
+                  if (!result.ok) return result
+                  const committed = commit(result.data)
+                  if (!committed.ok) return committed
+                  setMessage({ text: 'Product saved.' })
+                  return { ok: true }
+                }}
+                remove={(product) => {
+                  setConfirmModal({
+                    title: `Delete ${product.name}?`,
+                    description:
+                      'Existing invoice drafts and saved invoices keep their line items.',
+                    confirmLabel: 'Delete product',
+                    danger: true,
+                    onConfirm: () => {
+                      const latest = current.current?.data
+                      if (!latest) return
+                      const committed = commit({
+                        ...latest,
+                        products: latest.products.filter(({ id }) => id !== product.id),
+                      })
+                      if (committed.ok) {
+                        setMessage({ text: 'Product removed.' })
+                      }
+                    },
+                  })
+                }}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="companies">
+              <Companies
+                companies={data.companies}
+                save={(company) => {
+                  const latest = current.current?.data
+                  if (!latest) return { ok: false }
+                  const result = saveCompany(latest, company)
+                  if (!result.ok) return result
+                  const committed = commit(result.data)
+                  if (!committed.ok) return committed
+                  setMessage({ text: 'Sender profile saved.' })
+                  return { ok: true }
+                }}
+                remove={(company) => {
+                  setConfirmModal({
+                    title: `Delete ${company.sender.name}?`,
+                    description: 'Saved invoices keep their existing sender details.',
+                    confirmLabel: 'Delete company',
+                    danger: true,
+                    onConfirm: () => {
+                      const latest = current.current?.data
+                      if (!latest) return
+                      const committed = commit({
+                        ...latest,
+                        companies: latest.companies.filter((entry) => entry.id !== company.id),
+                      })
+                      if (committed.ok) {
+                        setMessage({ text: 'Sender profile removed.' })
+                      }
+                    },
+                  })
+                }}
+              />
+            </Tabs.Panel>
+          </Tabs.Root>
         )}
         {data && (
           <WorkspaceDialog
@@ -533,12 +557,12 @@ export function InvoiceWorkspace() {
                 storageBytes={new Blob([local?.raw ?? JSON.stringify(data)]).size}
                 damaged={local.damaged ? local.raw : null}
                 restore={(restored) => {
-                  const ok = commit(restored, { restore: true })
-                  if (ok) {
+                  const committed = commit(restored, { restore: true })
+                  if (committed.ok) {
                     show('invoices')
                     setMessage({ text: 'Backup restored.' })
                   }
-                  return ok
+                  return committed
                 }}
                 clear={clearWorkspace}
                 requestConfirm={setBackupConfirm}
@@ -584,6 +608,7 @@ export function InvoiceWorkspace() {
                   <ColorPicker
                     label="Accent color"
                     value={resolveAccentColor(draft)}
+                    defaultValue={defaultAccentColor}
                     onChange={(accentColor) =>
                       editDraft((current) => ({ ...current, accentColor }))
                     }

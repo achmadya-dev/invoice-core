@@ -58,7 +58,7 @@ function RouteMessage({
 
 function Root() {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="system">
       <head>
         <HeadContent />
       </head>

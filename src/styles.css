@@ -1,5 +1,14 @@
 @import 'tailwindcss';
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme='system'], [data-theme='system'] *) {
+      @slot;
+    }
+  }
+}
 
 @font-face {
   font-family: 'Bricolage Grotesque';
@@ -32,59 +41,32 @@
 @layer base {
   :root {
     color-scheme: light;
+    --color-ic-ink: light-dark(#22213a, #f3eefb);
+    --color-ic-muted: light-dark(#57556c, #c1b9d2);
+    --color-ic-accent: light-dark(#4837a6, #d1c2ff);
+    --color-ic-deep: light-dark(#282049, #221939);
+    --color-ic-desk: light-dark(#e8e5f4, #463959);
+    --color-ic-surface: light-dark(#ffffff, #241d33);
+    --color-ic-ground: light-dark(#f7f6fa, #191426);
+    --color-ic-soft: light-dark(#f0edf9, #362d49);
+    --color-ic-field: light-dark(#fcfbfe, #21192f);
+    --color-ic-line: light-dark(#dedbe8, #51465f);
+    --color-ic-error: light-dark(#8b2336, #ffb6c6);
+    --color-ic-error-bg: light-dark(#fff2f4, #3e2232);
+    --color-ic-action-bg: light-dark(#4837a6, #d4c6ff);
+    --color-ic-action-ink: light-dark(#ffffff, #241b40);
   }
   :root[data-theme='dark'] {
     color-scheme: dark;
-    --color-ic-ink: #f3eefb;
-    --color-ic-muted: #c1b9d2;
-    --color-ic-accent: #d1c2ff;
-    --color-ic-deep: #221939;
-    --color-ic-desk: #463959;
-    --color-ic-surface: #241d33;
-    --color-ic-ground: #191426;
-    --color-ic-soft: #362d49;
-    --color-ic-field: #21192f;
-    --color-ic-line: #51465f;
-    --color-ic-error: #ffb6c6;
-    --color-ic-error-bg: #3e2232;
-    --color-ic-action-bg: #d4c6ff;
-    --color-ic-action-ink: #241b40;
   }
   @media (prefers-color-scheme: dark) {
     :root[data-theme='system'] {
       color-scheme: dark;
-      --color-ic-ink: #f3eefb;
-      --color-ic-muted: #c1b9d2;
-      --color-ic-accent: #d1c2ff;
-      --color-ic-deep: #221939;
-      --color-ic-desk: #463959;
-      --color-ic-surface: #241d33;
-      --color-ic-ground: #191426;
-      --color-ic-soft: #362d49;
-      --color-ic-field: #21192f;
-      --color-ic-line: #51465f;
-      --color-ic-error: #ffb6c6;
-      --color-ic-error-bg: #3e2232;
-      --color-ic-action-bg: #d4c6ff;
-      --color-ic-action-ink: #241b40;
     }
   }
   .ic-proof {
     color-scheme: light;
-    --color-ic-ink: #22213a;
-    --color-ic-muted: #57556c;
-    --color-ic-accent: #4837a6;
-    --color-ic-desk: #e8e5f4;
     --color-ic-paper: #ffffff;
-    --color-ic-surface: #ffffff;
-    --color-ic-ground: #f7f6fa;
-    --color-ic-soft: #f0edf9;
-    --color-ic-field: #fcfbfe;
-    --color-ic-line: #dedbe8;
-    --color-ic-error: #8b2336;
-    --color-ic-error-bg: #fff2f4;
-    --color-ic-action-bg: #4837a6;
-    --color-ic-action-ink: #ffffff;
   }
   .ic-workspace,
   .ic-modal-popup {
@@ -175,8 +157,15 @@
     background: var(--color-ic-error-bg);
   }
   #invoice-editor textarea {
-    field-sizing: content;
-    resize: none;
+    min-height: 2.75rem;
+    resize: vertical;
+  }
+  @supports (field-sizing: content) {
+    #invoice-editor textarea {
+      min-height: 30px;
+      field-sizing: content;
+      resize: none;
+    }
   }
 }
 

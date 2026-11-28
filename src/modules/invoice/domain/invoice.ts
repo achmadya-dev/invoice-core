@@ -60,19 +60,53 @@ const invoiceThemePalettes: Record<InvoiceTheme, InvoicePalette> = {
 
 const hexColorPattern = /^#[0-9a-fA-F]{6}$/
 
-function mixHex(baseHex: string, targetHex: string, targetWeight: number) {
-  const parse = (hex: string): readonly [number, number, number] => [
+function parseHex(hex: string): readonly [number, number, number] {
+  return [
     Number.parseInt(hex.slice(1, 3), 16),
     Number.parseInt(hex.slice(3, 5), 16),
     Number.parseInt(hex.slice(5, 7), 16),
   ]
-  const [r1, g1, b1] = parse(baseHex)
-  const [r2, g2, b2] = parse(targetHex)
+}
+
+function mixHex(baseHex: string, targetHex: string, targetWeight: number) {
+  const [r1, g1, b1] = parseHex(baseHex)
+  const [r2, g2, b2] = parseHex(targetHex)
   const channel = (a: number, b: number) =>
     Math.round(a * (1 - targetWeight) + b * targetWeight)
       .toString(16)
       .padStart(2, '0')
   return `#${channel(r1, r2)}${channel(g1, g2)}${channel(b1, b2)}`
+}
+
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = parseHex(hex).map((value) => {
+    const channel = value / 255
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  }) as [number, number, number]
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+export function contrastRatio(hexA: string, hexB: string): number {
+  const l1 = relativeLuminance(hexA)
+  const l2 = relativeLuminance(hexB)
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
+}
+
+function ensureContrast(hex: string, backgroundHex: string, minRatio = 4.5): string {
+  if (contrastRatio(hex, backgroundHex) >= minRatio) return hex
+  const target = relativeLuminance(backgroundHex) > 0.5 ? '#0f172a' : '#ffffff'
+  let low = 0
+  let high = 1
+  for (let step = 0; step < 24; step += 1) {
+    const mid = (low + high) / 2
+    if (contrastRatio(mixHex(hex, target, mid), backgroundHex) >= minRatio) {
+      high = mid
+    } else {
+      low = mid
+    }
+  }
+  const candidate = mixHex(hex, target, high)
+  return contrastRatio(candidate, backgroundHex) >= minRatio ? candidate : target
 }
 
 export function resolveAccentColor(invoice: Pick<Invoice, 'accentColor' | 'theme'>): string {
@@ -89,11 +123,12 @@ export function resolveInvoiceLayout(invoice: Pick<Invoice, 'layout'>): InvoiceL
 export function deriveInvoicePalette(accentHex: string): InvoicePalette {
   const normalized = hexColorPattern.test(accentHex) ? accentHex.toLowerCase() : defaultAccentColor
   if (normalized === defaultAccentColor) return invoiceThemePalettes.indigo
+  const amountBg = mixHex(normalized, '#ffffff', 0.78)
   return {
-    accent: normalized,
+    accent: ensureContrast(normalized, '#ffffff', 4.5),
     soft: mixHex(normalized, '#ffffff', 0.92),
-    amountBg: mixHex(normalized, '#ffffff', 0.78),
-    amountInk: mixHex(normalized, '#0f172a', 0.76),
+    amountBg,
+    amountInk: ensureContrast(mixHex(normalized, '#0f172a', 0.76), amountBg, 4.5),
     line: mixHex(normalized, '#ffffff', 0.8),
   }
 }

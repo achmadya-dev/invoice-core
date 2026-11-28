@@ -1,4 +1,5 @@
 import pdfFont from './assets/noto-sans-regular.ttf?url'
+import pdfBoldFont from './assets/noto-sans-bold.ttf?url'
 import { loadPdfRenderer } from './pdf.browser'
 
 export async function prepareOffline(): Promise<boolean> {
@@ -17,6 +18,7 @@ export async function prepareOffline(): Promise<boolean> {
     await loadPdfRenderer()
     const paths = new Set([
       pdfFont,
+      pdfBoldFont,
       ...performance.getEntriesByType('resource').map((entry) => entry.name),
       ...Array.from(
         document.querySelectorAll<HTMLLinkElement>(

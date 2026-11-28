@@ -693,7 +693,7 @@ export function ConfirmModal({
     >
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="fixed inset-0 z-70 bg-[rgb(17_12_28/54%)] backdrop-blur-[2px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden" />
-        <AlertDialog.Viewport className="fixed inset-0 z-71 grid place-items-center overflow-y-auto p-5">
+        <AlertDialog.Viewport className="fixed inset-0 z-71 grid place-items-center overflow-y-auto p-5 print:hidden">
           <AlertDialog.Popup className="ic-modal-popup w-[min(100%,440px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none">
             {confirm && (
               <>
@@ -731,34 +731,53 @@ export function ConfirmModal({
 export function ColorPicker({
   label,
   value,
+  defaultValue,
   onChange,
 }: {
   label: string
   value: string
+  defaultValue?: string
   onChange: (hex: string) => void
 }) {
   const inputId = useId()
+  const isCustom = Boolean(defaultValue && value.toLowerCase() !== defaultValue.toLowerCase())
   return (
     <div className={fieldClass}>
       <label htmlFor={inputId}>{label}</label>
-      <span
-        className="ic-color-control relative inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[7px] border border-ic-line bg-ic-field px-2.5 text-ic-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:text-ic-ink"
-        title={value.toUpperCase()}
-      >
+      <div className="ic-color-control inline-flex h-10 items-center gap-1 rounded-[7px] border border-ic-line bg-ic-field pr-1.5 pl-2.5 text-ic-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:text-ic-ink">
         <span
-          className="size-[18px] shrink-0 rounded-full border border-ic-line"
-          style={{ backgroundColor: value }}
-          aria-hidden="true"
-        />
-        <Icon name="pipette" />
-        <input
-          id={inputId}
-          type="color"
-          className="absolute inset-0 size-full min-h-0 cursor-pointer border-0 p-0 opacity-0"
-          value={value}
-          onChange={(event) => onChange(event.target.value.toLowerCase())}
-        />
-      </span>
+          className="relative inline-flex h-full cursor-pointer items-center gap-2 pr-1"
+          title={value.toUpperCase()}
+        >
+          <span
+            className="size-[18px] shrink-0 rounded-full border border-ic-line"
+            style={{ backgroundColor: value }}
+            aria-hidden="true"
+          />
+          <Icon name="pipette" />
+          <span className="font-mono text-[11px] font-medium text-ic-ink uppercase max-[480px]:hidden">
+            {value}
+          </span>
+          <input
+            id={inputId}
+            type="color"
+            className="absolute inset-0 size-full min-h-0 cursor-pointer border-0 p-0 opacity-0"
+            value={value}
+            onChange={(event) => onChange(event.target.value.toLowerCase())}
+          />
+        </span>
+        {isCustom && defaultValue && (
+          <button
+            type="button"
+            aria-label="Reset accent color"
+            title="Reset to default accent color"
+            className="grid size-7 shrink-0 place-items-center rounded text-ic-muted hover:bg-ic-soft hover:text-ic-accent"
+            onClick={() => onChange(defaultValue)}
+          >
+            <Icon name="close" className="size-3.5 flex-none" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }

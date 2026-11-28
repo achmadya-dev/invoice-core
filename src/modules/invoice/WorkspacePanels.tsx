@@ -439,8 +439,8 @@ export function Backup({
   workspace: Workspace
   storageBytes: number
   damaged: string | null
-  restore: (data: Workspace) => boolean
-  clear: () => boolean
+  restore: (data: Workspace) => { ok: true } | { ok: false; message?: string }
+  clear: () => { ok: true } | { ok: false; message?: string }
   requestConfirm: (confirm: ConfirmState) => void
 }) {
   const [error, setError] = useState('')
@@ -578,7 +578,12 @@ export function Backup({
                         cancelLabel: 'Cancel restore',
                         danger: true,
                         onConfirm: () => {
-                          restore(data)
+                          const result = restore(data)
+                          if (!result.ok) {
+                            setError(
+                              result.message ?? 'The backup could not be saved to browser storage.',
+                            )
+                          }
                         },
                       })
                     } else {
@@ -625,7 +630,11 @@ export function Backup({
               cancelLabel: 'Cancel clear',
               danger: true,
               onConfirm: () => {
-                if (clear()) setError('')
+                const result = clear()
+                if (result.ok) setError('')
+                else {
+                  setError(result.message ?? 'The local workspace could not be cleared.')
+                }
               },
             })
           }
