@@ -148,14 +148,14 @@ export function InvoiceEditor({
 
   return (
     <section
-      className="ic-invoice-stage mx-auto grid w-[min(100%,940px)] min-w-0 gap-3 rounded-[14px] print:block print:w-full print:bg-white print:p-0"
+      className="ic-invoice-stage grid w-full min-w-0 gap-0 print:block print:w-full print:bg-white print:p-0"
       aria-labelledby="editor-title"
     >
       <h2 id="editor-title" className="sr-only">
         {editing ? 'Edit invoice' : 'Document preview'}
       </h2>
       <div
-        className={`ic-sheet-tools rounded-xl border border-ic-line bg-ic-ground px-3.5 pt-3 pb-2 max-[480px]:px-2.5 max-[480px]:pt-2.5 max-[480px]:pb-1.5 print:hidden ${editing ? '' : 'hidden'}`}
+        className={`ic-sheet-tools border-y border-ic-line bg-ic-field px-5 py-3 max-[620px]:px-3.5 max-[480px]:px-2.5 max-[480px]:py-2.5 print:hidden ${editing ? '' : 'hidden'}`}
         hidden={!editing}
         role="region"
         aria-label="Invoice options"
@@ -189,8 +189,8 @@ export function InvoiceEditor({
             }}
           />
         </div>
-        <details className="ic-detail mt-[3px] text-[13px] [&[open]>div]:pt-[3px] [&[open]>div]:pb-[9px]">
-          <summary className="min-h-9 cursor-pointer py-[5px] font-[670] text-ic-accent">
+        <details className="ic-detail mt-1 text-[13px] [&[open]>div]:pt-1.5 [&[open]>div]:pb-1">
+          <summary className="min-h-8 cursor-pointer py-1 font-semibold text-ic-accent">
             More options
           </summary>
           <div className="grid grid-cols-3 gap-x-3 gap-y-2.5 max-[620px]:grid-cols-1 max-[480px]:gap-[9px]">
@@ -227,8 +227,10 @@ export function InvoiceEditor({
           </div>
         </details>
       </div>
-      <div className="min-w-0 rounded-xl bg-ic-desk print:w-full print:bg-white print:p-0">
-        <div className="p-3 max-[480px]:px-1.5 print:w-full print:bg-white print:p-0">
+      <div
+        className={`min-w-0 bg-ic-desk print:w-full print:border-0 print:bg-white print:p-0 ${editing ? '' : 'border-t border-ic-line'}`}
+      >
+        <div className="px-4 py-4 max-[620px]:px-3 max-[620px]:py-3 max-[480px]:px-2 max-[480px]:py-2.5 print:w-full print:bg-white print:p-0">
           <article
             id="invoice-editor"
             className={`${proofCardClass} print:hidden [&_:focus-visible]:outline-(--ic-doc-accent) ${editing ? '' : 'hidden'}`}
@@ -542,17 +544,17 @@ export function InvoiceEditor({
             hidden={editing}
           />
         </div>
-        <div className="grid gap-2.5 px-3 pb-3 text-xs max-[480px]:px-1.5 print:hidden">
+        <div className="grid gap-2.5 border-t border-ic-line bg-ic-surface px-4 py-3 text-xs max-[620px]:px-3 max-[480px]:px-2 print:hidden">
           {notice && (
             <p
-              className={`rounded-md bg-ic-surface px-2.5 py-2 ${notice.error ? 'ic-error text-ic-error' : 'text-ic-muted'}`}
+              className={`rounded-md border px-3 py-2 ${notice.error ? 'ic-error border-ic-error/35 bg-ic-error-bg text-ic-error' : 'border-ic-line bg-ic-field text-ic-muted'}`}
               role={notice.error ? 'alert' : 'status'}
             >
               {notice.text}
             </p>
           )}
           <div
-            className={`${actionsClass} max-[620px]:grid max-[620px]:grid-cols-2 max-[620px]:[&>button]:w-full max-[620px]:[&>button]:min-w-0 max-[620px]:[&>button]:justify-center max-[480px]:[&>button]:px-2.5`}
+            className={`${actionsClass} max-[620px]:grid max-[620px]:grid-cols-2 max-[620px]:gap-2 max-[620px]:[&>button]:w-full max-[620px]:[&>button]:min-w-0 max-[620px]:[&>button]:justify-center max-[480px]:[&>button]:px-2.5`}
           >
             {editing && (
               <>

@@ -18,9 +18,9 @@ import {
 } from './invoice-ui'
 import { decodeWorkspace, downloadFile, validateWorkspaceLogos } from './workspace.browser'
 
-const statCapClass = 'text-[13px] font-medium text-ic-muted'
-const statValueClass = 'mt-1 font-mono text-[17px]/[1.4] font-[740] tabular-nums'
-const statLabelClass = 'text-xs font-semibold text-ic-muted'
+const statCapClass = 'text-xs font-normal text-ic-muted'
+const statValueClass = 'mt-1 font-mono text-[15px]/tight font-bold tabular-nums text-ic-ink'
+const statLabelClass = 'text-xs font-medium text-ic-muted'
 
 export function Backup({
   workspace,
@@ -51,29 +51,29 @@ export function Backup({
         <h2 className="mt-0 mb-2 text-[11px] font-bold tracking-[0.06em] text-ic-muted uppercase">
           Local storage
         </h2>
-        <dl className="grid grid-cols-4 overflow-hidden rounded-[10px] border border-ic-line bg-ic-field max-[620px]:grid-cols-2">
-          <div className="min-w-0 px-3.5 py-3">
+        <dl className="grid grid-cols-4 border-y border-ic-line max-[620px]:grid-cols-2">
+          <div className="min-w-0 py-3 pr-3">
             <dt className={statLabelClass}>Saved invoices</dt>
             <dd className={statValueClass}>
               {workspace.invoices.length}
               <span className={statCapClass}> / {maxInvoices}</span>
             </dd>
           </div>
-          <div className="min-w-0 border-l border-ic-line px-3.5 py-3">
+          <div className="min-w-0 border-l border-ic-line px-3 py-3">
             <dt className={statLabelClass}>Sender profiles</dt>
             <dd className={statValueClass}>
               {workspace.companies.length}
               <span className={statCapClass}> / {maxCompanies}</span>
             </dd>
           </div>
-          <div className="min-w-0 border-l border-ic-line px-3.5 py-3 max-[620px]:border-t max-[620px]:border-l-0">
+          <div className="min-w-0 border-l border-ic-line px-3 py-3 max-[620px]:border-t max-[620px]:border-l-0 max-[620px]:pl-0">
             <dt className={statLabelClass}>Products</dt>
             <dd className={statValueClass}>
               {workspace.products.length}
               <span className={statCapClass}> / {maxProducts}</span>
             </dd>
           </div>
-          <div className="min-w-0 border-l border-ic-line px-3.5 py-3 max-[620px]:border-t">
+          <div className="min-w-0 border-l border-ic-line py-3 pl-3 max-[620px]:border-t">
             <dt className={statLabelClass}>Storage used</dt>
             <dd className={statValueClass}>
               {formatBytes(storageBytes)}
@@ -82,24 +82,18 @@ export function Backup({
           </div>
         </dl>
       </section>
-      <div className="grid grid-cols-2 items-stretch gap-3.5 max-[620px]:grid-cols-1">
-        <section className="flex flex-col rounded-[10px] border border-ic-line bg-ic-surface p-[18px]">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-ic-soft text-ic-accent"
-              aria-hidden="true"
-            >
-              <Icon name="download" />
-            </span>
-            <h2 className="m-0 font-display text-[15px]/tight font-[720] text-ic-ink">
+      <div className="divide-y divide-ic-line">
+        <section className="flex flex-wrap items-center justify-between gap-4 py-3.5 first:pt-1">
+          <div className="min-w-0 flex-[1_1_280px]">
+            <h2 className="m-0 font-display text-sm/tight font-bold text-ic-ink">
               Export a backup
             </h2>
+            <p className="mt-1 text-[13px]/normal text-ic-muted">
+              Download a JSON copy of saved invoices, company profiles, products, and settings.
+              Store it somewhere private.
+            </p>
           </div>
-          <p className="mt-2 text-[13px]/normal text-ic-muted">
-            Download a JSON copy of saved invoices, company profiles, products, and settings. Store
-            it somewhere private.
-          </p>
-          <div className={`${actionsClass} mt-auto pt-3.5`}>
+          <div className={`${actionsClass} shrink-0`}>
             <button
               className={primaryButtonClass}
               type="button"
@@ -128,30 +122,22 @@ export function Backup({
             )}
           </div>
         </section>
-        <section className="flex flex-col rounded-[10px] border border-ic-line bg-ic-surface p-[18px]">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-ic-soft text-ic-accent"
-              aria-hidden="true"
+        <section className="py-3.5 last:pb-1">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 flex-[1_1_280px]">
+              <h2 className="m-0 font-display text-sm/tight font-bold text-ic-ink">
+                Restore a backup
+              </h2>
+              <p className="mt-1 text-[13px]/normal text-ic-muted">
+                Replace local workspace data from a validated .json backup (up to 8 MB). Export a
+                copy first.
+              </p>
+            </div>
+            <label
+              className={`${buttonClass} relative shrink-0 cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent`}
             >
               <Icon name="upload" />
-            </span>
-            <h2 className="m-0 font-display text-[15px]/tight font-[720] text-ic-ink">
-              Restore a backup
-            </h2>
-          </div>
-          <p className="mt-2 text-[13px]/normal text-ic-muted">
-            Restore replaces the local workspace. Download a backup of what you have first.
-          </p>
-          <div className="mt-auto pt-3.5">
-            <label className="relative flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-ic-accent/45 bg-ic-field px-3 py-2 text-ic-accent transition-[border-color,background-color] duration-140 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:bg-ic-soft">
-              <Icon name="upload" />
-              <span className="grid min-w-0 gap-px" aria-hidden="true">
-                <strong className="text-[13px]/[1.25] font-bold text-ic-ink">
-                  Choose backup file
-                </strong>
-                <span className="text-xs/[1.25] text-ic-muted">.json up to 8 MB</span>
-              </span>
+              <span>Choose backup file</span>
               <input
                 type="file"
                 className="absolute inset-0 size-full min-h-0 cursor-pointer border-0 p-0 opacity-0"
@@ -205,21 +191,19 @@ export function Backup({
             </label>
           </div>
           {error && (
-            <p className="ic-error mt-2 text-ic-error" role="alert">
+            <p className="ic-error mt-2.5 text-[13px] text-ic-error" role="alert">
               {error}
             </p>
           )}
         </section>
       </div>
       <section
-        className="flex flex-wrap items-center justify-between gap-4 rounded-[10px] border border-l-[3px] border-ic-error/28 border-l-ic-error bg-ic-surface px-[18px] py-4"
+        className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-ic-error/30 bg-ic-error-bg/50 px-4 py-3.5"
         aria-label="Reset local data"
       >
         <div className="min-w-0 flex-[1_1_280px]">
-          <h2 className="m-0 font-display text-[15px]/tight font-[720] text-ic-ink">
-            Reset local data
-          </h2>
-          <p className="mt-2 text-[13px]/normal text-ic-muted">
+          <h2 className="m-0 font-display text-sm/tight font-bold text-ic-ink">Reset local data</h2>
+          <p className="mt-1 text-[13px]/normal text-ic-muted">
             Remove all saved invoices, sender profiles, and products from this browser. Export a
             JSON backup first.
           </p>

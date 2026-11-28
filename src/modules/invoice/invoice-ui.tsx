@@ -8,34 +8,38 @@ import { readLogo } from './workspace.browser'
 import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 
 export const shellClass =
-  'ic-shell mx-auto w-[min(100%-72px,1320px)] max-[900px]:w-[calc(100%-36px)] print:block print:w-full print:max-w-none print:min-h-0 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none'
-export const actionsClass = 'ic-actions flex flex-wrap items-center gap-2'
-export const fieldClass = 'relative grid min-w-0 content-start gap-[5px] text-xs font-[680]'
+  'ic-shell mx-auto w-[min(100%-64px,1200px)] max-[900px]:w-[calc(100%-32px)] print:block print:w-full print:max-w-none print:min-h-0 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none'
+export const actionsClass = 'ic-actions flex flex-wrap items-center gap-1.5'
+export const fieldClass =
+  'relative grid min-w-0 content-start gap-1.5 text-xs font-semibold text-ic-ink'
 export const fieldsGridClass = 'grid grid-cols-2 gap-x-3 gap-y-2.5 max-[480px]:gap-[9px]'
 export const buttonClass =
-  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-line bg-ic-surface px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-accent enabled:hover:bg-ic-soft'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-line bg-ic-surface px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-ink hover:bg-ic-soft max-[620px]:min-h-[42px]'
 export const primaryButtonClass =
-  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-action-bg bg-ic-action-bg px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-action-ink enabled:hover:brightness-[0.92]'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-action-bg bg-ic-action-bg px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-action-ink transition-opacity duration-120 enabled:hover:opacity-90 motion-reduce:transition-none max-[620px]:min-h-[42px]'
 export const dangerButtonClass =
-  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg border border-ic-error bg-ic-error-bg px-[13px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-error enabled:hover:brightness-95'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-error/45 bg-ic-surface px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-error enabled:hover:bg-ic-error-bg max-[620px]:min-h-[42px]'
 export const textButtonClass =
-  'inline-flex min-h-[42px] items-center justify-center gap-[7px] rounded-lg px-[7px] py-2 text-[13px] font-bold whitespace-nowrap text-ic-accent underline decoration-transparent underline-offset-4 hover:bg-ic-soft hover:decoration-current'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-muted hover:bg-ic-soft hover:text-ic-ink max-[620px]:min-h-[42px]'
+export const dangerTextButtonClass =
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-muted hover:bg-ic-error-bg hover:text-ic-error focus-visible:text-ic-error max-[620px]:min-h-[42px]'
 export const iconButtonClass =
-  'grid size-9 flex-none place-items-center rounded-lg border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-accent motion-reduce:transition-none'
-export const panelClass = 'min-w-0 rounded-[14px] border border-ic-line bg-ic-surface'
-export const bannerClass = 'mb-3 rounded-lg bg-ic-soft px-3.5 py-[11px] print:hidden'
+  'grid size-9 flex-none place-items-center rounded-md border border-transparent bg-transparent p-0 text-ic-muted hover:border-ic-line hover:bg-ic-soft hover:text-ic-ink'
+export const panelClass = 'min-w-0 overflow-hidden rounded-lg border border-ic-line bg-ic-surface'
+export const bannerClass =
+  'mb-3 rounded-md border border-ic-line bg-ic-surface px-3.5 py-2.5 text-[13px] text-ic-muted print:hidden'
 export const errorBannerClass =
-  'ic-error mb-3 rounded-lg bg-ic-error-bg px-3.5 py-[11px] text-ic-error print:hidden'
-export const docLabelClass = 'text-[10px] font-[740] tracking-[0.07em] text-ic-muted uppercase'
+  'ic-error mb-3 rounded-md border border-ic-error/35 bg-ic-error-bg px-3.5 py-2.5 text-[13px] text-ic-error print:hidden'
+export const docLabelClass = 'text-[10px] font-bold tracking-[0.07em] text-ic-muted uppercase'
 export const recordRowBaseClass =
-  'ic-record grid cursor-pointer items-center gap-3.5 border-t border-ic-line px-[22px] py-[11px] wrap-anywhere transition-colors duration-120 last:rounded-b-[13px] [&:hover:not(:has(.ic-actions:hover))]:bg-ic-soft/55 [&:has(.ic-record-trigger:focus-visible)]:bg-ic-soft/55 [&:hover:not(:has(.ic-actions:hover))_.ic-record-trigger]:decoration-current max-[480px]:px-3.5 motion-reduce:transition-none'
+  'ic-record grid cursor-pointer items-center gap-3.5 border-t border-ic-line px-4 py-3 wrap-anywhere [&:hover:not(:has(.ic-actions:hover))]:bg-ic-field [&:has(.ic-record-trigger:focus-visible)]:bg-ic-field [&:hover:not(:has(.ic-actions:hover))_.ic-record-trigger]:decoration-current max-[480px]:px-3.5'
 export const sheetFieldLabelClass = 'relative grid min-w-0 content-start gap-0 text-xs font-normal'
 export const sheetNameLabelClass =
-  'relative mb-0.5 grid min-w-0 content-start gap-0 font-display text-[clamp(14px,1.7vw,19px)]/[1.15] font-[750]'
+  'relative mb-0.5 grid min-w-0 content-start gap-0 font-display text-[clamp(14px,1.7vw,19px)]/[1.15] font-bold'
 export const recordTriggerClass =
-  'ic-record-trigger block min-h-0 cursor-pointer rounded-lg p-0 text-left font-bold whitespace-normal text-ic-accent underline decoration-transparent underline-offset-4 hover:bg-transparent hover:decoration-current'
+  'ic-record-trigger block min-h-0 cursor-pointer rounded p-0 text-left font-bold whitespace-normal text-ic-accent underline decoration-transparent underline-offset-4 hover:bg-transparent hover:decoration-current'
 export const sheetChipClass =
-  'inline-flex min-h-6 items-center gap-1 rounded-md border border-ic-line bg-ic-soft px-2 py-0.5 font-sans text-[11px]/[1.2] font-[650] tracking-normal whitespace-nowrap text-ic-accent normal-case transition-[background-color,border-color] duration-120 hover:border-ic-accent hover:bg-ic-desk motion-reduce:transition-none'
+  'inline-flex min-h-6 items-center gap-1 rounded-md border border-ic-line bg-ic-field px-2 py-0.5 font-sans text-[11px]/[1.2] font-semibold tracking-normal whitespace-nowrap text-ic-ink normal-case hover:border-ic-accent hover:bg-ic-soft hover:text-ic-accent'
 
 const countryOptions = countryCodes
   .map((code) => ({ code, name: countryName(code) }))
@@ -194,7 +198,7 @@ export function PickerModal({
           </p>
         )}
         {options.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-ic-line px-3 py-[18px] text-center text-[13px] text-ic-muted">
+          <p className="rounded-md border border-dashed border-ic-line px-3 py-4 text-center text-[13px] text-ic-muted">
             {empty}
           </p>
         ) : (
@@ -203,16 +207,18 @@ export function PickerModal({
               <li key={option.value}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-ic-line bg-ic-field px-3 py-2.5 text-start text-ic-ink transition-[background-color,border-color] duration-120 hover:border-ic-accent hover:bg-ic-soft motion-reduce:transition-none"
+                  className="flex w-full items-center justify-between gap-3 rounded-md border border-ic-line bg-ic-field px-3 py-2.5 text-start text-ic-ink hover:border-ic-accent hover:bg-ic-soft"
                   onClick={() => onSelect(option.value)}
                 >
                   <span className="grid min-w-0 gap-0.5 wrap-anywhere">
-                    <strong className="text-[13.5px] font-[680]">{option.label}</strong>
+                    <strong className="text-[13.5px] font-semibold">{option.label}</strong>
                     {option.detail && (
                       <small className="text-xs text-ic-muted">{option.detail}</small>
                     )}
                   </span>
-                  <span className="flex-none text-xs font-bold text-ic-accent">{actionLabel}</span>
+                  <span className="flex-none text-xs font-semibold text-ic-accent">
+                    {actionLabel}
+                  </span>
                 </button>
               </li>
             ))}
@@ -242,6 +248,7 @@ export function WorkspaceDialog({
   onClose: () => void
   children: ReactNode
 }) {
+  const isWide = size === 'wide'
   return (
     <Dialog.Root
       open={open}
@@ -251,44 +258,52 @@ export function WorkspaceDialog({
     >
       <Dialog.Portal>
         <Dialog.Backdrop
-          className={`fixed inset-0 bg-[rgb(17_12_28/54%)] backdrop-blur-[2px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden ${nested ? 'z-70' : 'z-60'}`}
+          className={`fixed inset-0 bg-black/45 backdrop-blur-[1px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden ${nested ? 'z-70' : 'z-60'}`}
         />
         <Dialog.Viewport
           className={
-            size === 'wide'
+            isWide
               ? 'fixed inset-0 z-61 grid place-items-center items-start overflow-y-auto p-5 max-[620px]:p-2 max-[480px]:p-1 print:static print:block print:overflow-visible print:p-0'
               : `fixed inset-0 grid place-items-center overflow-y-auto p-5 ${nested ? 'z-71' : 'z-61'}`
           }
         >
           <Dialog.Popup
             className={
-              size === 'wide'
-                ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-wide w-[min(100%,988px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-opacity duration-120 ease-out outline-none data-starting-style:opacity-0 motion-reduce:transition-none max-[620px]:p-3.5 max-[480px]:rounded-xl max-[480px]:px-2 max-[480px]:py-3 print:block print:min-h-0 print:w-full print:max-w-none print:rounded-none print:border-0 print:bg-white print:p-0 print:text-ic-ink print:shadow-none'
+              isWide
+                ? 'ic-modal-popup ic-workspace-dialog ic-workspace-dialog-wide w-[min(100%,960px)] overflow-hidden rounded-lg border border-ic-line bg-ic-surface p-0 text-ic-ink shadow-[0_12px_32px_rgb(0_0_0/16%)] transition-opacity duration-120 ease-out outline-none data-starting-style:opacity-0 motion-reduce:transition-none max-[480px]:rounded-lg print:block print:min-h-0 print:w-full print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:bg-white print:p-0 print:text-ic-ink print:shadow-none'
                 : size === 'compact'
-                  ? 'ic-modal-popup ic-workspace-dialog w-[min(100%,520px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none'
-                  : 'ic-modal-popup ic-workspace-dialog w-[min(100%,760px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none'
+                  ? 'ic-modal-popup ic-workspace-dialog w-[min(100%,520px)] rounded-lg border border-ic-line bg-ic-surface p-5 text-ic-ink shadow-[0_12px_32px_rgb(0_0_0/16%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none'
+                  : 'ic-modal-popup ic-workspace-dialog w-[min(100%,720px)] rounded-lg border border-ic-line bg-ic-surface p-5 text-ic-ink shadow-[0_12px_32px_rgb(0_0_0/16%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none'
             }
           >
-            <div className="ic-dialog-heading flex items-center justify-between gap-3 print:hidden">
-              <Dialog.Title className="m-0 font-display text-lg/tight font-[730]">
-                {title}
-              </Dialog.Title>
-              <Dialog.Close className={iconButtonClass} aria-label="Close dialog">
-                <Icon name="close" />
-              </Dialog.Close>
-            </div>
-            {headerExtra ? (
-              <div className="ic-dialog-intro mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 max-[620px]:flex-col max-[620px]:items-stretch print:hidden">
-                <Dialog.Description className="m-0 text-sm/normal text-ic-muted">
+            <div
+              className={
+                isWide
+                  ? 'px-5 pt-4 pb-3.5 max-[620px]:px-3.5 max-[480px]:px-2.5 print:hidden'
+                  : 'print:hidden'
+              }
+            >
+              <div className="ic-dialog-heading flex items-center justify-between gap-3">
+                <Dialog.Title className="m-0 font-display text-lg/tight font-bold">
+                  {title}
+                </Dialog.Title>
+                <Dialog.Close className={iconButtonClass} aria-label="Close dialog">
+                  <Icon name="close" />
+                </Dialog.Close>
+              </div>
+              {headerExtra ? (
+                <div className="ic-dialog-intro mt-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2.5 max-[620px]:flex-col max-[620px]:items-stretch">
+                  <Dialog.Description className="m-0 text-[13px]/normal text-ic-muted">
+                    {description}
+                  </Dialog.Description>
+                  {headerExtra}
+                </div>
+              ) : (
+                <Dialog.Description className="mt-1.5 text-[13px]/normal text-ic-muted">
                   {description}
                 </Dialog.Description>
-                {headerExtra}
-              </div>
-            ) : (
-              <Dialog.Description className="mt-2.5 text-sm/normal text-ic-muted print:hidden">
-                {description}
-              </Dialog.Description>
-            )}
+              )}
+            </div>
             {children}
           </Dialog.Popup>
         </Dialog.Viewport>
@@ -319,7 +334,7 @@ export function SelectField({
     >
       <div className={fieldClass}>
         <Select.Label>{label}</Select.Label>
-        <Select.Trigger className="ic-select-trigger flex min-h-10 w-full min-w-0 items-center justify-between gap-2.5 rounded-[7px] border border-ic-line bg-ic-field px-[9px] py-[7px] text-start font-sans text-sm/[1.4] font-normal text-ic-ink data-disabled:cursor-not-allowed data-disabled:opacity-55 data-popup-open:border-ic-accent [&>:first-child]:min-w-0 [&>:first-child]:truncate">
+        <Select.Trigger className="ic-select-trigger flex h-9 min-h-9 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-ic-line bg-ic-field px-2.5 py-1.5 text-start font-sans text-sm/[1.4] font-normal text-ic-ink data-disabled:cursor-not-allowed data-disabled:opacity-55 data-popup-open:border-ic-accent [&>:first-child]:min-w-0 [&>:first-child]:truncate">
           <Select.Value />
           <Select.Icon className="grid flex-none place-items-center text-ic-muted">
             <Icon name="chevron" className="size-[15px] flex-none" />
@@ -333,17 +348,17 @@ export function SelectField({
           alignItemWithTrigger={false}
           positionMethod="fixed"
         >
-          <Select.Popup className="ic-select-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-lg border border-ic-line bg-ic-surface p-1 text-ic-ink shadow-[0_10px_28px_rgb(25_20_38/18%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
+          <Select.Popup className="ic-select-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-md border border-ic-line bg-ic-surface p-1 text-ic-ink shadow-[0_8px_24px_rgb(0_0_0/14%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
             <Select.List className="grid gap-0.5 outline-none">
               {options.map((option) => (
                 <Select.Item
                   key={option.value}
                   value={option.value}
                   label={option.label}
-                  className="ic-select-option relative flex min-h-9 cursor-default items-center rounded-[5px] py-[7px] pr-[34px] pl-[9px] text-[13px]/[1.35] wrap-anywhere text-ic-ink select-none focus-visible:-outline-offset-2 data-highlighted:bg-ic-soft data-highlighted:text-ic-accent data-selected:font-[680]"
+                  className="ic-select-option relative flex min-h-8 cursor-default items-center rounded py-1.5 pr-8 pl-2.5 text-[13px]/[1.35] wrap-anywhere text-ic-ink select-none focus-visible:-outline-offset-2 data-highlighted:bg-ic-soft data-highlighted:text-ic-accent data-selected:font-semibold"
                 >
                   <Select.ItemText>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator className="absolute inset-e-[9px] grid place-items-center text-ic-accent">
+                  <Select.ItemIndicator className="absolute inset-e-2.5 grid place-items-center text-ic-accent">
                     <Icon name="check" className="size-[15px] flex-none" />
                   </Select.ItemIndicator>
                 </Select.Item>
@@ -381,21 +396,21 @@ export function CountrySelect({
     >
       <div className={span ? `${fieldClass} col-span-full` : fieldClass}>
         <label htmlFor={id}>{label}</label>
-        <Combobox.InputGroup className="ic-country-group relative flex min-h-10 w-full min-w-0 items-center rounded-[7px] border border-ic-line bg-ic-field focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent">
+        <Combobox.InputGroup className="ic-country-group relative flex h-9 min-h-9 w-full min-w-0 items-center rounded-md border border-ic-line bg-ic-field focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent">
           <Combobox.Input
             id={id}
-            className="min-h-[38px] w-full min-w-0 rounded-[inherit] border-0 bg-transparent py-[7px] pr-[70px] pl-[9px] font-sans text-sm/[1.4] font-normal text-ic-ink outline-none placeholder:text-ic-muted placeholder:opacity-100"
+            className="min-h-[34px] w-full min-w-0 rounded-[inherit] border-0 bg-transparent py-1.5 pr-16 pl-2.5 font-sans text-sm/[1.4] font-normal text-ic-ink outline-none placeholder:text-ic-muted placeholder:opacity-100"
             placeholder="Search countries"
           />
           <Combobox.Trigger
-            className="absolute inset-y-0 inset-e-0 grid w-[34px] place-items-center rounded-[5px] border-0 bg-transparent p-0 text-ic-muted hover:bg-ic-soft hover:text-ic-accent"
+            className="absolute inset-y-0 inset-e-0 grid w-8 place-items-center rounded border-0 bg-transparent p-0 text-ic-muted hover:bg-ic-soft hover:text-ic-ink"
             aria-label={`Show ${label.toLowerCase()} options`}
           >
             <Icon name="chevron" className="size-[15px] flex-none" />
           </Combobox.Trigger>
           {value && (
             <Combobox.Clear
-              className="absolute inset-y-0 inset-e-[34px] grid w-[34px] place-items-center rounded-[5px] border-0 bg-transparent p-0 text-ic-muted hover:bg-ic-soft hover:text-ic-accent"
+              className="absolute inset-y-0 inset-e-8 grid w-8 place-items-center rounded border-0 bg-transparent p-0 text-ic-muted hover:bg-ic-soft hover:text-ic-ink"
               aria-label={`Clear ${label.toLowerCase()}`}
             >
               <Icon name="close" className="size-[15px] flex-none" />
@@ -404,18 +419,18 @@ export function CountrySelect({
         </Combobox.InputGroup>
         <Combobox.Portal>
           <Combobox.Positioner className="z-63 outline-none" sideOffset={4}>
-            <Combobox.Popup className="ic-country-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-lg border border-ic-line bg-ic-surface p-1 text-ic-ink shadow-[0_10px_28px_rgb(25_20_38/18%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
+            <Combobox.Popup className="ic-country-popup max-h-[min(280px,var(--available-height))] w-[max(var(--anchor-width),116px)] max-w-(--available-width) origin-(--transform-origin) overflow-y-auto overscroll-contain rounded-md border border-ic-line bg-ic-surface p-1 text-ic-ink shadow-[0_8px_24px_rgb(0_0_0/14%)] transition-[opacity,transform] duration-150 data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
               <Combobox.Empty>
-                <div className="p-[9px] text-[13px] text-ic-muted">No countries match.</div>
+                <div className="p-2 text-[13px] text-ic-muted">No countries match.</div>
               </Combobox.Empty>
               <Combobox.List className="grid gap-0.5 outline-none">
                 {(country) => (
                   <Combobox.Item
                     key={country.code}
                     value={country.code}
-                    className="ic-country-option relative flex min-h-9 cursor-default items-center rounded-[5px] py-[7px] pr-[34px] pl-[9px] text-[13px]/[1.35] wrap-anywhere text-ic-ink select-none focus-visible:-outline-offset-2 data-highlighted:bg-ic-soft data-highlighted:text-ic-accent data-selected:font-[680]"
+                    className="ic-country-option relative flex min-h-8 cursor-default items-center rounded py-1.5 pr-8 pl-2.5 text-[13px]/[1.35] wrap-anywhere text-ic-ink select-none focus-visible:-outline-offset-2 data-highlighted:bg-ic-soft data-highlighted:text-ic-accent data-selected:font-semibold"
                   >
-                    <Combobox.ItemIndicator className="absolute inset-e-[9px] grid place-items-center text-ic-accent">
+                    <Combobox.ItemIndicator className="absolute inset-e-2.5 grid place-items-center text-ic-accent">
                       <Icon name="check" className="size-[15px] flex-none" />
                     </Combobox.ItemIndicator>
                     <span>{country.name}</span>
@@ -692,15 +707,15 @@ export function ConfirmModal({
       }}
     >
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 z-70 bg-[rgb(17_12_28/54%)] backdrop-blur-[2px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden" />
+        <AlertDialog.Backdrop className="fixed inset-0 z-70 bg-black/45 backdrop-blur-[1px] transition-opacity duration-150 ease-out data-starting-style:opacity-0 motion-reduce:transition-none print:hidden" />
         <AlertDialog.Viewport className="fixed inset-0 z-71 grid place-items-center overflow-y-auto p-5 print:hidden">
-          <AlertDialog.Popup className="ic-modal-popup w-[min(100%,440px)] rounded-[14px] border border-ic-line bg-ic-surface p-[22px] text-ic-ink shadow-[0_18px_44px_rgb(17_12_28/28%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.97] data-starting-style:opacity-0 motion-reduce:transition-none">
+          <AlertDialog.Popup className="ic-modal-popup w-[min(100%,440px)] rounded-lg border border-ic-line bg-ic-surface p-5 text-ic-ink shadow-[0_12px_32px_rgb(0_0_0/16%)] transition-[opacity,transform] duration-150 ease-out outline-none data-starting-style:translate-y-1 data-starting-style:scale-[0.98] data-starting-style:opacity-0 motion-reduce:transition-none">
             {confirm && (
               <>
-                <AlertDialog.Title className="m-0 font-display text-lg/tight font-[730]">
+                <AlertDialog.Title className="m-0 font-display text-lg/tight font-bold">
                   {confirm.title}
                 </AlertDialog.Title>
-                <AlertDialog.Description className="mt-2.5 text-sm/normal text-ic-muted">
+                <AlertDialog.Description className="mt-2 text-sm/normal text-ic-muted">
                   {confirm.description}
                 </AlertDialog.Description>
                 <div className="mt-5 flex flex-wrap justify-end gap-2">
@@ -744,17 +759,17 @@ export function ColorPicker({
   return (
     <div className={fieldClass}>
       <label htmlFor={inputId}>{label}</label>
-      <div className="ic-color-control inline-flex h-10 items-center gap-1 rounded-[7px] border border-ic-line bg-ic-field pr-1.5 pl-2.5 text-ic-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:text-ic-ink">
+      <div className="ic-color-control inline-flex h-9 items-center gap-1 rounded-md border border-ic-line bg-ic-field pr-1 pl-2.5 text-ic-muted focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ic-accent hover:border-ic-accent hover:text-ic-ink">
         <span
           className="relative inline-flex h-full cursor-pointer items-center gap-2 pr-1"
           title={value.toUpperCase()}
         >
           <span
-            className="size-[18px] shrink-0 rounded-full border border-ic-line"
+            className="size-4 shrink-0 rounded-xs border border-ic-line"
             style={{ backgroundColor: value }}
             aria-hidden="true"
           />
-          <Icon name="pipette" />
+          <Icon name="pipette" className="size-3.5 flex-none" />
           <span className="font-mono text-[11px] font-medium text-ic-ink uppercase max-[480px]:hidden">
             {value}
           </span>
@@ -771,7 +786,7 @@ export function ColorPicker({
             type="button"
             aria-label="Reset accent color"
             title="Reset to default accent color"
-            className="grid size-7 shrink-0 place-items-center rounded text-ic-muted hover:bg-ic-soft hover:text-ic-accent"
+            className="grid size-6 shrink-0 place-items-center rounded text-ic-muted hover:bg-ic-soft hover:text-ic-ink"
             onClick={() => onChange(defaultValue)}
           >
             <Icon name="close" className="size-3.5 flex-none" />

@@ -107,8 +107,29 @@ test('keeps light custom accent colors accessible and supports resetting to defa
   const reset = dialog.getByRole('button', { name: 'Reset accent color' })
   await expect(reset).toBeVisible()
   await reset.click()
-  await expect(colorInput).toHaveValue('#4837a6')
+  await expect(colorInput).toHaveValue('#165947')
   await expect(reset).toHaveCount(0)
+})
+
+test('renders Backup danger section with uniform 1px border and zero Axe violations in light and dark modes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Backup', exact: true }).click()
+
+  const backupDialog = page.getByRole('dialog', { name: 'Backup' })
+  await expect(backupDialog).toBeVisible()
+  await expect(backupDialog).toHaveCSS('opacity', '1')
+  const resetSection = backupDialog.getByRole('region', { name: 'Reset local data' })
+  await expect(resetSection).toBeVisible()
+  await expect(resetSection).toHaveCSS('border-left-width', '1px')
+  await expect(resetSection).toHaveCSS('border-top-width', '1px')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(backupDialog).toHaveCSS('color-scheme', 'dark')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
 })
 
 test('surfaces cross-tab storage errors inside active editor and backup modals', async ({

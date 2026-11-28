@@ -3,7 +3,7 @@ import { countryCodes, currencies } from './catalog'
 
 const invoiceStatuses = ['draft', 'sent', 'paid'] as const
 const themes = ['system', 'light', 'dark'] as const
-export const defaultAccentColor = '#4837a6'
+export const defaultAccentColor = '#165947'
 export const invoiceLayouts = ['classic', 'modern', 'minimal'] as const
 export type InvoiceLayout = (typeof invoiceLayouts)[number]
 export const invoiceLayoutLabels: Record<InvoiceLayout, string> = {
@@ -17,6 +17,13 @@ export type InvoicePalette = {
   amountBg: string
   amountInk: string
   line: string
+}
+const defaultInvoicePalette: InvoicePalette = {
+  accent: '#165947',
+  soft: '#eef5f2',
+  amountBg: '#e4f0eb',
+  amountInk: '#10372d',
+  line: '#d3e0da',
 }
 const invoiceThemes = ['indigo', 'slate', 'emerald', 'amber', 'rose'] as const
 type InvoiceTheme = (typeof invoiceThemes)[number]
@@ -113,7 +120,7 @@ export function resolveAccentColor(invoice: Pick<Invoice, 'accentColor' | 'theme
   if (invoice.accentColor && hexColorPattern.test(invoice.accentColor)) {
     return invoice.accentColor.toLowerCase()
   }
-  return invoiceThemePalettes[invoice.theme ?? 'indigo'].accent
+  return invoice.theme ? invoiceThemePalettes[invoice.theme].accent : defaultAccentColor
 }
 
 export function resolveInvoiceLayout(invoice: Pick<Invoice, 'layout'>): InvoiceLayout {
@@ -122,7 +129,8 @@ export function resolveInvoiceLayout(invoice: Pick<Invoice, 'layout'>): InvoiceL
 
 export function deriveInvoicePalette(accentHex: string): InvoicePalette {
   const normalized = hexColorPattern.test(accentHex) ? accentHex.toLowerCase() : defaultAccentColor
-  if (normalized === defaultAccentColor) return invoiceThemePalettes.indigo
+  if (normalized === defaultAccentColor) return defaultInvoicePalette
+  if (normalized === invoiceThemePalettes.indigo.accent) return invoiceThemePalettes.indigo
   const amountBg = mixHex(normalized, '#ffffff', 0.78)
   return {
     accent: ensureContrast(normalized, '#ffffff', 4.5),

@@ -3,6 +3,7 @@ import { invoiceDocument } from '../../src/modules/invoice/document'
 import {
   backupFilename,
   contrastRatio,
+  defaultAccentColor,
   deriveInvoicePalette,
   duplicateInvoice,
   formatBytes,
@@ -15,6 +16,7 @@ import {
   newInvoice,
   newItem,
   newWorkspace,
+  resolveAccentColor,
   sanitizeFilename,
   saveCompany,
   saveInvoice,
@@ -257,10 +259,14 @@ describe('local invoice workspace', () => {
     expect(hasPositiveDecimal('abc')).toBe(false)
     expect(hasPositiveDecimal('0.001')).toBe(true)
 
+    expect(defaultAccentColor).toBe('#165947')
+    expect(resolveAccentColor(newInvoice(undefined, []))).toBe('#165947')
+    expect(resolveAccentColor({ theme: 'indigo' })).toBe('#4837a6')
+    expect(deriveInvoicePalette('#165947').accent).toBe('#165947')
     expect(deriveInvoicePalette('#4837a6').accent).toBe('#4837a6')
     expect(deriveInvoicePalette('#047857').accent).toBe('#047857')
-    for (const lightHex of ['#ffff00', '#ffffff', '#f9e080', '#a7f3d0']) {
-      const palette = deriveInvoicePalette(lightHex)
+    for (const hex of ['#165947', '#ffff00', '#ffffff', '#f9e080', '#a7f3d0']) {
+      const palette = deriveInvoicePalette(hex)
       expect(contrastRatio(palette.accent, '#ffffff')).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(palette.amountInk, palette.amountBg)).toBeGreaterThanOrEqual(4.5)
     }

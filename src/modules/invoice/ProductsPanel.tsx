@@ -4,6 +4,7 @@ import {
   actionsClass,
   buttonClass,
   CurrencySelect,
+  dangerTextButtonClass,
   fieldClass,
   fieldsGridClass,
   Icon,
@@ -12,7 +13,6 @@ import {
   recordRowBaseClass,
   recordTriggerClass,
   shouldOpenRecordRow,
-  textButtonClass,
   WorkspaceDialog,
 } from './invoice-ui'
 import { LineItems } from './LineItems'
@@ -53,7 +53,7 @@ export function ProductsPanel({
       <h2 id="products-title" className="sr-only">
         Products
       </h2>
-      <div className="flex flex-wrap items-end justify-between gap-3 px-[22px] py-[21px] max-[480px]:px-3.5">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-ic-line bg-ic-field px-4 py-3.5 max-[480px]:px-3.5">
         <label className={`${fieldClass} flex-[0_1_300px]`}>
           Search products
           <input
@@ -76,12 +76,12 @@ export function ProductsPanel({
         </button>
       </div>
       {matches.length > 0 && (
-        <p className="px-[22px] pb-3 text-xs text-ic-muted max-[480px]:px-3.5">
+        <p className="px-4 py-2 text-xs text-ic-muted max-[480px]:px-3.5">
           Showing {first + 1}–{first + visible.length} of {matches.length} products
         </p>
       )}
       {matches.length === 0 ? (
-        <p className="px-[22px] py-[21px] max-[480px]:px-3.5">
+        <p className="px-4 py-5 text-[13px] text-ic-muted max-[480px]:px-3.5">
           {products.length
             ? 'No products match this search.'
             : 'No products yet. Add a product or service to reuse it on invoices.'}
@@ -99,21 +99,21 @@ export function ProductsPanel({
               <div>
                 <h3>
                   <button
-                    className={recordTriggerClass}
+                    className={`${recordTriggerClass} font-sans text-sm`}
                     type="button"
                     onClick={() => openDialog(product)}
                   >
                     {product.name}
                   </button>
                 </h3>
-                <p className="mt-[5px] text-xs text-ic-muted">
+                <p className="mt-1 font-mono text-xs text-ic-muted">
                   {product.items.length} {product.items.length === 1 ? 'item' : 'items'} ·{' '}
                   {product.currency}
                 </p>
               </div>
               <div className={`${actionsClass} cursor-default max-[620px]:col-span-full`}>
                 <button
-                  className={textButtonClass}
+                  className={dangerTextButtonClass}
                   type="button"
                   aria-label={`Delete ${product.name}`}
                   onClick={() => remove(product)}
@@ -127,7 +127,7 @@ export function ProductsPanel({
       )}
       {pageCount > 1 && (
         <nav
-          className="flex items-center justify-between gap-2.5 border-t border-ic-line px-[18px] py-3"
+          className="flex items-center justify-between gap-2.5 border-t border-ic-line bg-ic-field px-4 py-2.5 text-xs text-ic-muted"
           aria-label="Product catalog pages"
         >
           <button
