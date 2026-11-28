@@ -14,17 +14,17 @@ export const fieldClass =
   'relative grid min-w-0 content-start gap-1.5 text-xs font-semibold text-ic-ink'
 export const fieldsGridClass = 'grid grid-cols-2 gap-x-3 gap-y-2.5 max-[480px]:gap-[9px]'
 export const buttonClass =
-  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-line bg-ic-surface px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-ink transition-colors duration-120 hover:bg-ic-soft motion-reduce:transition-none max-[620px]:min-h-[42px]'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-line bg-ic-surface px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-ink hover:bg-ic-soft max-[620px]:min-h-[42px]'
 export const primaryButtonClass =
   'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-action-bg bg-ic-action-bg px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-action-ink transition-opacity duration-120 enabled:hover:opacity-90 motion-reduce:transition-none max-[620px]:min-h-[42px]'
 export const dangerButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-error/45 bg-ic-surface px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-error transition-colors duration-120 enabled:hover:bg-ic-error-bg motion-reduce:transition-none max-[620px]:min-h-[42px]'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-ic-error/45 bg-ic-surface px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-error enabled:hover:bg-ic-error-bg max-[620px]:min-h-[42px]'
 export const textButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-muted transition-colors duration-120 hover:bg-ic-soft hover:text-ic-ink motion-reduce:transition-none max-[620px]:min-h-[42px]'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-muted hover:bg-ic-soft hover:text-ic-ink max-[620px]:min-h-[42px]'
 export const dangerTextButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-muted transition-colors duration-120 hover:bg-ic-error-bg hover:text-ic-error focus-visible:text-ic-error motion-reduce:transition-none max-[620px]:min-h-[42px]'
+  'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-semibold whitespace-nowrap text-ic-muted hover:bg-ic-error-bg hover:text-ic-error focus-visible:text-ic-error max-[620px]:min-h-[42px]'
 export const iconButtonClass =
-  'grid size-9 flex-none place-items-center rounded-md border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-ink motion-reduce:transition-none'
+  'grid size-9 flex-none place-items-center rounded-md border border-transparent bg-transparent p-0 text-ic-muted hover:border-ic-line hover:bg-ic-soft hover:text-ic-ink'
 export const panelClass = 'min-w-0 overflow-hidden rounded-lg border border-ic-line bg-ic-surface'
 export const bannerClass =
   'mb-3 rounded-md border border-ic-line bg-ic-surface px-3.5 py-2.5 text-[13px] text-ic-muted print:hidden'
@@ -32,14 +32,14 @@ export const errorBannerClass =
   'ic-error mb-3 rounded-md border border-ic-error/35 bg-ic-error-bg px-3.5 py-2.5 text-[13px] text-ic-error print:hidden'
 export const docLabelClass = 'text-[10px] font-bold tracking-[0.07em] text-ic-muted uppercase'
 export const recordRowBaseClass =
-  'ic-record grid cursor-pointer items-center gap-3.5 border-t border-ic-line px-4 py-3 wrap-anywhere transition-colors duration-120 [&:hover:not(:has(.ic-actions:hover))]:bg-ic-field [&:has(.ic-record-trigger:focus-visible)]:bg-ic-field [&:hover:not(:has(.ic-actions:hover))_.ic-record-trigger]:decoration-current max-[480px]:px-3.5 motion-reduce:transition-none'
+  'ic-record grid cursor-pointer items-center gap-3.5 border-t border-ic-line px-4 py-3 wrap-anywhere [&:hover:not(:has(.ic-actions:hover))]:bg-ic-field [&:has(.ic-record-trigger:focus-visible)]:bg-ic-field [&:hover:not(:has(.ic-actions:hover))_.ic-record-trigger]:decoration-current max-[480px]:px-3.5'
 export const sheetFieldLabelClass = 'relative grid min-w-0 content-start gap-0 text-xs font-normal'
 export const sheetNameLabelClass =
   'relative mb-0.5 grid min-w-0 content-start gap-0 font-display text-[clamp(14px,1.7vw,19px)]/[1.15] font-bold'
 export const recordTriggerClass =
   'ic-record-trigger block min-h-0 cursor-pointer rounded p-0 text-left font-bold whitespace-normal text-ic-accent underline decoration-transparent underline-offset-4 hover:bg-transparent hover:decoration-current'
 export const sheetChipClass =
-  'inline-flex min-h-6 items-center gap-1 rounded-md border border-ic-line bg-ic-field px-2 py-0.5 font-sans text-[11px]/[1.2] font-semibold tracking-normal whitespace-nowrap text-ic-ink normal-case transition-[background-color,border-color,color] duration-120 hover:border-ic-accent hover:bg-ic-soft hover:text-ic-accent motion-reduce:transition-none'
+  'inline-flex min-h-6 items-center gap-1 rounded-md border border-ic-line bg-ic-field px-2 py-0.5 font-sans text-[11px]/[1.2] font-semibold tracking-normal whitespace-nowrap text-ic-ink normal-case hover:border-ic-accent hover:bg-ic-soft hover:text-ic-accent'
 
 const countryOptions = countryCodes
   .map((code) => ({ code, name: countryName(code) }))
@@ -207,7 +207,7 @@ export function PickerModal({
               <li key={option.value}>
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between gap-3 rounded-md border border-ic-line bg-ic-field px-3 py-2.5 text-start text-ic-ink transition-[background-color,border-color] duration-120 hover:border-ic-accent hover:bg-ic-soft motion-reduce:transition-none"
+                  className="flex w-full items-center justify-between gap-3 rounded-md border border-ic-line bg-ic-field px-3 py-2.5 text-start text-ic-ink hover:border-ic-accent hover:bg-ic-soft"
                   onClick={() => onSelect(option.value)}
                 >
                   <span className="grid min-w-0 gap-0.5 wrap-anywhere">

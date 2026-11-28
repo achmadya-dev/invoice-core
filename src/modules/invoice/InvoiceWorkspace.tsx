@@ -360,7 +360,7 @@ export function InvoiceWorkspace() {
                 aria-checked={isDark}
                 aria-label="Dark mode"
                 title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                className="group relative inline-grid h-8 w-14 flex-none grid-cols-2 items-center rounded-md border border-ic-line bg-ic-soft p-0.5 transition-colors duration-150 hover:border-ic-muted motion-reduce:transition-none"
+                className="group relative inline-grid h-8 w-14 flex-none grid-cols-2 items-center rounded-md border border-ic-line bg-ic-soft p-0.5 hover:border-ic-muted"
                 onClick={toggleTheme}
               >
                 <span
@@ -369,13 +369,13 @@ export function InvoiceWorkspace() {
                 />
                 <span
                   aria-hidden="true"
-                  className={`relative z-1 grid size-[26px] place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-ic-muted group-hover:text-ic-ink' : 'text-ic-ink'}`}
+                  className={`relative z-1 grid size-[26px] place-items-center ${isDark ? 'text-ic-muted group-hover:text-ic-ink' : 'text-ic-ink'}`}
                 >
                   <Icon name="sun" className="size-3.5 flex-none" />
                 </span>
                 <span
                   aria-hidden="true"
-                  className={`relative z-1 grid size-[26px] place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-ic-ink' : 'text-ic-muted group-hover:text-ic-ink'}`}
+                  className={`relative z-1 grid size-[26px] place-items-center ${isDark ? 'text-ic-ink' : 'text-ic-muted group-hover:text-ic-ink'}`}
                 >
                   <Icon name="moon" className="size-3.5 flex-none" />
                 </span>
@@ -447,7 +447,7 @@ export function InvoiceWorkspace() {
                   key={key}
                   value={key}
                   id={`tab-${key}`}
-                  className="-mb-px border-b-2 border-transparent py-2.5 text-[13.5px] font-semibold text-ic-muted transition-colors duration-120 hover:text-ic-ink aria-selected:border-ic-ink aria-selected:text-ic-ink motion-reduce:transition-none"
+                  className="-mb-px border-b-2 border-transparent py-2.5 text-[13.5px] font-semibold text-ic-muted hover:text-ic-ink aria-selected:border-ic-ink aria-selected:text-ic-ink"
                 >
                   {tabs[key]}
                 </Tabs.Tab>
@@ -590,7 +590,7 @@ export function InvoiceWorkspace() {
                       type="button"
                       aria-pressed={view === 'edit'}
                       aria-controls="invoice-editor"
-                      className="min-h-[30px] min-w-[70px] rounded px-3 py-0 text-[13px] font-semibold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/10%)] motion-reduce:transition-none max-[620px]:min-w-0"
+                      className="min-h-[30px] min-w-[70px] rounded px-3 py-0 text-[13px] font-semibold text-ic-muted hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/10%)] max-[620px]:min-w-0"
                       onClick={() => setView('edit')}
                     >
                       Edit
@@ -599,7 +599,7 @@ export function InvoiceWorkspace() {
                       type="button"
                       aria-pressed={view === 'preview'}
                       aria-controls="invoice-preview"
-                      className="min-h-[30px] min-w-[70px] rounded px-3 py-0 text-[13px] font-semibold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/10%)] motion-reduce:transition-none max-[620px]:min-w-0"
+                      className="min-h-[30px] min-w-[70px] rounded px-3 py-0 text-[13px] font-semibold text-ic-muted hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/10%)] max-[620px]:min-w-0"
                       onClick={() => setView('preview')}
                     >
                       Preview

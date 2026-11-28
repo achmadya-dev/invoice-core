@@ -4,7 +4,7 @@ import { actionsClass, buttonClass, Icon, iconButtonClass } from './invoice-ui'
 
 const mobileLabelClass = 'hidden pb-[3px] text-[11px] font-semibold text-ic-muted max-[480px]:block'
 const compactActionClass =
-  'grid size-8 flex-none place-items-center rounded-md border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-ink motion-reduce:transition-none'
+  'grid size-8 flex-none place-items-center rounded-md border border-transparent bg-transparent p-0 text-ic-muted hover:border-ic-line hover:bg-ic-soft hover:text-ic-ink'
 
 export function LineItems({
   items,
