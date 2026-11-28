@@ -9,6 +9,7 @@ import {
   newWorkspace,
   resolveAccentColor,
   resolveInvoiceLayout,
+  sanitizeFilename,
   saveCompany,
   saveInvoice,
   saveProduct,
@@ -303,11 +304,7 @@ export function InvoiceWorkspace() {
     try {
       const { createInvoicePdf } = await loadPdfRenderer()
       const blob = await createInvoicePdf(target)
-      const name = target.number
-        .trim()
-        .replace(/[^\p{L}\p{N}._-]+/gu, '-')
-        .slice(0, 100)
-      downloadFile(blob, `${name || 'invoice'}.pdf`)
+      downloadFile(blob, `${sanitizeFilename(target.number, 'invoice')}.pdf`)
       setMessage({ text: 'PDF downloaded.' })
     } catch {
       setMessage({

@@ -83,7 +83,11 @@ export function InvoiceEditor({
   const productSearch = productQuery.trim().toLowerCase()
   const products =
     pickerModal === 'product'
-      ? workspace.products.filter((product) => matchesProduct(product, productSearch))
+      ? workspace.products
+          .filter((product) => matchesProduct(product, productSearch))
+          .sort(
+            (a, b) => Number(b.currency === draft.currency) - Number(a.currency === draft.currency),
+          )
       : []
   const editing = view === 'edit'
   const proof = invoiceDocument(draft)
@@ -211,6 +215,15 @@ export function InvoiceEditor({
               ]}
               onChange={(value) => set('discountKind', value === 'fixed' ? 'fixed' : 'percent')}
             />
+            <label className={fieldClass}>
+              Tax label
+              <input
+                maxLength={120}
+                placeholder="Tax"
+                value={draft.taxLabel}
+                onChange={(event) => set('taxLabel', event.target.value)}
+              />
+            </label>
           </div>
         </details>
       </div>
@@ -459,7 +472,9 @@ export function InvoiceEditor({
                         <span
                           className="ic-summary-unit w-9 shrink-0 text-left text-[11px] font-semibold [overflow-wrap:normal] whitespace-nowrap text-ic-muted max-[480px]:w-8"
                           aria-hidden="true"
-                        />
+                        >
+                          {draft.currency}
+                        </span>
                       </span>
                     </label>
                   </dt>
@@ -598,7 +613,7 @@ export function InvoiceEditor({
         options={products.map((product) => ({
           value: product.id,
           label: product.name,
-          detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}`,
+          detail: `${product.items.length} ${product.items.length === 1 ? 'item' : 'items'} · ${product.currency}${product.currency === draft.currency ? '' : ' (different currency)'}`,
         }))}
         error={productError || undefined}
         onQuery={(query) => {
