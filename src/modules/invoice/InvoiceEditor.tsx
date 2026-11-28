@@ -8,7 +8,6 @@ import {
   decimalValid,
   deriveInvoicePalette,
   formatMoney,
-  invoiceTotals,
   manualCompanyId,
   matchesProduct,
   resolveAccentColor,
@@ -82,10 +81,13 @@ export function InvoiceEditor({
   const saved = workspace.invoices.some((invoice) => invoice.id === draft.id)
   const company = workspace.companies.find((entry) => entry.id === draft.companyId)
   const productSearch = productQuery.trim().toLowerCase()
-  const products = workspace.products.filter((product) => matchesProduct(product, productSearch))
+  const products =
+    pickerModal === 'product'
+      ? workspace.products.filter((product) => matchesProduct(product, productSearch))
+      : []
   const editing = view === 'edit'
   const proof = invoiceDocument(draft)
-  const totals = invoiceTotals(draft)
+  const totals = proof.totals
   const accentColor = resolveAccentColor(draft)
   const invoiceLayout = resolveInvoiceLayout(draft)
   const palette = deriveInvoicePalette(accentColor)

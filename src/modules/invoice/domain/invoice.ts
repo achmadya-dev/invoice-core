@@ -708,13 +708,44 @@ function rounded(numerator: bigint, denominator: bigint) {
   return numerator < 0n ? -result : result
 }
 
+const moneyFormatters = new Map<string, Intl.NumberFormat>()
+const rateFormatters = new Map<number, Intl.NumberFormat>()
+const scaleCache = new Map<Currency, { digits: number; factor: bigint }>()
+
 function formatFor(currency: Currency, display: 'symbol' | 'code' = 'symbol') {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, currencyDisplay: display })
+  const key = `${currency}:${display}`
+  let formatter = moneyFormatters.get(key)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      currencyDisplay: display,
+    })
+    moneyFormatters.set(key, formatter)
+  }
+  return formatter
 }
 
 function currencyScale(currency: Currency) {
-  const digits = formatFor(currency).resolvedOptions().maximumFractionDigits ?? 2
-  return { digits, factor: 10n ** BigInt(digits) }
+  let scale = scaleCache.get(currency)
+  if (!scale) {
+    const digits = formatFor(currency).resolvedOptions().maximumFractionDigits ?? 2
+    scale = { digits, factor: 10n ** BigInt(digits) }
+    scaleCache.set(currency, scale)
+  }
+  return scale
+}
+
+function rateFormatFor(digits: number) {
+  let formatter = rateFormatters.get(digits)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    })
+    rateFormatters.set(digits, formatter)
+  }
+  return formatter
 }
 
 export function formatMoney(
@@ -739,10 +770,7 @@ export function formatRate(value: string, currency: Currency) {
   // Show the input precision, even when a currency rounds line totals to fewer places.
   const fraction = value.split('.')[1]?.length ?? 0
   const digits = Math.max(fraction, currencyScale(currency).digits)
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })
+  return rateFormatFor(digits)
     .formatToParts(rate / thousands)
     .map((part) =>
       part.type === 'fraction'
