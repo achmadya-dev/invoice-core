@@ -88,7 +88,16 @@ try {
   assert.equal(response.status, 200, output)
   assertSecurityHeaders(response.headers, 'Home page')
   const html = await response.text()
-  assert.ok(html.includes('<html lang="en">'), 'Home page must declare English as its language')
+  assert.match(
+    html,
+    /<html\b[^>]*\blang="en"[^>]*>/,
+    'Home page must declare English as its language',
+  )
+  assert.match(
+    html,
+    /<html\b[^>]*\bdata-theme="system"[^>]*>/,
+    'Home page must default data-theme to system during SSR',
+  )
   assert.match(html, /<h1>Invoices<\/h1>/, 'Home page should render the invoice list shell')
   assert.ok(html.includes('Opening the local workspace'), 'Browser data must load after hydration')
   assert.ok(html.includes('/invoice.webmanifest'), 'Home page should link the PWA manifest')
