@@ -10,6 +10,7 @@ import {
 import {
   actionsClass,
   buttonClass,
+  dangerTextButtonClass,
   fieldClass,
   Icon,
   panelClass,
@@ -64,7 +65,7 @@ export function InvoiceHistory({
   const visible = filtered.slice(first, first + pageSize)
   return (
     <section className={panelClass} aria-label="Invoice history">
-      <div className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-3.5 px-[22px] py-5 max-[720px]:grid-cols-1 max-[720px]:gap-2 max-[480px]:px-3.5">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)] gap-3 border-b border-ic-line bg-ic-field px-4 py-3.5 max-[720px]:grid-cols-1 max-[720px]:gap-2 max-[480px]:px-3.5">
         <label className={fieldClass}>
           Search invoices
           <input
@@ -91,84 +92,104 @@ export function InvoiceHistory({
         />
       </div>
       {filtered.length > 0 && (
-        <p className="px-[22px] pb-3 text-xs text-ic-muted max-[480px]:px-3.5">
+        <p className="border-b border-ic-line bg-ic-surface px-4 py-2 text-xs text-ic-muted max-[480px]:px-3.5">
           Showing {first + 1}–{first + visible.length} of {filtered.length} invoices · Newest issue
           date first
         </p>
       )}
       {workspace.invoices.length === 0 ? (
-        <div className="px-[22px] py-[21px] max-[480px]:px-3.5">
-          <h2>No saved invoices yet</h2>
-          <p className="mt-2 mb-3.5 text-ic-muted">
+        <div className="px-4 py-5 max-[480px]:px-3.5">
+          <h2 className="text-base">No saved invoices yet</h2>
+          <p className="mt-1.5 text-[13px] text-ic-muted">
             Save your first invoice to keep it in your local history.
           </p>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="px-[22px] py-[21px] max-[480px]:px-3.5">No invoices match these filters.</p>
+        <p className="px-4 py-5 text-[13px] text-ic-muted max-[480px]:px-3.5">
+          No invoices match these filters.
+        </p>
       ) : (
-        <ul className="list-none">
-          {visible.map((invoice) => {
-            const totals = invoiceTotals(invoice)
-            return (
-              <li
-                className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_minmax(0,0.5fr)_auto] max-[620px]:grid-cols-[minmax(0,1fr)_minmax(0,0.6fr)]`}
-                key={invoice.id}
-                onClick={(event) => {
-                  if (shouldOpenRecordRow(event)) open(invoice)
-                }}
-              >
-                <div>
-                  <button
-                    className={`${recordTriggerClass} font-mono text-[13px]/[1.4]`}
-                    type="button"
-                    onClick={() => open(invoice)}
+        <>
+          <div
+            className="grid grid-cols-[minmax(0,1fr)_minmax(0,130px)_236px] items-center gap-3.5 bg-ic-field px-4 py-2 text-[11px] font-bold tracking-[0.05em] text-ic-muted uppercase max-[720px]:hidden"
+            aria-hidden="true"
+          >
+            <span>Invoice &amp; client</span>
+            <span className="text-right">Amount</span>
+            <span className="text-right">Actions</span>
+          </div>
+          <ul className="list-none">
+            {visible.map((invoice) => {
+              const totals = invoiceTotals(invoice)
+              return (
+                <li
+                  className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_minmax(0,130px)_236px] max-[720px]:grid-cols-[minmax(0,1fr)_auto] max-[720px]:items-start`}
+                  key={invoice.id}
+                  onClick={(event) => {
+                    if (shouldOpenRecordRow(event)) open(invoice)
+                  }}
+                >
+                  <div className="flex min-w-0 items-center gap-4 max-[720px]:block">
+                    <div className="min-w-[100px] shrink-0 max-[720px]:mb-0.5 max-[720px]:min-w-0">
+                      <button
+                        className={`${recordTriggerClass} font-mono text-[13px]/[1.4]`}
+                        type="button"
+                        onClick={() => open(invoice)}
+                      >
+                        {invoice.number}
+                      </button>
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="font-sans text-sm/snug font-semibold text-ic-ink">
+                        {invoice.client.name}
+                      </h2>
+                      <p className="mt-0.5 text-xs text-ic-muted">
+                        {invoice.sender.name} · {formatDate(invoice.issueDate)}
+                        {invoice.dueDate ? ` · Due ${formatDate(invoice.dueDate)}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ic-record-total text-right font-mono text-[13.5px] font-semibold text-ic-ink tabular-nums">
+                    <strong>{totals && formatMoney(totals.total, invoice.currency)}</strong>
+                  </div>
+                  <div
+                    className={`${actionsClass} cursor-default justify-end max-[720px]:col-span-full max-[720px]:justify-start min-[721px]:flex-nowrap`}
                   >
-                    {invoice.number}
-                  </button>
-                  <h2>{invoice.client.name}</h2>
-                  <p className="mt-[5px] text-xs text-ic-muted">
-                    {invoice.sender.name} · {formatDate(invoice.issueDate)}
-                    {invoice.dueDate ? ` · Due ${formatDate(invoice.dueDate)}` : ''}
-                  </p>
-                </div>
-                <div className="ic-record-total flex flex-col items-start gap-1.5 tabular-nums">
-                  <strong>{totals && formatMoney(totals.total, invoice.currency)}</strong>
-                </div>
-                <div className={`${actionsClass} cursor-default max-[620px]:col-span-full`}>
-                  <button
-                    className={buttonClass}
-                    type="button"
-                    aria-label={`Download PDF for ${invoice.number}`}
-                    disabled={pdfBusyId !== null}
-                    onClick={() => downloadPdf(invoice)}
-                  >
-                    <Icon name="download" /> {pdfBusyId === invoice.id ? 'Preparing…' : 'PDF'}
-                  </button>
-                  <button
-                    className={buttonClass}
-                    type="button"
-                    aria-label={`Duplicate ${invoice.number}`}
-                    onClick={() => duplicate(invoice)}
-                  >
-                    Duplicate
-                  </button>
-                  <button
-                    className={textButtonClass}
-                    type="button"
-                    aria-label={`Delete ${invoice.number}`}
-                    onClick={() => remove(invoice)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+                    <button
+                      className={buttonClass}
+                      type="button"
+                      aria-label={`Download PDF for ${invoice.number}`}
+                      disabled={pdfBusyId !== null}
+                      onClick={() => downloadPdf(invoice)}
+                    >
+                      <Icon name="download" /> {pdfBusyId === invoice.id ? 'Preparing…' : 'PDF'}
+                    </button>
+                    <button
+                      className={textButtonClass}
+                      type="button"
+                      aria-label={`Duplicate ${invoice.number}`}
+                      onClick={() => duplicate(invoice)}
+                    >
+                      Duplicate
+                    </button>
+                    <button
+                      className={dangerTextButtonClass}
+                      type="button"
+                      aria-label={`Delete ${invoice.number}`}
+                      onClick={() => remove(invoice)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </>
       )}
       {pageCount > 1 && (
         <nav
-          className="flex items-center justify-between gap-2.5 border-t border-ic-line px-[18px] py-3"
+          className="flex items-center justify-between gap-2.5 border-t border-ic-line bg-ic-field px-4 py-2.5 text-xs text-ic-muted"
           aria-label="Invoice history pages"
         >
           <button

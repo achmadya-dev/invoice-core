@@ -7,16 +7,16 @@ import { docLabelClass } from './invoice-ui'
 type DocumentProof = ReturnType<typeof invoiceDocument>
 
 export const proofCardClass =
-  'group/proof ic-proof mx-auto w-full bg-ic-paper p-[clamp(18px,3.1vw,41px)] text-ic-ink shadow-[0_10px_26px_#28204926] wrap-anywhere scheme-light max-[480px]:p-3.5 print:w-full print:max-w-none print:p-0 print:shadow-none'
+  'group/proof ic-proof mx-auto w-full rounded-xs border border-black/10 bg-ic-paper p-[clamp(18px,3.1vw,41px)] text-ic-ink shadow-[0_2px_10px_rgb(0_0_0/7%)] wrap-anywhere scheme-light max-[480px]:p-3.5 print:w-full print:max-w-none print:rounded-none print:border-0 print:p-0 print:shadow-none'
 
 export const summaryListBaseClass =
   'tabular-nums [&>div]:ml-auto [&>div]:flex [&>div]:justify-between [&>div]:gap-2 [&>div:not(.ic-amount)]:py-1 [&>div:not(.ic-amount)]:text-xs [&>div>dd]:shrink-0 [&>div>dd]:text-right [&>div>dd]:whitespace-nowrap'
 
 export const amountCardClass =
-  'ic-amount mt-2.5 flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-[3px] bg-(--ic-doc-amount-bg) px-[15px] py-[13px] text-(--ic-doc-amount-ink) group-data-[invoice-layout=modern]/proof:rounded-md group-data-[invoice-layout=modern]/proof:border-l-4 group-data-[invoice-layout=modern]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:rounded-none group-data-[invoice-layout=minimal]/proof:border-t-2 group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:px-0 group-data-[invoice-layout=minimal]/proof:py-3 group-data-[invoice-layout=minimal]/proof:text-ic-ink'
+  'ic-amount mt-2.5 flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xs bg-(--ic-doc-amount-bg) px-[15px] py-[13px] text-(--ic-doc-amount-ink) group-data-[invoice-layout=modern]/proof:bg-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:text-white group-data-[invoice-layout=minimal]/proof:rounded-none group-data-[invoice-layout=minimal]/proof:border-t-2 group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:px-0 group-data-[invoice-layout=minimal]/proof:py-3 group-data-[invoice-layout=minimal]/proof:text-ic-ink'
 
 export const proofHeadingVariantClass =
-  'border-b-2 border-(--ic-doc-accent) pb-5 group-data-[invoice-layout=modern]/proof:rounded-md group-data-[invoice-layout=modern]/proof:border-t-4 group-data-[invoice-layout=modern]/proof:border-b-0 group-data-[invoice-layout=modern]/proof:border-t-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:bg-(--ic-doc-soft) group-data-[invoice-layout=modern]/proof:px-[18px] group-data-[invoice-layout=modern]/proof:py-4 group-data-[invoice-layout=minimal]/proof:border-b group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-line)'
+  'border-b-2 border-(--ic-doc-accent) pb-5 group-data-[invoice-layout=modern]/proof:border-t-2 group-data-[invoice-layout=modern]/proof:border-b group-data-[invoice-layout=modern]/proof:border-t-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:border-b-(--ic-doc-line) group-data-[invoice-layout=modern]/proof:pt-4 group-data-[invoice-layout=modern]/proof:pb-4 group-data-[invoice-layout=minimal]/proof:border-b group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-line)'
 
 export function invoicePaletteVars(palette: InvoicePalette): CSSProperties {
   return {
@@ -126,7 +126,7 @@ export function InvoicePreview({
           ))}
         </div>
       </div>
-      <table className="ic-proof-table w-full border-collapse text-xs tabular-nums max-[480px]:text-[11px] [&_td]:border-b [&_td]:border-(--ic-doc-line) [&_td]:px-[7px] [&_td]:py-[9px] [&_td]:align-top max-[480px]:[&_td]:px-1 [&_td:not(:first-child)]:text-right [&_th]:bg-(--ic-doc-soft) [&_th]:px-[7px] [&_th]:py-[9px] [&_th]:text-left [&_th]:align-top [&_th]:text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:[&_th]:border-y group-data-[invoice-layout=minimal]/proof:[&_th]:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:[&_th]:bg-transparent group-data-[invoice-layout=minimal]/proof:[&_th]:text-ic-ink max-[480px]:[&_th]:px-1 [&_th:not(:first-child)]:text-right">
+      <table className="ic-proof-table w-full border-collapse text-xs tabular-nums max-[480px]:text-[11px] [&_td]:border-b [&_td]:border-(--ic-doc-line) [&_td]:px-[7px] [&_td]:py-[9px] [&_td]:align-top max-[480px]:[&_td]:px-1 [&_td:not(:first-child)]:text-right [&_th]:bg-(--ic-doc-soft) [&_th]:px-[7px] [&_th]:py-[9px] [&_th]:text-left [&_th]:align-top [&_th]:text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:[&_th]:border-y group-data-[invoice-layout=minimal]/proof:[&_th]:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:[&_th]:bg-transparent group-data-[invoice-layout=minimal]/proof:[&_th]:text-ic-ink group-data-[invoice-layout=modern]/proof:[&_th]:border-y group-data-[invoice-layout=modern]/proof:[&_th]:border-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:[&_th]:bg-transparent group-data-[invoice-layout=modern]/proof:[&_th]:text-(--ic-doc-accent) max-[480px]:[&_th]:px-1 [&_th:not(:first-child)]:text-right">
         <caption className="sr-only">Invoice line items in {currency}</caption>
         <thead>
           <tr>

@@ -2,9 +2,9 @@ import { useId } from 'react'
 import { decimalValid, maxItems, newItem, type Currency, type LineItem } from './domain/invoice'
 import { actionsClass, buttonClass, Icon, iconButtonClass } from './invoice-ui'
 
-const mobileLabelClass = 'hidden pb-[3px] text-[11px] font-[680] text-ic-muted max-[480px]:block'
+const mobileLabelClass = 'hidden pb-[3px] text-[11px] font-semibold text-ic-muted max-[480px]:block'
 const compactActionClass =
-  'grid size-8 flex-none place-items-center rounded-lg border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-accent motion-reduce:transition-none'
+  'grid size-8 flex-none place-items-center rounded-md border border-transparent bg-transparent p-0 text-ic-muted transition-[background-color,border-color,color] duration-120 hover:border-ic-line hover:bg-ic-soft hover:text-ic-ink motion-reduce:transition-none'
 
 export function LineItems({
   items,
@@ -66,7 +66,7 @@ export function LineItems({
               role="rowgroup"
               className={
                 amounts
-                  ? 'bg-(--ic-doc-soft) group-data-[invoice-layout=minimal]/proof:bg-transparent max-[480px]:sr-only'
+                  ? 'bg-(--ic-doc-soft) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=modern]/proof:bg-transparent max-[480px]:sr-only'
                   : undefined
               }
             >
@@ -76,7 +76,7 @@ export function LineItems({
                   role="columnheader"
                   className={
                     amounts
-                      ? 'px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink'
+                      ? 'px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink group-data-[invoice-layout=modern]/proof:border-y group-data-[invoice-layout=modern]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:bg-transparent group-data-[invoice-layout=modern]/proof:text-(--ic-doc-accent)'
                       : 'px-1 pt-0 pb-0.5 text-start text-xs font-bold text-ic-muted'
                   }
                 >
@@ -87,7 +87,7 @@ export function LineItems({
                   role="columnheader"
                   className={
                     amounts
-                      ? 'w-[62px] px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink max-[480px]:w-12'
+                      ? 'w-[62px] px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink group-data-[invoice-layout=modern]/proof:border-y group-data-[invoice-layout=modern]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:bg-transparent group-data-[invoice-layout=modern]/proof:text-(--ic-doc-accent) max-[480px]:w-12'
                       : 'w-[62px] px-1 pt-0 pb-0.5 text-start text-xs font-bold text-ic-muted max-[480px]:w-12'
                   }
                 >
@@ -98,7 +98,7 @@ export function LineItems({
                   role="columnheader"
                   className={
                     amounts
-                      ? 'w-[82px] px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink max-[480px]:w-[68px]'
+                      ? 'w-[82px] px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink group-data-[invoice-layout=modern]/proof:border-y group-data-[invoice-layout=modern]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:bg-transparent group-data-[invoice-layout=modern]/proof:text-(--ic-doc-accent) max-[480px]:w-[68px]'
                       : 'w-[82px] px-1 pt-0 pb-0.5 text-start text-xs font-bold text-ic-muted max-[480px]:w-[68px]'
                   }
                 >
@@ -108,7 +108,7 @@ export function LineItems({
                   <th
                     scope="col"
                     role="columnheader"
-                    className="w-[108px] py-[7px] pr-1.5 pl-1 text-end text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink"
+                    className="w-[108px] py-[7px] pr-1.5 pl-1 text-end text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink group-data-[invoice-layout=modern]/proof:border-y group-data-[invoice-layout=modern]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:bg-transparent group-data-[invoice-layout=modern]/proof:text-(--ic-doc-accent)"
                   >
                     Amount
                   </th>
@@ -118,7 +118,7 @@ export function LineItems({
                   role="columnheader"
                   className={
                     amounts
-                      ? `${reorderable ? 'w-[104px]' : 'w-10'} px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink max-[480px]:w-9`
+                      ? `${reorderable ? 'w-[104px]' : 'w-10'} px-1 py-[7px] text-start text-xs font-bold text-(--ic-doc-amount-ink) group-data-[invoice-layout=minimal]/proof:border-y group-data-[invoice-layout=minimal]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=minimal]/proof:bg-transparent group-data-[invoice-layout=minimal]/proof:text-ic-ink group-data-[invoice-layout=modern]/proof:border-y group-data-[invoice-layout=modern]/proof:border-(--ic-doc-accent) group-data-[invoice-layout=modern]/proof:bg-transparent group-data-[invoice-layout=modern]/proof:text-(--ic-doc-accent) max-[480px]:w-9`
                       : `${reorderable ? 'w-[104px] max-[480px]:w-[68px]' : 'w-10 max-[480px]:w-9'} px-1 pt-0 pb-0.5 text-start text-xs font-bold text-ic-muted`
                   }
                 >

@@ -4,6 +4,7 @@ import {
   actionsClass,
   buttonClass,
   CurrencySelect,
+  dangerTextButtonClass,
   DecimalField,
   fieldClass,
   fieldsGridClass,
@@ -14,7 +15,6 @@ import {
   recordTriggerClass,
   SenderFields,
   shouldOpenRecordRow,
-  textButtonClass,
   WorkspaceDialog,
 } from './invoice-ui'
 
@@ -59,7 +59,7 @@ export function Companies({
       <h2 id="companies-title" className="sr-only">
         Companies
       </h2>
-      <div className="flex flex-wrap items-end justify-between gap-3 px-[22px] py-[21px] max-[480px]:px-3.5">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-ic-line bg-ic-field px-4 py-3.5 max-[480px]:px-3.5">
         <label className={`${fieldClass} flex-[0_1_300px]`}>
           Search companies
           <input
@@ -82,22 +82,26 @@ export function Companies({
         {matches.map((company) => (
           <li
             key={company.id}
-            className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_auto]`}
+            className={`${recordRowBaseClass} grid-cols-[minmax(0,1fr)_auto] first:border-t-0`}
             onClick={(event) => {
               if (shouldOpenRecordRow(event)) edit(company)
             }}
           >
             <div>
               <h3>
-                <button className={recordTriggerClass} type="button" onClick={() => edit(company)}>
+                <button
+                  className={`${recordTriggerClass} font-sans text-sm`}
+                  type="button"
+                  onClick={() => edit(company)}
+                >
                   {company.sender.name}
                 </button>
               </h3>
-              <p className="mt-[5px] text-xs text-ic-muted">{company.currency}</p>
+              <p className="mt-1 font-mono text-xs text-ic-muted">{company.currency}</p>
             </div>
             <div className={`${actionsClass} cursor-default max-[620px]:col-span-full`}>
               <button
-                className={textButtonClass}
+                className={dangerTextButtonClass}
                 type="button"
                 aria-label={`Delete ${company.sender.name}`}
                 onClick={() => remove(company)}
@@ -109,7 +113,7 @@ export function Companies({
         ))}
       </ul>
       {matches.length === 0 && (
-        <p className="px-[22px] py-[21px] max-[480px]:px-3.5">
+        <p className="px-4 py-5 text-[13px] text-ic-muted max-[480px]:px-3.5">
           {companies.length
             ? 'No companies match this search.'
             : 'No companies yet. Add one to reuse its sender details.'}

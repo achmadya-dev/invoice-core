@@ -30,6 +30,7 @@ import {
   primaryButtonClass,
   SelectField,
   shellClass,
+  textButtonClass,
   WorkspaceDialog,
   type ConfirmState,
 } from './invoice-ui'
@@ -336,65 +337,67 @@ export function InvoiceWorkspace() {
       className="ic-workspace min-h-screen bg-ic-ground text-ic-ink print:block print:min-h-0 print:bg-white print:p-0 print:text-ic-ink"
       data-theme={theme}
     >
-      <header className="ic-topbar bg-ic-deep text-white print:hidden">
-        <div className={`${shellClass} flex min-h-16 items-center justify-between gap-4`}>
+      <header className="ic-topbar border-b border-ic-line bg-ic-surface text-ic-ink print:hidden">
+        <div className={`${shellClass} flex min-h-14 items-center justify-between gap-3`}>
           <button
             type="button"
-            className="inline-flex flex-none items-center gap-2.5 font-display text-[23px]/none font-[750] tracking-[-0.03em] whitespace-nowrap max-[480px]:gap-[7px] max-[480px]:text-[19px]"
+            className="inline-flex flex-none items-center gap-2.5 rounded-md font-display text-[17px]/none font-bold tracking-[-0.025em] whitespace-nowrap text-ic-ink max-[480px]:gap-2 max-[480px]:text-base"
             onClick={() => show('invoices')}
           >
-            <span className="grid size-[34px] place-items-center rounded-[9px] bg-ic-stamp text-ic-deep max-[480px]:size-[31px]">
-              <Icon name="mark" className="size-5 flex-none" />
+            <span className="grid size-7 place-items-center rounded-md bg-ic-deep text-ic-stamp">
+              <Icon name="mark" className="size-4 flex-none" />
             </span>{' '}
             Invoice Core
           </button>
           {data && (
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isDark}
-              aria-label="Dark mode"
-              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="group relative inline-grid h-9 w-16 flex-none grid-cols-2 items-center rounded-[9px] border border-white/15 bg-black/20 p-[3px] transition-colors duration-150 hover:border-white/25 hover:bg-black/30 motion-reduce:transition-none"
-              onClick={toggleTheme}
-            >
-              <span
-                aria-hidden="true"
-                className={`pointer-events-none absolute top-[3px] left-[3px] size-7 rounded-md bg-white/15 shadow-[0_1px_2px_rgb(0_0_0/25%)] transition-transform duration-200 ease-out motion-reduce:transition-none ${isDark ? 'translate-x-full' : 'translate-x-0'}`}
-              />
-              <span
-                aria-hidden="true"
-                className={`relative z-1 grid size-7 place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-white/45 group-hover:text-white/75' : 'text-white'}`}
+            <div className="flex flex-none items-center gap-2">
+              <button type="button" className={textButtonClass} onClick={() => setBackupOpen(true)}>
+                Backup
+              </button>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isDark}
+                aria-label="Dark mode"
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                className="group relative inline-grid h-8 w-14 flex-none grid-cols-2 items-center rounded-md border border-ic-line bg-ic-soft p-0.5 transition-colors duration-150 hover:border-ic-muted motion-reduce:transition-none"
+                onClick={toggleTheme}
               >
-                <Icon name="sun" className="size-[15px] flex-none" />
-              </span>
-              <span
-                aria-hidden="true"
-                className={`relative z-1 grid size-7 place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-white' : 'text-white/45 group-hover:text-white/75'}`}
-              >
-                <Icon name="moon" className="size-[15px] flex-none" />
-              </span>
-            </button>
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute top-0.5 left-0.5 size-[26px] rounded bg-ic-surface shadow-[0_1px_2px_rgb(0_0_0/12%)] transition-transform duration-200 ease-out motion-reduce:transition-none ${isDark ? 'translate-x-full' : 'translate-x-0'}`}
+                />
+                <span
+                  aria-hidden="true"
+                  className={`relative z-1 grid size-[26px] place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-ic-muted group-hover:text-ic-ink' : 'text-ic-ink'}`}
+                >
+                  <Icon name="sun" className="size-3.5 flex-none" />
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`relative z-1 grid size-[26px] place-items-center transition-colors duration-150 motion-reduce:transition-none ${isDark ? 'text-ic-ink' : 'text-ic-muted group-hover:text-ic-ink'}`}
+                >
+                  <Icon name="moon" className="size-3.5 flex-none" />
+                </span>
+              </button>
+            </div>
           )}
         </div>
       </header>
       <main className={shellClass}>
         <div
-          className="flex items-end justify-between gap-5 pt-8 pb-5 max-[900px]:pt-[25px] max-[900px]:pb-4 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-3 print:hidden"
+          className="flex items-end justify-between gap-4 pt-6 pb-4 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-3 print:hidden"
           data-panel={tab}
         >
           <div>
             <h1>{copy.title}</h1>
-            <p className="mt-[9px] text-ic-muted">{copy.detail}</p>
+            <p className="mt-1 text-[13.5px] text-ic-muted">{copy.detail}</p>
           </div>
           {data && (
             <div className={`${actionsClass} flex-none`}>
-              <button type="button" className={buttonClass} onClick={() => setBackupOpen(true)}>
-                Backup
-              </button>
               <button
                 type="button"
-                className={primaryButtonClass}
+                className={tab === 'invoices' ? primaryButtonClass : buttonClass}
                 onClick={() => openEditor(newInvoice(undefined, data.invoices))}
               >
                 <Icon name="plus" /> Create invoice
@@ -435,7 +438,7 @@ export function InvoiceWorkspace() {
             }}
           >
             <Tabs.List
-              className="inline-grid grid-cols-3 gap-1 justify-self-start rounded-[10px] border border-ic-line bg-ic-soft p-1 max-[480px]:w-full max-[480px]:justify-self-stretch"
+              className="flex items-center gap-6 border-b border-ic-line max-[480px]:gap-4"
               aria-label="Workspace sections"
               activateOnFocus
             >
@@ -444,7 +447,7 @@ export function InvoiceWorkspace() {
                   key={key}
                   value={key}
                   id={`tab-${key}`}
-                  className="min-h-10 min-w-[112px] rounded-[7px] px-4 py-1.5 text-[13px] font-[730] text-ic-muted aria-selected:bg-ic-surface aria-selected:text-ic-ink aria-selected:shadow-[0_1px_3px_rgb(25_20_38/12%)] max-[480px]:min-w-0 max-[480px]:px-2 max-[480px]:py-1.5"
+                  className="-mb-px border-b-2 border-transparent py-2.5 text-[13.5px] font-semibold text-ic-muted transition-colors duration-120 hover:text-ic-ink aria-selected:border-ic-ink aria-selected:text-ic-ink motion-reduce:transition-none"
                 >
                   {tabs[key]}
                 </Tabs.Tab>
@@ -577,17 +580,17 @@ export function InvoiceWorkspace() {
             headerExtra={
               draft ? (
                 <div
-                  className={`${actionsClass} ic-editor-appearance items-end gap-2.5 max-[620px]:w-full [&>:not(:first-child)]:min-w-[136px] max-[620px]:[&>:not(:first-child)]:min-w-0 max-[620px]:[&>:not(:first-child)]:flex-1 [&>:nth-child(2)]:min-w-0`}
+                  className={`${actionsClass} ic-editor-appearance items-end gap-2 max-[620px]:w-full [&>:not(:first-child)]:min-w-[132px] max-[620px]:[&>:not(:first-child)]:min-w-0 max-[620px]:[&>:not(:first-child)]:flex-1 [&>:nth-child(2)]:min-w-0`}
                 >
                   <nav
-                    className="ic-switcher inline-grid min-h-10 grid-cols-2 gap-[3px] rounded-lg border border-ic-line bg-ic-soft p-[3px] max-[620px]:w-full max-[620px]:flex-[1_1_100%]"
+                    className="ic-switcher inline-grid h-9 min-h-9 grid-cols-2 gap-0.5 rounded-md border border-ic-line bg-ic-soft p-0.5 max-[620px]:w-full max-[620px]:flex-[1_1_100%]"
                     aria-label="Invoice view"
                   >
                     <button
                       type="button"
                       aria-pressed={view === 'edit'}
                       aria-controls="invoice-editor"
-                      className="min-h-8 min-w-[74px] rounded-[5px] px-3 py-0 text-[13px] font-bold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_3px_rgb(25_20_38/12%)] motion-reduce:transition-none max-[620px]:min-w-0"
+                      className="min-h-[30px] min-w-[70px] rounded px-3 py-0 text-[13px] font-semibold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/10%)] motion-reduce:transition-none max-[620px]:min-w-0"
                       onClick={() => setView('edit')}
                     >
                       Edit
@@ -596,7 +599,7 @@ export function InvoiceWorkspace() {
                       type="button"
                       aria-pressed={view === 'preview'}
                       aria-controls="invoice-preview"
-                      className="min-h-8 min-w-[74px] rounded-[5px] px-3 py-0 text-[13px] font-bold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_3px_rgb(25_20_38/12%)] motion-reduce:transition-none max-[620px]:min-w-0"
+                      className="min-h-[30px] min-w-[70px] rounded px-3 py-0 text-[13px] font-semibold text-ic-muted transition-[background-color,color] duration-120 hover:text-ic-ink aria-pressed:bg-ic-surface aria-pressed:text-ic-ink aria-pressed:shadow-[0_1px_2px_rgb(0_0_0/10%)] motion-reduce:transition-none max-[620px]:min-w-0"
                       onClick={() => setView('preview')}
                     >
                       Preview
@@ -628,7 +631,7 @@ export function InvoiceWorkspace() {
             onClose={closeEditor}
           >
             {draft && (
-              <div className="mt-3.5 print:m-0">
+              <div className="print:m-0">
                 <InvoiceEditor
                   key={draft.id}
                   draft={draft}

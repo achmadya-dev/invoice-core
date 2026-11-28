@@ -44,10 +44,10 @@ function RouteMessage({
   return (
     <div className="ic-workspace min-h-screen bg-ic-ground text-ic-ink">
       <main className={shellClass}>
-        <div className="flex items-end justify-between gap-5 pt-8 pb-5 max-[900px]:pt-[25px] max-[900px]:pb-4 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-3">
+        <div className="flex items-end justify-between gap-4 pt-6 pb-4 max-[620px]:flex-col max-[620px]:items-start max-[620px]:gap-3">
           <div>
             <h1>{title}</h1>
-            <p className="mt-[9px] text-ic-muted">{detail}</p>
+            <p className="mt-1.5 text-sm text-ic-muted">{detail}</p>
           </div>
         </div>
         {children}

@@ -22,7 +22,7 @@ const style = StyleSheet.create({
     padding: 42,
     paddingBottom: 58,
     fontFamily: 'Invoice Sans',
-    color: '#22213a',
+    color: '#18181b',
     fontSize: 11,
     lineHeight: 1.42,
   },
@@ -46,7 +46,7 @@ const style = StyleSheet.create({
   headerDateItem: { alignItems: 'flex-end' },
   meta: { flexDirection: 'row', justifyContent: 'space-between', gap: 20, paddingVertical: 21 },
   caption: {
-    color: '#57556c',
+    color: '#5d5a53',
     fontFamily: 'Helvetica-Bold',
     fontSize: 9,
     letterSpacing: 0.55,
@@ -83,7 +83,7 @@ const style = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 3,
+    borderRadius: 2,
     paddingVertical: 11,
     paddingHorizontal: 15,
     marginTop: 10,
@@ -105,7 +105,7 @@ const style = StyleSheet.create({
   footer: {
     marginTop: 12,
     fontSize: 8,
-    color: '#57556c',
+    color: '#5d5a53',
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
@@ -121,8 +121,8 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
   const layout = resolveInvoiceLayout(invoice)
   const isModern = layout === 'modern'
   const isMinimal = layout === 'minimal'
-  const tableHeadInk = isMinimal ? '#22213a' : palette.amountInk
-  const amountInk = isMinimal ? '#22213a' : palette.amountInk
+  const tableHeadInk = isModern ? palette.accent : isMinimal ? '#18181b' : palette.amountInk
+  const amountInk = isModern ? '#ffffff' : isMinimal ? '#18181b' : palette.amountInk
   const amountFontSize =
     proof.total.length > 16 ? 18 : proof.total.length > 13 ? 21 : proof.total.length > 10 ? 24 : 27
   const noteAndTerms = proof.extras.filter((entry) => entry.label !== 'Payment details')
@@ -135,13 +135,14 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
             style.heading,
             isModern
               ? {
-                  backgroundColor: palette.soft,
-                  borderTopWidth: 3.5,
+                  borderTopWidth: 2,
                   borderTopStyle: 'solid',
                   borderTopColor: palette.accent,
-                  borderBottomWidth: 0,
-                  padding: 14,
-                  borderRadius: 5,
+                  borderBottomWidth: 1,
+                  borderBottomStyle: 'solid',
+                  borderBottomColor: palette.line,
+                  paddingTop: 14,
+                  paddingBottom: 14,
                 }
               : isMinimal
                 ? {
@@ -196,7 +197,7 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
           style={[
             style.row,
             style.tableHead,
-            isMinimal
+            isMinimal || isModern
               ? {
                   backgroundColor: 'transparent',
                   borderTopWidth: 1,
@@ -250,13 +251,10 @@ function InvoicePdf({ invoice }: { invoice: Invoice }) {
                   }
                 : isModern
                   ? {
-                      backgroundColor: palette.amountBg,
-                      borderLeftWidth: 3.5,
-                      borderLeftStyle: 'solid',
-                      borderLeftColor: palette.accent,
-                      borderRadius: 5,
+                      backgroundColor: palette.accent,
+                      borderRadius: 2,
                     }
-                  : { backgroundColor: palette.amountBg, borderRadius: 3 },
+                  : { backgroundColor: palette.amountBg, borderRadius: 2 },
             ]}
           >
             <View style={style.amountMeta}>
